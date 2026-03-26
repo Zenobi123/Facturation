@@ -1,0 +1,2243 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Clients - PRISMA GESTION</title>
+    <script src="assets/css/tailwindcss.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="prisma-print.css">
+    <link rel="stylesheet" href="assets/css/inter-font.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-blue-900 text-white p-4 shadow-lg">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div>
+                <a href="index.html" class="inline-flex items-center px-3 py-1.5 border border-white rounded-lg shadow-sm text-white hover:bg-white hover:text-blue-900 transition-colors duration-200">← PRISMA GESTION</a>
+                <span class="text-sm text-blue-200 ml-4">Gestion des Clients</span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto p-6">
+        <!-- En-tête -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">Gestion des Clients</h1>
+                    <p class="text-gray-600 text-sm">Ajoutez et gérez vos clients</p>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="showImportForm()" class="bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        Importer
+                    </button>
+                    <button onclick="showAddForm()" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Nouveau Client
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formulaire d'import (caché par défaut) -->
+        <div id="importForm" class="bg-white rounded-lg shadow-md p-6 mb-6 hidden">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Importer des clients</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div class="border-2 border-dashed border-blue-300 rounded-lg p-4 text-center bg-blue-50">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mx-auto mb-2 text-blue-600">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                    <p class="font-semibold text-blue-800">CSV</p>
+                    <p class="text-xs text-gray-600">Fichier texte séparé par des virgules ou points-virgules</p>
+                </div>
+                <div class="border-2 border-dashed border-green-300 rounded-lg p-4 text-center bg-green-50">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mx-auto mb-2 text-green-600">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                    <p class="font-semibold text-green-800">Excel (XLSX)</p>
+                    <p class="text-xs text-gray-600">Fichier Microsoft Excel</p>
+                </div>
+                <div class="border-2 border-dashed border-orange-300 rounded-lg p-4 text-center bg-orange-50">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mx-auto mb-2 text-orange-600">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                    <p class="font-semibold text-orange-800">JSON</p>
+                    <p class="text-xs text-gray-600">Fichier de données structurées</p>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Sélectionner un fichier</label>
+                <input type="file" id="importFile" accept=".csv,.xlsx,.xls,.json" onchange="previewImport()" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+                <p class="text-xs text-gray-500 mt-1">Formats acceptés : CSV, XLSX, XLS, JSON</p>
+            </div>
+
+            <div class="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <h3 class="font-semibold text-gray-800 mb-2">Colonnes attendues :</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                    <span class="bg-red-100 text-red-800 px-2 py-1 rounded">Nom / name *</span>
+                    <span class="bg-red-100 text-red-800 px-2 py-1 rounded">NIU *</span>
+                    <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded">Type</span>
+                    <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded">CentreRattachement</span>
+                    <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded">Ville</span>
+                    <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded">Quartier</span>
+                    <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded">Telephone</span>
+                    <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded">Email</span>
+                    <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded">SecteurActivite</span>
+                    <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded">Statut</span>
+                    <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded">NumeroCNPS</span>
+                    <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded">GestionExternalisee</span>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">* Champs obligatoires. Compatible avec l'export PRISMA.</p>
+                <details class="mt-2">
+                    <summary class="text-xs text-blue-600 cursor-pointer">Centres des impôts reconnus</summary>
+                    <div class="mt-1 text-xs text-gray-600">
+                        CDI YDE 1-6, CIME YDE EST, CIME YDE OUEST, CSIPLI MFOUNDI, CDI MEFOU ET AFAMBA, CDI Douala, CDI Bafoussam, CDI Garoua
+                    </div>
+                </details>
+            </div>
+
+            <!-- Aperçu des données -->
+            <div id="importPreview" class="hidden mb-4">
+                <h3 class="font-semibold text-gray-800 mb-2">Aperçu des données (<span id="previewCount">0</span> clients)</h3>
+                <div class="overflow-x-auto max-h-64 border rounded-lg">
+                    <table class="w-full text-xs">
+                        <thead class="bg-gray-100 sticky top-0">
+                            <tr>
+                                <th class="px-2 py-2 text-left">Nom</th>
+                                <th class="px-2 py-2 text-left">NIU</th>
+                                <th class="px-2 py-2 text-left">Type</th>
+                                <th class="px-2 py-2 text-left">CDI</th>
+                                <th class="px-2 py-2 text-left">Ville</th>
+                                <th class="px-2 py-2 text-center">Valide</th>
+                            </tr>
+                        </thead>
+                        <tbody id="previewTable"></tbody>
+                    </table>
+                </div>
+                <div id="importErrors" class="hidden mt-2 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800"></div>
+            </div>
+
+            <div class="flex gap-4 mt-6">
+                <button onclick="executeImport()" id="importBtn" disabled class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                    Importer les clients
+                </button>
+                <button onclick="downloadTemplate()" class="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition">
+                    Télécharger un modèle CSV
+                </button>
+                <button onclick="hideImportForm()" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition">
+                    Annuler
+                </button>
+            </div>
+        </div>
+
+        <!-- Formulaire d'ajout (caché par défaut) -->
+        <div id="addForm" class="bg-white rounded-lg shadow-md p-6 mb-6 hidden">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Ajouter un nouveau client</h2>
+            <form id="clientForm" onsubmit="saveClient(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Informations de base -->
+                <div class="md:col-span-2">
+                    <h3 class="text-lg font-semibold text-blue-900 mb-3 border-b pb-2">Informations générales</h3>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Type de client *</label>
+                    <select id="clientType" onchange="toggleCiviliteLabel(); calculateFiscalTaxes()" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+                        <option value="Personne morale">Personne morale</option>
+                        <option value="Personne physique">Personne physique</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Nom / Raison sociale *</label>
+                    <input type="text" id="clientName" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">NIU *</label>
+                    <input type="text" id="clientNiu" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500" placeholder="Ex: M052116042979Z">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Centre de rattachement fiscal (CDI) *</label>
+                    <select id="clientCdi" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+                        <option value="">-- Sélectionner --</option>
+                        <optgroup label="Yaoundé - CDI">
+                            <option value="CDI YDE 1">CDI YDE 1</option>
+                            <option value="CDI YDE 2">CDI YDE 2</option>
+                            <option value="CDI YDE 3">CDI YDE 3</option>
+                            <option value="CDI YDE 4">CDI YDE 4</option>
+                            <option value="CDI YDE 5">CDI YDE 5</option>
+                            <option value="CDI YDE 6">CDI YDE 6</option>
+                        </optgroup>
+                        <optgroup label="Yaoundé - CIME">
+                            <option value="CIME YDE EST">CIME YDE EST</option>
+                            <option value="CIME YDE OUEST">CIME YDE OUEST</option>
+                        </optgroup>
+                        <optgroup label="Yaoundé - Autres">
+                            <option value="CSIPLI MFOUNDI">CSIPLI MFOUNDI</option>
+                        </optgroup>
+                        <optgroup label="Autres régions">
+                            <option value="CDI MEFOU ET AFAMBA">CDI MEFOU ET AFAMBA</option>
+                            <option value="CDI Douala">CDI Douala</option>
+                            <option value="CDI Bafoussam">CDI Bafoussam</option>
+                            <option value="CDI Garoua">CDI Garoua</option>
+                        </optgroup>
+                        <option value="Autre">Autre</option>
+                    </select>
+                </div>
+
+                <!-- Localisation -->
+                <div class="md:col-span-2">
+                    <h3 class="text-lg font-semibold text-blue-900 mb-3 border-b pb-2 mt-4">Localisation</h3>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Ville *</label>
+                    <input type="text" id="clientVille" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500" placeholder="Ex: Yaoundé">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Quartier *</label>
+                    <input type="text" id="clientQuartier" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500" placeholder="Ex: Bata Longkak">
+                </div>
+
+                <!-- Contact -->
+                <div class="md:col-span-2">
+                    <h3 class="text-lg font-semibold text-blue-900 mb-3 border-b pb-2 mt-4">Coordonnées</h3>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Téléphone *</label>
+                    <input type="tel" id="clientPhone" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500" placeholder="Ex: 656752475">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Email</label>
+                    <input type="email" id="clientEmail" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500" placeholder="contact@entreprise.cm">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Nom du contact principal</label>
+                    <input type="text" id="clientContact" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500" placeholder="Ex: M. OBIANG Nathan">
+                </div>
+
+                <div>
+                    <label id="clientCiviliteLabel" class="block text-sm font-semibold text-gray-700 mb-2">Civilité du contact principal</label>
+                    <select id="clientCivilite" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+                        <option value="M.">Monsieur</option>
+                        <option value="Mme">Madame</option>
+                    </select>
+                </div>
+
+                <!-- Informations complémentaires -->
+                <div class="md:col-span-2">
+                    <h3 class="text-lg font-semibold text-blue-900 mb-3 border-b pb-2 mt-4">Informations métier</h3>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Secteur d'activité *</label>
+                    <input type="text" id="clientSecteur" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500" placeholder="Ex: Commerce, Services, BTP...">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Numéro CNPS</label>
+                    <input type="text" id="clientCnps" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500" placeholder="Si applicable">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Gestion externalisée</label>
+                    <select id="clientExternalise" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+                        <option value="Non">Non</option>
+                        <option value="Oui">Oui</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Statut</label>
+                    <select id="clientStatut" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+                        <option value="Actif">Actif</option>
+                        <option value="Inactif">Inactif</option>
+                    </select>
+                </div>
+
+                <!-- Situation immobilière -->
+                <div class="md:col-span-2">
+                    <h3 class="text-lg font-semibold text-blue-900 mb-3 border-b pb-2 mt-4">Situation immobilière</h3>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Statut immobilier</label>
+                    <select id="clientStatutImmo" onchange="toggleImmoFields()" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+                        <option value="">-- Non concerné --</option>
+                        <option value="Locataire">Locataire</option>
+                        <option value="Proprietaire">Propriétaire</option>
+                        <option value="Les deux">Locataire et Propriétaire</option>
+                    </select>
+                </div>
+
+                <div class="hidden" id="loyerField">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Loyer mensuel (F CFA)</label>
+                    <input type="number" id="clientLoyerMensuel" oninput="calculateLoyerAnnuel()" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500" placeholder="Ex: 200000">
+                    <p class="text-xs text-gray-500 mt-1">Montant du loyer par mois</p>
+                </div>
+
+                <div class="hidden" id="loyerAnnuelField">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Loyer annuel (F CFA)</label>
+                    <input type="text" id="clientLoyerAnnuelDisplay" readonly class="w-full border border-gray-300 rounded-lg px-4 py-2 bg-gray-100 text-gray-700 font-semibold" value="0 F CFA">
+                    <input type="hidden" id="clientLoyerAnnuel" value="0">
+                    <p class="text-xs text-gray-500 mt-1">Calculé automatiquement (× 12)</p>
+                </div>
+
+                <div class="hidden" id="modePaiementPSLField">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Mode de paiement PSL</label>
+                    <select id="clientModePaiementPSL" onchange="calculateImmoTaxes()" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+                        <option value="annuel">Paiement annuel (1 fois)</option>
+                        <option value="trimestriel">Paiement trimestriel (4 fois)</option>
+                    </select>
+                    <p class="text-xs text-gray-500 mt-1">Échéances trim. : 15 Jan, 15 Mars, 15 Juil, 15 Oct | Bail : paiement unique</p>
+                </div>
+
+                <div class="hidden" id="valeurBienField">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Valeur du bien (F CFA)</label>
+                    <input type="number" id="clientValeurBien" onchange="calculateImmoTaxes()" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500" placeholder="Ex: 50000000">
+                    <p class="text-xs text-gray-500 mt-1">Valeur de l'immeuble ou du terrain</p>
+                </div>
+
+                <!-- Situation fiscale -->
+                <div class="md:col-span-2">
+                    <h3 class="text-lg font-semibold text-blue-900 mb-3 border-b pb-2 mt-4">Situation fiscale</h3>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Régime d'imposition</label>
+                    <select id="clientRegimeFiscal" onchange="toggleFiscalFields()" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+                        <option value="">-- Sélectionner --</option>
+                        <option value="IGS">Impôt Général Synthétique (IGS)</option>
+                        <option value="Reel">Régime Réel (Patente)</option>
+                        <option value="NonPro">Non Professionnel</option>
+                        <option value="OBNL">Organisme à But Non Lucratif</option>
+                    </select>
+                </div>
+
+                <div class="hidden" id="caField">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Chiffre d'affaires (F CFA)</label>
+                    <input type="number" id="clientChiffreAffaires" oninput="calculateFiscalTaxes()" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500" placeholder="Ex: 15000000">
+                    <p class="text-xs text-gray-500 mt-1">CA de l'année passée ou prévisionnel</p>
+                </div>
+
+                <div class="hidden" id="cgaField">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Centre de Gestion Agréé</label>
+                    <div class="flex items-center mt-2">
+                        <input type="checkbox" id="clientCGA" onchange="calculateFiscalTaxes()" class="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                        <label for="clientCGA" class="ml-2 text-sm text-gray-700">Adhérent à un CGA (réduction 50% IGS)</label>
+                    </div>
+                </div>
+
+                <div class="hidden" id="modePaiementIGSField">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Mode de paiement IGS</label>
+                    <select id="clientModePaiementIGS" onchange="calculateFiscalTaxes()" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+                        <option value="annuel">Paiement annuel (1 fois)</option>
+                        <option value="trimestriel">Paiement trimestriel (4 fois)</option>
+                    </select>
+                    <p class="text-xs text-gray-500 mt-1">Échéances : 15 Jan, 15 Mars, 15 Juil, 15 Oct</p>
+                </div>
+
+                <div class="hidden" id="vendeurBoissonsField">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Taxe Licence</label>
+                    <div class="flex items-center mt-2">
+                        <input type="checkbox" id="clientVendeurBoissons" onchange="calculateFiscalTaxes()" class="w-5 h-5 text-rose-600 border-gray-300 rounded focus:ring-rose-500">
+                        <label for="clientVendeurBoissons" class="ml-2 text-sm text-gray-700">Vendeur de boissons</label>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">La Licence est calculée automatiquement à partir de l'IGS ou de la Patente.</p>
+                </div>
+
+                <!-- Affichage des impôts fiscaux calculés -->
+                <div class="md:col-span-2 hidden" id="impotsFiscauxCalcules">
+                    <div id="fiscalDashboardContent"></div>
+                </div>
+
+                <!-- Affichage des impôts calculés -->
+                <div class="md:col-span-2 hidden" id="impotsCalcules">
+                    <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                        <h4 class="font-semibold text-blue-900 mb-3">Impôts immobiliers calculés automatiquement</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="hidden" id="pslDisplay">
+                                <div class="bg-white rounded-lg p-3 border border-blue-300">
+                                    <p class="text-xs text-gray-600">Précompte sur Loyer (PSL)</p>
+                                    <p class="text-lg font-bold text-blue-900" id="pslAmount">0 F CFA</p>
+                                    <p class="text-xs text-gray-500">10% du loyer annuel</p>
+                                </div>
+                            </div>
+                            <div class="hidden" id="bailDisplay">
+                                <div class="bg-white rounded-lg p-3 border border-green-300">
+                                    <p class="text-xs text-gray-600">Bail Commercial</p>
+                                    <p class="text-lg font-bold text-green-900" id="bailAmount">0 F CFA</p>
+                                    <p class="text-xs text-gray-500">10% du loyer annuel</p>
+                                </div>
+                            </div>
+                            <div class="hidden" id="tfDisplay">
+                                <div class="bg-white rounded-lg p-3 border border-orange-300">
+                                    <p class="text-xs text-gray-600">Taxe Foncière (TF)</p>
+                                    <p class="text-lg font-bold text-orange-900" id="tfAmount">0 F CFA</p>
+                                    <p class="text-xs text-gray-500">0,1% de la valeur du bien</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="md:col-span-2 flex gap-4 mt-6">
+                    <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
+                        Enregistrer
+                    </button>
+                    <button type="button" onclick="hideAddForm()" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition">
+                        Annuler
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Liste des clients -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+                <h2 class="text-xl font-bold text-gray-800">Liste des clients</h2>
+                <div class="flex flex-col md:flex-row gap-3">
+                    <!-- Barre de recherche -->
+                    <div class="relative">
+                        <input type="text" id="searchClient" onkeyup="searchClients()" placeholder="Rechercher un client..."
+                            class="w-full md:w-64 border border-gray-300 rounded-lg pl-10 pr-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <svg class="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                    <!-- Filtres -->
+                    <select id="filterRegime" onchange="searchClients()" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                        <option value="">Tous les régimes</option>
+                        <option value="IGS">IGS</option>
+                        <option value="Reel">Réel (Patente)</option>
+                        <option value="NonPro">Non Professionnel</option>
+                        <option value="OBNL">OBNL</option>
+                    </select>
+                    <select id="filterStatut" onchange="searchClients()" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                        <option value="">Tous les statuts</option>
+                        <option value="Actif">Actif</option>
+                        <option value="Inactif">Inactif</option>
+                        <option value="Prospect">Prospect</option>
+                    </select>
+                    <button onclick="resetFilters()" class="bg-gray-200 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-300 transition" title="Réinitialiser les filtres">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                            <path d="M3 3v5h5"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <p id="searchResultCount" class="text-sm text-gray-500 mb-3 hidden"></p>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="bg-gray-800 text-white text-xs">
+                            <th class="px-4 py-3 text-left">Type</th>
+                            <th class="px-4 py-3 text-left">Nom / Raison sociale</th>
+                            <th class="px-4 py-3 text-left">NIU</th>
+                            <th class="px-4 py-3 text-left">CDI</th>
+                            <th class="px-4 py-3 text-left">Ville</th>
+                            <th class="px-4 py-3 text-center">Immo</th>
+                            <th class="px-4 py-3 text-center">Fiscal</th>
+                            <th class="px-4 py-3 text-center">Statut</th>
+                            <th class="px-4 py-3 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="clientsList">
+                        <tr>
+                            <td colspan="9" class="text-center py-8 text-gray-500">Aucun client enregistré</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="prisma-components.js"></script>
+    <script>
+        // ============================================
+        // FONCTIONS SITUATION IMMOBILIÈRE
+        // ============================================
+
+        // Afficher/masquer les champs selon le statut immobilier
+        function toggleImmoFields() {
+            const statut = document.getElementById('clientStatutImmo').value;
+            const loyerField = document.getElementById('loyerField');
+            const loyerAnnuelField = document.getElementById('loyerAnnuelField');
+            const modePaiementPSLField = document.getElementById('modePaiementPSLField');
+            const valeurBienField = document.getElementById('valeurBienField');
+            const impotsCalcules = document.getElementById('impotsCalcules');
+            const regimeFiscal = document.getElementById('clientRegimeFiscal').value;
+
+            // Réinitialiser
+            loyerField.classList.add('hidden');
+            loyerAnnuelField.classList.add('hidden');
+            modePaiementPSLField.classList.add('hidden');
+            valeurBienField.classList.add('hidden');
+            impotsCalcules.classList.add('hidden');
+
+            // Déterminer si le PSL s'applique (pas pour OBNL/NonPro)
+            const hasPSL = !(regimeFiscal === 'OBNL' || regimeFiscal === 'NonPro');
+
+            if (statut === 'Locataire') {
+                loyerField.classList.remove('hidden');
+                loyerAnnuelField.classList.remove('hidden');
+                if (hasPSL) modePaiementPSLField.classList.remove('hidden');
+            } else if (statut === 'Proprietaire') {
+                valeurBienField.classList.remove('hidden');
+            } else if (statut === 'Les deux') {
+                loyerField.classList.remove('hidden');
+                loyerAnnuelField.classList.remove('hidden');
+                if (hasPSL) modePaiementPSLField.classList.remove('hidden');
+                valeurBienField.classList.remove('hidden');
+            }
+
+            calculateLoyerAnnuel();
+        }
+
+        // Calculer le loyer annuel à partir du loyer mensuel
+        function calculateLoyerAnnuel() {
+            const loyerMensuel = parseFloat(document.getElementById('clientLoyerMensuel').value) || 0;
+            const loyerAnnuel = loyerMensuel * 12;
+
+            document.getElementById('clientLoyerAnnuel').value = loyerAnnuel;
+            document.getElementById('clientLoyerAnnuelDisplay').value = loyerAnnuel.toLocaleString('fr-FR') + ' F CFA';
+
+            calculateImmoTaxes();
+        }
+
+        // ============================================
+        // FONCTIONS SITUATION FISCALE
+        // ============================================
+
+        // Barème IGS (Article C 40 alinéa 1 de la LPF)
+        const BAREME_IGS = [
+            { classe: 1, min: 0, max: 499999, montant: 20000 },
+            { classe: 2, min: 500000, max: 999999, montant: 30000 },
+            { classe: 3, min: 1000000, max: 1499999, montant: 40000 },
+            { classe: 4, min: 1500000, max: 1999999, montant: 50000 },
+            { classe: 5, min: 2000000, max: 2499999, montant: 60000 },
+            { classe: 6, min: 2500000, max: 4999999, montant: 150000 },
+            { classe: 7, min: 5000000, max: 9999999, montant: 300000 },
+            { classe: 8, min: 10000000, max: 19999999, montant: 500000 },
+            { classe: 9, min: 20000000, max: 29999999, montant: 1000000 },
+            { classe: 10, min: 30000000, max: 49999999, montant: 2000000 }
+        ];
+
+        // Barème Patente (Moyennes Entreprises)
+        // Taux : 0,283% du CA
+        // Plancher : 141 500 F CFA
+        // Plafond : 4 500 000 F CFA
+        const PATENTE_TAUX = 0.00283;      // 0,283%
+        const PATENTE_PLANCHER = 141500;   // Minimum
+        const PATENTE_PLAFOND = 4500000;   // Maximum
+        const SOLDE_IR_TAUX = 0.001;       // 0,1%
+        const SOLDE_IR_SEUIL = 15000000;   // À partir de 15 000 000 F CFA de CA
+        const BAREME_TDL = [
+            { max: 30000, montant: 7500 },
+            { max: 60000, montant: 9000 },
+            { max: 100000, montant: 15000 },
+            { max: 150000, montant: 22500 },
+            { max: 200000, montant: 30000 },
+            { max: 300000, montant: 45000 },
+            { max: 400000, montant: 60000 },
+            { max: 500000, montant: 75000 },
+            { max: Infinity, montant: 90000 }
+        ];
+        const PENALITE_TAUX = 0.10;        // 10% par mois de retard
+
+        function formatMoney(amount) {
+            return `${Math.round(amount || 0).toLocaleString('fr-FR')} F CFA`;
+        }
+
+        function normalizeCivilite(value, fallback = 'M.') {
+            const normalized = String(value || '').trim().toLowerCase();
+
+            if (['mme', 'madame', 'f', 'femme', 'feminin', 'féminin'].includes(normalized)) {
+                return 'Mme';
+            }
+
+            if (['m.', 'm', 'mr', 'monsieur', 'h', 'homme', 'masculin'].includes(normalized)) {
+                return 'M.';
+            }
+
+            return fallback;
+        }
+
+        function verifierFicheClient(client) {
+            const champsObligatoires = [];
+
+            if (!client.name || client.name.trim() === '') champsObligatoires.push('Nom du client');
+            if (!client.type) champsObligatoires.push('Type (PM/PP)');
+            if (!client.niu || client.niu.trim() === '') champsObligatoires.push('NIU');
+            if (!client.ville || client.ville.trim() === '') champsObligatoires.push('Ville');
+            if (!client.contact || client.contact.trim() === '') champsObligatoires.push('Contact');
+            if (!client.regimeFiscal) champsObligatoires.push('Regime fiscal');
+
+            return champsObligatoires;
+        }
+
+        function notifyIncompleteClientRecord(client, actionLabel) {
+            const champsManquants = verifierFicheClient(client);
+            if (champsManquants.length === 0) return;
+
+            PrismaToast.warning(`Client ${actionLabel}, mais fiche incomplete : ${champsManquants.join(', ')}`);
+        }
+
+        function stripTime(date) {
+            return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        }
+
+        function addDays(date, days) {
+            const nextDate = new Date(date);
+            nextDate.setDate(nextDate.getDate() + days);
+            return nextDate;
+        }
+
+        function formatShortDate(date) {
+            return date.toLocaleDateString('fr-FR', {
+                day: '2-digit',
+                month: 'short'
+            });
+        }
+
+        function splitAmount(total, count) {
+            const base = Math.floor(total / count);
+            const remainder = total - (base * count);
+            return Array.from({ length: count }, (_, index) => base + (index < remainder ? 1 : 0));
+        }
+
+        function calculateTDL(montantIGSPrincipal) {
+            const montant = Math.round(montantIGSPrincipal || 0);
+            if (montant <= 0) {
+                return 0;
+            }
+
+            const tranche = BAREME_TDL.find((item) => montant <= item.max);
+            return tranche ? tranche.montant : 0;
+        }
+
+        function getDaysBetween(startDate, endDate) {
+            return Math.ceil((stripTime(endDate) - stripTime(startDate)) / 86400000);
+        }
+
+        function getMoisRetard(dateDebut, dateFin) {
+            const debut = stripTime(dateDebut);
+            const fin = stripTime(dateFin);
+
+            if (fin < debut) return 0;
+
+            let mois = ((fin.getFullYear() - debut.getFullYear()) * 12) + (fin.getMonth() - debut.getMonth());
+            if (fin.getDate() >= debut.getDate()) {
+                mois += 1;
+            }
+
+            return Math.max(mois, 1);
+        }
+
+        function getTaxIcon(type) {
+            const icons = {
+                IGS: '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7H14.5a3.5 3.5 0 0 1 0 7H6"/></svg>',
+                Patente: '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v18M7 7h7a3 3 0 0 1 0 6H10a3 3 0 0 0 0 6h7"/></svg>',
+                TDL: '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M5 21V8l7-4 7 4v13M9 10h.01M15 10h.01M9 14h.01M15 14h.01"/></svg>',
+                SoldeIR: '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><circle cx="7.5" cy="7.5" r="1.5"/><circle cx="16.5" cy="16.5" r="1.5"/><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6"/></svg>',
+                Licence: '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.4 6.4 20.2l1.1-6.2L3 9.6l6.2-.9L12 3z"/></svg>',
+                Calculator: '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><rect x="5" y="2.5" width="14" height="19" rx="2.5"/><path stroke-linecap="round" stroke-linejoin="round" d="M8.5 7.5h7M8.5 12h2M13.5 12h2M8.5 16.5h2M13.5 16.5h2"/></svg>',
+                Check: '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M20 6L9 17l-5-5"/></svg>',
+                Clock: '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 2"/></svg>',
+                Alert: '<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01"/><path stroke-linecap="round" stroke-linejoin="round" d="M10.3 3.8L1.8 18.2A2 2 0 0 0 3.5 21h17a2 2 0 0 0 1.7-2.8L13.7 3.8a2 2 0 0 0-3.4 0z"/></svg>'
+            };
+
+            return icons[type] || icons.Clock;
+        }
+
+        function getTaxTheme(type) {
+            const themes = {
+                IGS: {
+                    wrapper: 'border-green-200 bg-gradient-to-br from-green-50 to-white',
+                    icon: 'bg-green-600 text-white',
+                    amount: 'text-green-900',
+                    badge: 'text-green-700 bg-green-100'
+                },
+                TDL: {
+                    wrapper: 'border-teal-200 bg-gradient-to-br from-teal-50 to-white',
+                    icon: 'bg-teal-600 text-white',
+                    amount: 'text-teal-900',
+                    badge: 'text-teal-700 bg-teal-100'
+                },
+                SoldeIR: {
+                    wrapper: 'border-indigo-200 bg-gradient-to-br from-indigo-50 to-white',
+                    icon: 'bg-indigo-600 text-white',
+                    amount: 'text-indigo-900',
+                    badge: 'text-indigo-700 bg-indigo-100'
+                },
+                Licence: {
+                    wrapper: 'border-rose-200 bg-gradient-to-br from-rose-50 to-white',
+                    icon: 'bg-rose-600 text-white',
+                    amount: 'text-rose-900',
+                    badge: 'text-rose-700 bg-rose-100'
+                },
+                Patente: {
+                    wrapper: 'border-amber-200 bg-gradient-to-br from-amber-50 to-white',
+                    icon: 'bg-amber-600 text-white',
+                    amount: 'text-amber-900',
+                    badge: 'text-amber-700 bg-amber-100'
+                }
+            };
+
+            return themes[type];
+        }
+
+        function renderTaxCard(tax) {
+            const theme = getTaxTheme(tax.type);
+
+            return `
+                <div class="relative overflow-hidden rounded-2xl border ${theme.wrapper} p-5 shadow-sm">
+                    <div class="absolute right-0 top-0 h-12 w-12 translate-x-4 -translate-y-4 rounded-full bg-white/60"></div>
+                    <div class="flex items-start justify-between gap-4">
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-11 w-11 items-center justify-center rounded-2xl ${theme.icon}">
+                                ${getTaxIcon(tax.type)}
+                            </div>
+                            <div>
+                                <p class="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">${tax.type}</p>
+                                <p class="text-sm font-semibold text-gray-900">${tax.label}</p>
+                            </div>
+                        </div>
+                        ${tax.badge ? `<span class="rounded-full px-2.5 py-1 text-[11px] font-semibold ${theme.badge}">${tax.badge}</span>` : ''}
+                    </div>
+                    <p class="mt-4 text-3xl font-black ${theme.amount}">${formatMoney(tax.amount)}</p>
+                    <p class="mt-2 text-sm text-gray-600">${tax.note}</p>
+                    ${tax.subnote ? `<p class="mt-2 text-xs font-medium text-gray-500">${tax.subnote}</p>` : ''}
+                </div>
+            `;
+        }
+
+        function renderWarningCard(message, detail) {
+            return `
+                <div class="rounded-2xl border border-red-200 bg-red-50 p-5 shadow-sm">
+                    <div class="flex items-start gap-3">
+                        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-red-600 text-white">
+                            ${getTaxIcon('Alert')}
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold uppercase tracking-[0.16em] text-red-700">Alerte régime</p>
+                            <p class="mt-1 text-lg font-bold text-red-900">${message}</p>
+                            <p class="mt-2 text-sm text-red-700">${detail}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function getIGSEcheances(modePaiement, montantIGS) {
+            const today = stripTime(new Date());
+            const year = today.getFullYear();
+            let schedule;
+
+            if (modePaiement === 'trimestriel') {
+                const fractions = splitAmount(montantIGS, 4);
+                const dueDates = [
+                    new Date(year, 0, 15),
+                    new Date(year, 2, 15),
+                    new Date(year, 6, 15),
+                    new Date(year, 9, 15)
+                ];
+
+                schedule = dueDates.map((dueDate, index) => ({
+                    label: `T${index + 1}`,
+                    title: `Échéance ${index + 1}`,
+                    amount: fractions[index],
+                    dueDate,
+                    penaltyStart: addDays(dueDate, 30)
+                }));
+            } else {
+                schedule = [{
+                    label: 'Annuel',
+                    title: 'Paiement annuel IGS',
+                    amount: montantIGS,
+                    dueDate: new Date(year, 2, 1),
+                    penaltyStart: new Date(year, 3, 1)
+                }];
+            }
+
+            return schedule.map((item) => {
+                const dueDate = stripTime(item.dueDate);
+                const penaltyStart = stripTime(item.penaltyStart);
+                const graceDaysTotal = Math.max(getDaysBetween(dueDate, penaltyStart), 1);
+                let status = 'ok';
+                let statusLabel = 'Dans les délais';
+                let icon = 'Check';
+                let daysRemaining = 0;
+                let graceProgress = 0;
+                let graceDaysElapsed = 0;
+                let moisRetard = 0;
+                let penalite = 0;
+
+                if (today < dueDate) {
+                    daysRemaining = getDaysBetween(today, dueDate);
+                } else if (today < penaltyStart) {
+                    status = 'grace';
+                    statusLabel = 'Période de grâce';
+                    icon = 'Clock';
+                    graceDaysElapsed = getDaysBetween(dueDate, today);
+                    graceProgress = Math.min(100, Math.max(0, Math.round((graceDaysElapsed / graceDaysTotal) * 100)));
+                } else {
+                    status = 'retard';
+                    statusLabel = 'Pénalités actives';
+                    icon = 'Alert';
+                    moisRetard = getMoisRetard(penaltyStart, today);
+                    penalite = Math.round(item.amount * PENALITE_TAUX * moisRetard);
+                }
+
+                return {
+                    ...item,
+                    dueDate,
+                    penaltyStart,
+                    status,
+                    statusLabel,
+                    icon,
+                    daysRemaining,
+                    graceProgress,
+                    graceDaysElapsed,
+                    graceDaysTotal,
+                    moisRetard,
+                    penalite,
+                    totalDue: item.amount + penalite
+                };
+            });
+        }
+
+        function renderEcheanceCard(echeance) {
+            const statusThemes = {
+                ok: {
+                    wrapper: 'border-emerald-200 bg-emerald-50',
+                    icon: 'bg-emerald-600 text-white',
+                    title: 'text-emerald-900',
+                    meta: 'text-emerald-700'
+                },
+                grace: {
+                    wrapper: 'border-amber-200 bg-amber-50',
+                    icon: 'bg-amber-500 text-white',
+                    title: 'text-amber-900',
+                    meta: 'text-amber-700'
+                },
+                retard: {
+                    wrapper: 'border-red-200 bg-red-50',
+                    icon: 'bg-red-600 text-white',
+                    title: 'text-red-900',
+                    meta: 'text-red-700'
+                }
+            };
+
+            const theme = statusThemes[echeance.status];
+            let details = '';
+
+            if (echeance.status === 'ok') {
+                details = `
+                    <p class="text-sm font-semibold ${theme.meta}">${echeance.daysRemaining} jour(s) avant l'échéance</p>
+                    <p class="mt-2 text-xs text-gray-500">Échéance légale: ${formatShortDate(echeance.dueDate)}</p>
+                `;
+            } else if (echeance.status === 'grace') {
+                details = `
+                    <p class="text-sm font-semibold ${theme.meta}">Pénalités à partir du ${formatShortDate(echeance.penaltyStart)}</p>
+                    <div class="mt-3 h-2 overflow-hidden rounded-full bg-amber-100">
+                        <div class="h-full rounded-full bg-amber-500" style="width: ${echeance.graceProgress}%"></div>
+                    </div>
+                    <p class="mt-2 text-xs text-gray-500">${echeance.graceDaysElapsed} jour(s) écoulé(s) sur ${echeance.graceDaysTotal} avant le déclenchement des pénalités</p>
+                `;
+            } else {
+                details = `
+                    <p class="text-sm font-semibold ${theme.meta}">${echeance.moisRetard} mois de retard</p>
+                    <p class="mt-2 text-sm text-red-800">Pénalités: <span class="font-bold">${formatMoney(echeance.penalite)}</span></p>
+                    <p class="mt-1 text-xs text-red-700">Total dû: ${formatMoney(echeance.totalDue)}</p>
+                `;
+            }
+
+            return `
+                <div class="rounded-2xl border ${theme.wrapper} p-4 shadow-sm">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-10 w-10 items-center justify-center rounded-full ${theme.icon}">
+                                ${getTaxIcon(echeance.icon)}
+                            </div>
+                            <div>
+                                <p class="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">${echeance.label}</p>
+                                <p class="text-sm font-bold ${theme.title}">${echeance.title}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs text-gray-500">Montant</p>
+                            <p class="text-base font-black ${theme.title}">${formatMoney(echeance.amount)}</p>
+                        </div>
+                    </div>
+                    <div class="mt-4 rounded-xl bg-white/70 p-3">
+                        <p class="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">${echeance.statusLabel}</p>
+                        ${details}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderIGSCalendar(modePaiement, montantIGS) {
+            const echeances = getIGSEcheances(modePaiement, montantIGS);
+            const retards = echeances.filter((echeance) => echeance.status === 'retard');
+            const totalPenalites = retards.reduce((sum, echeance) => sum + echeance.penalite, 0);
+
+            return `
+                <div class="rounded-3xl border border-gray-200 bg-white/90 p-5">
+                    ${retards.length > 0 ? `
+                        <div class="mb-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-red-900">
+                            <div class="flex items-center gap-3">
+                                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-red-600 text-white">
+                                    ${getTaxIcon('Alert')}
+                                </div>
+                                <div>
+                                    <p class="text-sm font-bold">Alerte pénalités IGS</p>
+                                    <p class="text-sm">${retards.length} échéance(s) en retard pour un total de ${formatMoney(totalPenalites)} de pénalités.</p>
+                                </div>
+                            </div>
+                        </div>
+                    ` : ''}
+                    <div class="mb-4 flex items-center justify-between gap-3">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">Calendrier IGS</p>
+                            <h5 class="text-lg font-black text-gray-900">${modePaiement === 'trimestriel' ? 'Paiement trimestriel' : 'Paiement annuel'}</h5>
+                        </div>
+                        <span class="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">${echeances.length} échéance(s)</span>
+                    </div>
+                    <div class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+                        ${echeances.map(renderEcheanceCard).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Afficher/masquer les champs selon le régime fiscal
+        function toggleFiscalFields() {
+            const regime = document.getElementById('clientRegimeFiscal').value;
+            const caField = document.getElementById('caField');
+            const cgaField = document.getElementById('cgaField');
+            const modePaiementIGSField = document.getElementById('modePaiementIGSField');
+            const vendeurBoissonsField = document.getElementById('vendeurBoissonsField');
+            const impotsFiscauxCalcules = document.getElementById('impotsFiscauxCalcules');
+
+            caField.classList.add('hidden');
+            cgaField.classList.add('hidden');
+            modePaiementIGSField.classList.add('hidden');
+            vendeurBoissonsField.classList.add('hidden');
+            impotsFiscauxCalcules.classList.add('hidden');
+
+            if (regime === 'IGS') {
+                caField.classList.remove('hidden');
+                cgaField.classList.remove('hidden');
+                modePaiementIGSField.classList.remove('hidden');
+                vendeurBoissonsField.classList.remove('hidden');
+            } else if (regime === 'Reel') {
+                caField.classList.remove('hidden');
+                vendeurBoissonsField.classList.remove('hidden');
+            } else {
+                document.getElementById('clientVendeurBoissons').checked = false;
+            }
+
+            calculateFiscalTaxes();
+            toggleCiviliteLabel();
+            toggleImmoFields();
+        }
+
+        function toggleCiviliteLabel() {
+            const clientType = document.getElementById('clientType').value;
+            const civiliteLabel = document.getElementById('clientCiviliteLabel');
+
+            civiliteLabel.textContent = clientType === 'Personne physique'
+                ? 'Civilité du client'
+                : 'Civilité du contact principal';
+        }
+
+        // Calculer l'IGS selon le barème
+        function calculateIGS(ca, isCGA) {
+            for (const tranche of BAREME_IGS) {
+                if (ca >= tranche.min && ca <= tranche.max) {
+                    let montant = tranche.montant;
+                    if (isCGA) {
+                        montant = Math.round(montant / 2); // Réduction 50% pour CGA
+                    }
+                    return { montant, montantPrincipal: tranche.montant, classe: tranche.classe };
+                }
+            }
+            // Si CA > 50 000 000, le régime IGS ne s'applique plus
+            return { montant: 0, montantPrincipal: 0, classe: 0, horsBareme: true };
+        }
+
+        // Calculer la Patente selon le barème
+        // Taux : 0,283% du CA avec plancher 141 500 et plafond 4 500 000
+        function calculatePatente(ca) {
+            let montantCalcule = Math.round(ca * PATENTE_TAUX);
+            let montantFinal;
+
+            if (montantCalcule < PATENTE_PLANCHER) {
+                montantFinal = PATENTE_PLANCHER;
+            } else if (montantCalcule > PATENTE_PLAFOND) {
+                montantFinal = PATENTE_PLAFOND;
+            } else {
+                montantFinal = montantCalcule;
+            }
+
+            return {
+                montant: montantFinal,
+                montantCalcule: montantCalcule,
+                taux: PATENTE_TAUX * 100,
+                plancher: PATENTE_PLANCHER,
+                plafond: PATENTE_PLAFOND
+            };
+        }
+
+        function calculateSoldeIR(ca) {
+            const applicable = ca >= SOLDE_IR_SEUIL;
+            return {
+                montant: applicable ? Math.round(ca * SOLDE_IR_TAUX) : 0,
+                taux: SOLDE_IR_TAUX * 100,
+                seuil: SOLDE_IR_SEUIL,
+                applicable
+            };
+        }
+
+        function getSoldeTaxLabel(clientType) {
+            return clientType === 'Personne morale' ? 'Solde IS' : 'Solde IR';
+        }
+
+        function calculateFiscalData(regime, ca, isCGA, isVendeurBoissons) {
+            const fiscalData = {
+                igs: 0,
+                igsClasse: 0,
+                patente: 0,
+                tdl: 0,
+                soldeIR: 0,
+                licence: 0,
+                horsBareme: false,
+                igsResult: null,
+                patenteResult: null,
+                soldeIRResult: null
+            };
+
+            if (regime === 'IGS' && ca > 0) {
+                fiscalData.igsResult = calculateIGS(ca, isCGA);
+                fiscalData.horsBareme = Boolean(fiscalData.igsResult.horsBareme);
+                fiscalData.igs = fiscalData.igsResult.montant || 0;
+                fiscalData.igsClasse = fiscalData.igsResult.classe || 0;
+
+                if (!fiscalData.horsBareme) {
+                    fiscalData.soldeIRResult = calculateSoldeIR(ca);
+                    fiscalData.soldeIR = fiscalData.soldeIRResult.montant;
+                    fiscalData.tdl = calculateTDL(fiscalData.igsResult.montantPrincipal || fiscalData.igs);
+                    if (isVendeurBoissons) {
+                        fiscalData.licence = fiscalData.igs * 2;
+                    }
+                }
+            } else if (regime === 'Reel' && ca > 0) {
+                fiscalData.patenteResult = calculatePatente(ca);
+                fiscalData.patente = fiscalData.patenteResult.montant;
+                fiscalData.soldeIRResult = calculateSoldeIR(ca);
+                fiscalData.soldeIR = fiscalData.soldeIRResult.montant;
+
+                if (isVendeurBoissons) {
+                    fiscalData.licence = fiscalData.patente * 2;
+                }
+            }
+
+            return fiscalData;
+        }
+
+        function buildFiscalDashboard(regime, fiscalData, ca, isCGA, isVendeurBoissons, modePaiement, clientType) {
+            const regimeLabel = regime === 'IGS'
+                ? `Régime IGS · ${modePaiement === 'trimestriel' ? 'Trimestriel' : 'Annuel'}`
+                : 'Régime Réel · Patente annuelle';
+            const fiscalYear = new Date().getFullYear();
+            const cards = [];
+            const soldeTaxLabel = getSoldeTaxLabel(clientType);
+
+            if (regime === 'IGS') {
+                if (fiscalData.horsBareme) {
+                    return `
+                        <div class="overflow-hidden rounded-3xl border border-gray-200 bg-gradient-to-br from-green-50 via-white to-teal-50 shadow-lg">
+                            <div class="flex items-center justify-between gap-4 bg-gradient-to-r from-green-700 to-teal-600 px-6 py-5 text-white">
+                                <div class="flex items-center gap-3">
+                                    <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15">
+                                        ${getTaxIcon('Calculator')}
+                                    </div>
+                                    <div>
+                                        <p class="text-xs font-semibold uppercase tracking-[0.22em] text-green-100">Tableau fiscal ${fiscalYear}</p>
+                                        <h4 class="text-xl font-black">Calcul des impôts</h4>
+                                    </div>
+                                </div>
+                                <span class="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold">${regimeLabel}</span>
+                            </div>
+                            <div class="p-6">
+                                ${renderWarningCard('CA hors barème IGS', 'Le chiffre d\'affaires dépasse 50 000 000 F CFA. Le client doit basculer au régime Réel pour la patente.')}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                cards.push({
+                    type: 'IGS',
+                    label: 'Impôt Général Synthétique',
+                    amount: fiscalData.igs,
+                    note: `Classe ${fiscalData.igsClasse} · ${modePaiement === 'trimestriel' ? 'Paiement trimestriel' : 'Paiement annuel'}`,
+                    subnote: isCGA ? 'Réduction CGA appliquée à 50%.' : 'Montant calculé selon le barème légal.',
+                    badge: `CA ${ca.toLocaleString('fr-FR')} F`
+                });
+                if (fiscalData.soldeIR > 0) {
+                    cards.push({
+                        type: 'SoldeIR',
+                        label: soldeTaxLabel,
+                        amount: fiscalData.soldeIR,
+                        note: `0,1% × ${ca.toLocaleString('fr-FR')} F CFA = ${fiscalData.soldeIR.toLocaleString('fr-FR')} F CFA`,
+                        subnote: `Applicable à partir de ${SOLDE_IR_SEUIL.toLocaleString('fr-FR')} F CFA de chiffre d'affaires.`,
+                        badge: '0,1% du CA'
+                    });
+                }
+                cards.push({
+                    type: 'TDL',
+                    label: 'Taxe de Développement Local',
+                    amount: fiscalData.tdl,
+                    note: 'Barème officiel par tranches sur l\'IGS en principal.',
+                    subnote: isCGA ? 'Le barème est appliqué avant la réduction CGA de 50%.' : 'Applicable à tout contribuable soumis au régime IGS.',
+                    badge: 'Barème légal'
+                });
+
+                if (isVendeurBoissons && fiscalData.licence > 0) {
+                    cards.push({
+                        type: 'Licence',
+                        label: 'Licence vente de boissons',
+                        amount: fiscalData.licence,
+                        note: 'Taxe spécifique au vendeur de boissons.',
+                        subnote: 'Calculée à 2 × IGS.',
+                        badge: '2 × IGS'
+                    });
+                }
+            } else if (regime === 'Reel') {
+                const patenteNote = `0,283% × ${ca.toLocaleString('fr-FR')} = ${fiscalData.patenteResult.montantCalcule.toLocaleString('fr-FR')} F`;
+                const patenteSubnote = fiscalData.patenteResult.montantCalcule < PATENTE_PLANCHER
+                    ? `Plancher appliqué (${PATENTE_PLANCHER.toLocaleString('fr-FR')} F)`
+                    : (fiscalData.patenteResult.montantCalcule > PATENTE_PLAFOND
+                        ? `Plafond appliqué (${PATENTE_PLAFOND.toLocaleString('fr-FR')} F)`
+                        : 'Montant retenu selon le calcul standard.');
+
+                cards.push({
+                    type: 'Patente',
+                    label: 'Patente',
+                    amount: fiscalData.patente,
+                    note: patenteNote,
+                    subnote: patenteSubnote,
+                    badge: '0,283% du CA'
+                });
+                if (fiscalData.soldeIR > 0) {
+                    cards.push({
+                        type: 'SoldeIR',
+                        label: soldeTaxLabel,
+                        amount: fiscalData.soldeIR,
+                        note: `0,1% × ${ca.toLocaleString('fr-FR')} F CFA = ${fiscalData.soldeIR.toLocaleString('fr-FR')} F CFA`,
+                        subnote: `Applicable à partir de ${SOLDE_IR_SEUIL.toLocaleString('fr-FR')} F CFA de chiffre d'affaires.`,
+                        badge: '0,1% du CA'
+                    });
+                }
+
+                if (isVendeurBoissons && fiscalData.licence > 0) {
+                    cards.push({
+                        type: 'Licence',
+                        label: 'Licence vente de boissons',
+                        amount: fiscalData.licence,
+                        note: 'Taxe spécifique au vendeur de boissons.',
+                        subnote: 'Calculée à 2 × Patente.',
+                        badge: '2 × Patente'
+                    });
+                }
+            }
+
+            const totalFiscal = cards.reduce((sum, card) => sum + card.amount, 0);
+            const distribution = cards.map((card) => ({
+                ...card,
+                width: totalFiscal > 0 ? Math.max(8, Math.round((card.amount / totalFiscal) * 100)) : 0,
+                color: card.type === 'IGS'
+                    ? 'bg-green-500'
+                    : (card.type === 'TDL'
+                        ? 'bg-teal-500'
+                        : (card.type === 'SoldeIR'
+                            ? 'bg-indigo-500'
+                            : (card.type === 'Licence' ? 'bg-rose-500' : 'bg-amber-500')))
+            }));
+
+            return `
+                <div class="overflow-hidden rounded-3xl border border-gray-200 bg-gradient-to-br from-green-50 via-white to-teal-50 shadow-lg">
+                    <div class="flex flex-col gap-4 bg-gradient-to-r from-green-700 to-teal-600 px-6 py-5 text-white lg:flex-row lg:items-center lg:justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15">
+                                ${getTaxIcon('Calculator')}
+                            </div>
+                            <div>
+                                <p class="text-xs font-semibold uppercase tracking-[0.22em] text-green-100">Tableau fiscal ${fiscalYear}</p>
+                                <h4 class="text-xl font-black">Calcul des impôts</h4>
+                            </div>
+                        </div>
+                        <span class="inline-flex rounded-full bg-white/15 px-3 py-1 text-xs font-semibold">${regimeLabel}</span>
+                    </div>
+
+                    <div class="space-y-6 p-6">
+                        <div class="grid grid-cols-1 gap-4 xl:grid-cols-3">
+                            ${cards.map(renderTaxCard).join('')}
+                        </div>
+
+                        <div class="rounded-3xl bg-gray-900 p-5 text-white shadow-sm">
+                            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                                <div>
+                                    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-gray-400">Total fiscal</p>
+                                    <p class="mt-1 text-3xl font-black">${formatMoney(totalFiscal)}</p>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex h-3 overflow-hidden rounded-full bg-gray-700">
+                                        ${distribution.map((segment) => `<div class="${segment.color}" style="width: ${segment.width}%"></div>`).join('')}
+                                    </div>
+                                    <div class="mt-3 flex flex-wrap gap-3 text-xs text-gray-300">
+                                        ${distribution.map((segment) => `
+                                            <span class="inline-flex items-center gap-2">
+                                                <span class="h-2.5 w-2.5 rounded-full ${segment.color}"></span>
+                                                ${segment.type}: ${formatMoney(segment.amount)}
+                                            </span>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        ${regime === 'IGS' ? renderIGSCalendar(modePaiement, fiscalData.igs) : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Calculer les impôts fiscaux
+        function calculateFiscalTaxes() {
+            const regime = document.getElementById('clientRegimeFiscal').value;
+            const ca = parseFloat(document.getElementById('clientChiffreAffaires').value) || 0;
+            const isCGA = document.getElementById('clientCGA').checked;
+            const isVendeurBoissons = document.getElementById('clientVendeurBoissons').checked;
+            const modePaiement = document.getElementById('clientModePaiementIGS').value;
+            const clientType = document.getElementById('clientType').value;
+
+            const impotsFiscauxCalcules = document.getElementById('impotsFiscauxCalcules');
+            const fiscalDashboardContent = document.getElementById('fiscalDashboardContent');
+
+            impotsFiscauxCalcules.classList.add('hidden');
+            fiscalDashboardContent.innerHTML = '';
+
+            if (!regime || ca <= 0) return;
+
+            const fiscalData = calculateFiscalData(regime, ca, isCGA, isVendeurBoissons);
+            fiscalDashboardContent.innerHTML = buildFiscalDashboard(regime, fiscalData, ca, isCGA, isVendeurBoissons, modePaiement, clientType);
+            impotsFiscauxCalcules.classList.remove('hidden');
+        }
+
+        // Calculer les impôts immobiliers
+        function calculateImmoTaxes() {
+            const statut = document.getElementById('clientStatutImmo').value;
+            const loyerAnnuel = parseFloat(document.getElementById('clientLoyerAnnuel').value) || 0;
+            const valeurBien = parseFloat(document.getElementById('clientValeurBien').value) || 0;
+            const regimeFiscal = document.getElementById('clientRegimeFiscal').value;
+
+            const impotsCalcules = document.getElementById('impotsCalcules');
+            const pslDisplay = document.getElementById('pslDisplay');
+            const bailDisplay = document.getElementById('bailDisplay');
+            const tfDisplay = document.getElementById('tfDisplay');
+
+            // Réinitialiser l'affichage
+            pslDisplay.classList.add('hidden');
+            bailDisplay.classList.add('hidden');
+            tfDisplay.classList.add('hidden');
+
+            let hasCalculations = false;
+
+            // Déterminer si c'est un régime OBNL ou Non Pro (pas de PSL, Bail à 5%)
+            const isOBNLorNonPro = (regimeFiscal === 'OBNL' || regimeFiscal === 'NonPro');
+
+            // Calculs pour les locataires
+            if (statut === 'Locataire' || statut === 'Les deux') {
+                if (loyerAnnuel > 0) {
+                    // PSL = 10% du loyer annuel (sauf OBNL et Non Pro)
+                    if (!isOBNLorNonPro) {
+                        const psl = Math.round(loyerAnnuel * 0.10);
+                        const modePaiementPSL = document.getElementById('clientModePaiementPSL').value;
+
+                        document.getElementById('pslAmount').textContent = psl.toLocaleString('fr-FR') + ' F CFA';
+
+                        // Afficher les échéances selon le mode de paiement
+                        const pslNote = document.querySelector('#pslDisplay .text-xs.text-gray-500');
+                        if (modePaiementPSL === 'trimestriel') {
+                            const trimestriel = Math.round(psl / 4);
+                            pslNote.innerHTML = `10% du loyer annuel - <span class="text-blue-700 font-semibold">Trimestriel : ${trimestriel.toLocaleString('fr-FR')} F × 4</span>`;
+                        } else {
+                            pslNote.textContent = '10% du loyer annuel - Paiement annuel';
+                        }
+                        pslDisplay.classList.remove('hidden');
+                    }
+
+                    // Bail Commercial = 10% pour régimes normaux, 5% pour OBNL/Non Pro
+                    // Le Bail se paie toujours en une seule fois
+                    const tauxBail = isOBNLorNonPro ? 0.05 : 0.10;
+                    const bail = Math.round(loyerAnnuel * tauxBail);
+                    document.getElementById('bailAmount').textContent = bail.toLocaleString('fr-FR') + ' F CFA';
+                    // Mettre à jour le taux affiché
+                    const bailTauxText = isOBNLorNonPro ? '5% du loyer annuel (paiement unique)' : '10% du loyer annuel (paiement unique)';
+                    document.querySelector('#bailDisplay .text-xs.text-gray-500').textContent = bailTauxText;
+                    bailDisplay.classList.remove('hidden');
+
+                    hasCalculations = true;
+                }
+            }
+
+            // Calculs pour les propriétaires
+            if (statut === 'Proprietaire' || statut === 'Les deux') {
+                if (valeurBien > 0) {
+                    // TF = 0,1% de la valeur du bien
+                    const tf = Math.round(valeurBien * 0.001);
+                    document.getElementById('tfAmount').textContent = tf.toLocaleString('fr-FR') + ' F CFA';
+                    tfDisplay.classList.remove('hidden');
+
+                    hasCalculations = true;
+                }
+            }
+
+            if (hasCalculations) {
+                impotsCalcules.classList.remove('hidden');
+            } else {
+                impotsCalcules.classList.add('hidden');
+            }
+        }
+
+        // Fonction de recherche et filtrage
+        function searchClients() {
+            const searchTerm = document.getElementById('searchClient').value.toLowerCase().trim();
+            const filterRegime = document.getElementById('filterRegime').value;
+            const filterStatut = document.getElementById('filterStatut').value;
+
+            loadClients(searchTerm, filterRegime, filterStatut);
+        }
+
+        // Réinitialiser les filtres
+        function resetFilters() {
+            document.getElementById('searchClient').value = '';
+            document.getElementById('filterRegime').value = '';
+            document.getElementById('filterStatut').value = '';
+            loadClients();
+        }
+
+        function getStoredTDL(client) {
+            if (typeof client.tdl === 'number') {
+                return client.tdl;
+            }
+
+            const igsPrincipal = client.isCGA ? (client.igs || 0) * 2 : (client.igs || 0);
+            return client.regimeFiscal === 'IGS' && igsPrincipal
+                ? calculateTDL(igsPrincipal)
+                : 0;
+        }
+
+        function getStoredSoldeIR(client) {
+            if (typeof client.soldeIR === 'number') {
+                return client.soldeIR;
+            }
+
+            const ca = Number(client.chiffreAffaires) || 0;
+            const regimeEligible = client.regimeFiscal === 'IGS' || client.regimeFiscal === 'Reel';
+            return regimeEligible && ca >= SOLDE_IR_SEUIL
+                ? Math.round(ca * SOLDE_IR_TAUX)
+                : 0;
+        }
+
+        function getStoredLicence(client) {
+            if (typeof client.licence === 'number') {
+                return client.licence;
+            }
+
+            if (!client.isVendeurBoissons) {
+                return 0;
+            }
+
+            if (client.regimeFiscal === 'IGS' && client.igs) {
+                return client.igs * 2;
+            }
+
+            if (client.regimeFiscal === 'Reel' && client.patente) {
+                return client.patente * 2;
+            }
+
+            return 0;
+        }
+
+        // Charger les clients depuis localStorage
+        function loadClients(searchTerm = '', filterRegime = '', filterStatut = '') {
+            const allClients = JSON.parse(localStorage.getItem('clients') || '[]');
+            const tbody = document.getElementById('clientsList');
+            const resultCount = document.getElementById('searchResultCount');
+
+            // Filtrer les clients
+            let clients = allClients.filter((client, index) => {
+                // Associer l'index original pour les actions
+                client._originalIndex = index;
+
+                // Filtre par recherche textuelle
+                if (searchTerm) {
+                    const searchFields = [
+                        client.name,
+                        client.niu,
+                        client.cdi,
+                        client.ville,
+                        client.quartier,
+                        client.email,
+                        client.phone,
+                        client.contact
+                    ].filter(Boolean).join(' ').toLowerCase();
+
+                    if (!searchFields.includes(searchTerm)) {
+                        return false;
+                    }
+                }
+
+                // Filtre par régime fiscal
+                if (filterRegime && client.regimeFiscal !== filterRegime) {
+                    return false;
+                }
+
+                // Filtre par statut
+                if (filterStatut && (client.statut || 'Actif') !== filterStatut) {
+                    return false;
+                }
+
+                return true;
+            });
+
+            // Afficher le compteur de résultats
+            if (searchTerm || filterRegime || filterStatut) {
+                resultCount.textContent = `${clients.length} client(s) trouvé(s) sur ${allClients.length}`;
+                resultCount.classList.remove('hidden');
+            } else {
+                resultCount.classList.add('hidden');
+            }
+
+            if (clients.length === 0) {
+                const message = (searchTerm || filterRegime || filterStatut)
+                    ? 'Aucun client ne correspond à votre recherche'
+                    : 'Aucun client enregistré';
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center py-8 text-gray-500">${message}</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = clients.map((client) => {
+                const index = client._originalIndex; // Utiliser l'index original
+                // Générer les badges d'impôts immobiliers
+                let immoBadges = '';
+                if (client.statutImmo) {
+                    if (client.psl && client.psl > 0) {
+                        immoBadges += `<span class="inline-block px-1 py-0.5 rounded text-xs bg-blue-100 text-blue-800 mr-1" title="PSL: ${client.psl.toLocaleString('fr-FR')} F">PSL</span>`;
+                    }
+                    if (client.bail && client.bail > 0) {
+                        const tauxBailLabel = client.tauxBail ? `${client.tauxBail}%` : '10%';
+                        immoBadges += `<span class="inline-block px-1 py-0.5 rounded text-xs bg-green-100 text-green-800 mr-1" title="Bail (${tauxBailLabel}): ${client.bail.toLocaleString('fr-FR')} F">Bail</span>`;
+                    }
+                    if (client.tf && client.tf > 0) {
+                        immoBadges += `<span class="inline-block px-1 py-0.5 rounded text-xs bg-orange-100 text-orange-800" title="TF: ${client.tf.toLocaleString('fr-FR')} F">TF</span>`;
+                    }
+                }
+                if (!immoBadges) {
+                    immoBadges = '<span class="text-gray-400">-</span>';
+                }
+
+                // Générer les badges fiscaux
+                let fiscalBadges = '';
+                if (client.regimeFiscal) {
+                    if (client.regimeFiscal === 'IGS' && client.igs > 0) {
+                        const cgaLabel = client.isCGA ? ' (CGA)' : '';
+                        const tdl = getStoredTDL(client);
+                        const soldeIR = getStoredSoldeIR(client);
+                        const licence = getStoredLicence(client);
+                        const soldeTaxLabel = getSoldeTaxLabel(client.type);
+                        fiscalBadges = `<span class="inline-block px-1 py-0.5 rounded text-xs bg-green-100 text-green-800 mr-1" title="IGS Classe ${client.igsClasse}: ${client.igs.toLocaleString('fr-FR')} F${cgaLabel}">IGS C${client.igsClasse}</span>`;
+                        if (tdl > 0) {
+                            fiscalBadges += `<span class="inline-block px-1 py-0.5 rounded text-xs bg-teal-100 text-teal-800 mr-1" title="TDL: ${tdl.toLocaleString('fr-FR')} F">TDL</span>`;
+                        }
+                        if (soldeIR > 0) {
+                            fiscalBadges += `<span class="inline-block px-1 py-0.5 rounded text-xs bg-indigo-100 text-indigo-800 mr-1" title="${soldeTaxLabel}: ${soldeIR.toLocaleString('fr-FR')} F">${soldeTaxLabel}</span>`;
+                        }
+                        if (licence > 0) {
+                            fiscalBadges += `<span class="inline-block px-1 py-0.5 rounded text-xs bg-rose-100 text-rose-800" title="Licence: ${licence.toLocaleString('fr-FR')} F">Licence</span>`;
+                        }
+                    } else if (client.regimeFiscal === 'Reel' && client.patente > 0) {
+                        const soldeIR = getStoredSoldeIR(client);
+                        const licence = getStoredLicence(client);
+                        const soldeTaxLabel = getSoldeTaxLabel(client.type);
+                        fiscalBadges = `<span class="inline-block px-1 py-0.5 rounded text-xs bg-amber-100 text-amber-800 mr-1" title="Patente: ${client.patente.toLocaleString('fr-FR')} F">Patente</span>`;
+                        if (soldeIR > 0) {
+                            fiscalBadges += `<span class="inline-block px-1 py-0.5 rounded text-xs bg-indigo-100 text-indigo-800 mr-1" title="${soldeTaxLabel}: ${soldeIR.toLocaleString('fr-FR')} F">${soldeTaxLabel}</span>`;
+                        }
+                        if (licence > 0) {
+                            fiscalBadges += `<span class="inline-block px-1 py-0.5 rounded text-xs bg-rose-100 text-rose-800" title="Licence: ${licence.toLocaleString('fr-FR')} F">Licence</span>`;
+                        }
+                    } else if (client.regimeFiscal === 'NonPro') {
+                        fiscalBadges = `<span class="inline-block px-1 py-0.5 rounded text-xs bg-gray-100 text-gray-800">Non Pro</span>`;
+                    } else if (client.regimeFiscal === 'OBNL') {
+                        fiscalBadges = `<span class="inline-block px-1 py-0.5 rounded text-xs bg-purple-100 text-purple-800">OBNL</span>`;
+                    }
+                }
+                if (!fiscalBadges) {
+                    fiscalBadges = '<span class="text-gray-400">-</span>';
+                }
+
+                return `
+                <tr class="border-b hover:bg-gray-50 text-xs">
+                    <td class="px-4 py-3">
+                        <span class="inline-block px-2 py-1 rounded text-xs font-semibold ${client.type === 'Personne morale' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'}">
+                            ${client.type === 'Personne morale' ? 'PM' : 'PP'}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="font-semibold text-gray-800">${client.name}</div>
+                        ${client.email ? `<div class="text-xs text-gray-600">${client.email}</div>` : ''}
+                    </td>
+                    <td class="px-4 py-3 text-sm">${client.niu || '-'}</td>
+                    <td class="px-4 py-3 text-sm">${client.cdi || '-'}</td>
+                    <td class="px-4 py-3 text-sm">
+                        ${client.ville || '-'}
+                        ${client.quartier ? `<div class="text-xs text-gray-600">${client.quartier}</div>` : ''}
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        ${immoBadges}
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        ${fiscalBadges}
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        <span class="inline-block px-2 py-1 rounded text-xs font-semibold ${client.statut === 'Actif' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">
+                            ${client.statut || 'Actif'}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        <button onclick="editClient(${index})" class="text-blue-600 hover:text-blue-800 mx-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                        </button>
+                        <button onclick="deleteClient(${index})" class="text-red-600 hover:text-red-800 mx-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                        </button>
+                    </td>
+                </tr>
+            `}).join('');
+        }
+
+        // Afficher le formulaire
+        function showAddForm() {
+            document.getElementById('addForm').classList.remove('hidden');
+            document.getElementById('clientName').focus();
+        }
+
+        // Masquer le formulaire
+        function hideAddForm() {
+            document.getElementById('addForm').classList.add('hidden');
+            document.getElementById('addForm').querySelector('form').reset();
+            // Réinitialiser les champs immobiliers
+            document.getElementById('loyerField').classList.add('hidden');
+            document.getElementById('loyerAnnuelField').classList.add('hidden');
+            document.getElementById('valeurBienField').classList.add('hidden');
+            document.getElementById('impotsCalcules').classList.add('hidden');
+            document.getElementById('clientLoyerAnnuelDisplay').value = '0 F CFA';
+            // Réinitialiser les champs fiscaux
+            document.getElementById('caField').classList.add('hidden');
+            document.getElementById('cgaField').classList.add('hidden');
+            document.getElementById('modePaiementIGSField').classList.add('hidden');
+            document.getElementById('vendeurBoissonsField').classList.add('hidden');
+            document.getElementById('modePaiementPSLField').classList.add('hidden');
+            document.getElementById('impotsFiscauxCalcules').classList.add('hidden');
+            document.getElementById('fiscalDashboardContent').innerHTML = '';
+            document.getElementById('clientVendeurBoissons').checked = false;
+            document.getElementById('clientCivilite').value = 'M.';
+            toggleCiviliteLabel();
+        }
+
+        // Enregistrer un client
+        function saveClient(event) {
+            event.preventDefault();
+
+            // Récupérer les données fiscales en premier (utilisées pour les calculs)
+            const regimeFiscal = document.getElementById('clientRegimeFiscal').value;
+            const isOBNLorNonPro = (regimeFiscal === 'OBNL' || regimeFiscal === 'NonPro');
+
+            // Récupérer les données immobilières
+            const statutImmo = document.getElementById('clientStatutImmo').value;
+            const loyerMensuel = parseFloat(document.getElementById('clientLoyerMensuel').value) || 0;
+            const loyerAnnuel = loyerMensuel * 12;
+            const valeurBien = parseFloat(document.getElementById('clientValeurBien').value) || 0;
+
+            // Calculer les impôts immobiliers
+            let psl = 0, bail = 0, tf = 0;
+            if (statutImmo === 'Locataire' || statutImmo === 'Les deux') {
+                // PSL = 10% du loyer annuel (sauf OBNL et Non Pro qui ne sont pas soumis)
+                if (!isOBNLorNonPro) {
+                    psl = Math.round(loyerAnnuel * 0.10);
+                }
+                // Bail = 10% pour régimes normaux, 5% pour OBNL/Non Pro
+                const tauxBail = isOBNLorNonPro ? 0.05 : 0.10;
+                bail = Math.round(loyerAnnuel * tauxBail);
+            }
+            if (statutImmo === 'Proprietaire' || statutImmo === 'Les deux') {
+                tf = Math.round(valeurBien * 0.001);   // TF = 0,1% de la valeur du bien
+            }
+
+            // Récupérer les autres données fiscales
+            const chiffreAffaires = parseFloat(document.getElementById('clientChiffreAffaires').value) || 0;
+            const isCGA = document.getElementById('clientCGA').checked;
+            const isVendeurBoissons = document.getElementById('clientVendeurBoissons').checked;
+            const modePaiementIGS = document.getElementById('clientModePaiementIGS').value;
+            const modePaiementPSL = document.getElementById('clientModePaiementPSL').value;
+
+            const fiscalData = calculateFiscalData(regimeFiscal, chiffreAffaires, isCGA, isVendeurBoissons);
+
+            // Taux de bail appliqué
+            const tauxBail = isOBNLorNonPro ? 5 : 10;
+
+            const client = {
+                id: Date.now(),
+                type: document.getElementById('clientType').value,
+                name: document.getElementById('clientName').value,
+                niu: document.getElementById('clientNiu').value,
+                cdi: document.getElementById('clientCdi').value,
+                ville: document.getElementById('clientVille').value,
+                quartier: document.getElementById('clientQuartier').value,
+                phone: document.getElementById('clientPhone').value,
+                email: document.getElementById('clientEmail').value,
+                contact: document.getElementById('clientContact').value,
+                civilite: normalizeCivilite(document.getElementById('clientCivilite').value),
+                secteur: document.getElementById('clientSecteur').value,
+                cnps: document.getElementById('clientCnps').value,
+                externalise: document.getElementById('clientExternalise').value,
+                statut: document.getElementById('clientStatut').value,
+                // Données immobilières
+                statutImmo: statutImmo,
+                loyerMensuel: loyerMensuel,
+                loyerAnnuel: loyerAnnuel,
+                valeurBien: valeurBien,
+                // Impôts immobiliers calculés
+                psl: psl,       // Précompte sur Loyer (0 pour OBNL/NonPro)
+                bail: bail,     // Bail Commercial
+                tauxBail: tauxBail, // 10% ou 5% selon le régime
+                tf: tf,         // Taxe Foncière
+                // Données fiscales
+                regimeFiscal: regimeFiscal,
+                chiffreAffaires: chiffreAffaires,
+                isCGA: isCGA,
+                isVendeurBoissons: isVendeurBoissons,
+                modePaiementIGS: modePaiementIGS,   // 'annuel' ou 'trimestriel'
+                modePaiementPSL: modePaiementPSL,   // 'annuel' ou 'trimestriel'
+                // Impôts fiscaux calculés
+                igs: fiscalData.igs,
+                igsClasse: fiscalData.igsClasse,
+                patente: fiscalData.patente,
+                tdl: fiscalData.tdl,
+                soldeIR: fiscalData.soldeIR,
+                licence: fiscalData.licence,
+                createdAt: new Date().toISOString()
+            };
+            
+            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+            clients.push(client);
+            localStorage.setItem('clients', JSON.stringify(clients));
+            PrismaAutoSave.clear('prisma_autosave_client_form'); // Effacer l'auto-save
+
+            hideAddForm();
+            loadClients();
+            PrismaToast.success('Client enregistré avec succès !');
+            notifyIncompleteClientRecord(client, 'enregistre');
+        }
+
+        // Supprimer un client
+        function deleteClient(index) {
+            PrismaModal.confirmDelete('Êtes-vous sûr de vouloir supprimer ce client ?', () => {
+                const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+                clients.splice(index, 1);
+                localStorage.setItem('clients', JSON.stringify(clients));
+                loadClients();
+                PrismaToast.success('Client supprimé');
+            });
+        }
+
+        // Éditer un client
+        function editClient(index) {
+            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+            const client = clients[index];
+
+            document.getElementById('clientType').value = client.type || 'Personne morale';
+            document.getElementById('clientName').value = client.name;
+            document.getElementById('clientNiu').value = client.niu || '';
+            document.getElementById('clientCdi').value = client.cdi || '';
+            document.getElementById('clientVille').value = client.ville || '';
+            document.getElementById('clientQuartier').value = client.quartier || '';
+            document.getElementById('clientPhone').value = client.phone || '';
+            document.getElementById('clientEmail').value = client.email || '';
+            document.getElementById('clientContact').value = client.contact || '';
+            document.getElementById('clientCivilite').value = normalizeCivilite(client.civilite);
+            document.getElementById('clientSecteur').value = client.secteur || '';
+            document.getElementById('clientCnps').value = client.cnps || '';
+            document.getElementById('clientExternalise').value = client.externalise || 'Non';
+            document.getElementById('clientStatut').value = client.statut || 'Actif';
+
+            // Charger les données immobilières
+            document.getElementById('clientStatutImmo').value = client.statutImmo || '';
+            document.getElementById('clientLoyerMensuel').value = client.loyerMensuel || '';
+            document.getElementById('clientValeurBien').value = client.valeurBien || '';
+
+            // Charger les données fiscales
+            document.getElementById('clientRegimeFiscal').value = client.regimeFiscal || '';
+            document.getElementById('clientChiffreAffaires').value = client.chiffreAffaires || '';
+            document.getElementById('clientCGA').checked = client.isCGA || false;
+            document.getElementById('clientVendeurBoissons').checked = client.isVendeurBoissons || false;
+            document.getElementById('clientModePaiementIGS').value = client.modePaiementIGS || 'annuel';
+            document.getElementById('clientModePaiementPSL').value = client.modePaiementPSL || 'annuel';
+
+            // Afficher les champs appropriés et calculer les impôts
+            toggleCiviliteLabel();
+            toggleImmoFields();
+            toggleFiscalFields();
+
+            showAddForm();
+
+            // Modifier le comportement du formulaire pour mettre à jour au lieu de créer
+            const form = document.getElementById('addForm').querySelector('form');
+            form.onsubmit = function(e) {
+                e.preventDefault();
+                updateClient(index);
+                form.onsubmit = saveClient; // Restaurer le comportement normal
+            };
+        }
+
+        // Mettre à jour un client existant
+        function updateClient(index) {
+            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+
+            // Récupérer les données du formulaire
+            const loyerMensuel = parseFloat(document.getElementById('clientLoyerMensuel').value) || 0;
+            const loyerAnnuel = loyerMensuel * 12;
+            const valeurBien = parseFloat(document.getElementById('clientValeurBien').value) || 0;
+            const statutImmo = document.getElementById('clientStatutImmo').value;
+            const regimeFiscal = document.getElementById('clientRegimeFiscal').value;
+            const chiffreAffaires = parseFloat(document.getElementById('clientChiffreAffaires').value) || 0;
+            const isCGA = document.getElementById('clientCGA').checked;
+            const isVendeurBoissons = document.getElementById('clientVendeurBoissons').checked;
+            const modePaiementIGS = document.getElementById('clientModePaiementIGS').value;
+            const modePaiementPSL = document.getElementById('clientModePaiementPSL').value;
+
+            // Calculer les impôts immobiliers
+            let psl = 0, bail = 0, tf = 0;
+            const isOBNLorNonPro = (regimeFiscal === 'OBNL' || regimeFiscal === 'NonPro');
+
+            if (statutImmo === 'Locataire' || statutImmo === 'Les deux') {
+                if (!isOBNLorNonPro) {
+                    psl = Math.round(loyerAnnuel * 0.10);
+                }
+                const tauxBail = isOBNLorNonPro ? 0.05 : 0.10;
+                bail = Math.round(loyerAnnuel * tauxBail);
+            }
+
+            if (statutImmo === 'Proprietaire' || statutImmo === 'Les deux') {
+                tf = Math.round(valeurBien * 0.001);
+            }
+
+            const fiscalData = calculateFiscalData(regimeFiscal, chiffreAffaires, isCGA, isVendeurBoissons);
+
+            // Mettre à jour le client
+            clients[index] = {
+                ...clients[index], // Conserver les données existantes
+                type: document.getElementById('clientType').value,
+                name: document.getElementById('clientName').value,
+                niu: document.getElementById('clientNiu').value,
+                cdi: document.getElementById('clientCdi').value,
+                ville: document.getElementById('clientVille').value,
+                quartier: document.getElementById('clientQuartier').value,
+                phone: document.getElementById('clientPhone').value,
+                email: document.getElementById('clientEmail').value,
+                contact: document.getElementById('clientContact').value,
+                civilite: normalizeCivilite(document.getElementById('clientCivilite').value),
+                secteur: document.getElementById('clientSecteur').value,
+                cnps: document.getElementById('clientCnps').value,
+                externalise: document.getElementById('clientExternalise').value,
+                statut: document.getElementById('clientStatut').value,
+                statutImmo: statutImmo,
+                loyerMensuel: loyerMensuel,
+                loyerAnnuel: loyerAnnuel,
+                valeurBien: valeurBien,
+                psl: psl,
+                bail: bail,
+                tauxBail: isOBNLorNonPro ? 5 : 10,
+                tf: tf,
+                regimeFiscal: regimeFiscal,
+                chiffreAffaires: chiffreAffaires,
+                isCGA: isCGA,
+                isVendeurBoissons: isVendeurBoissons,
+                igs: fiscalData.igs,
+                igsClasse: fiscalData.igsClasse,
+                patente: fiscalData.patente,
+                tdl: fiscalData.tdl,
+                soldeIR: fiscalData.soldeIR,
+                licence: fiscalData.licence,
+                modePaiementIGS: modePaiementIGS,
+                modePaiementPSL: modePaiementPSL
+            };
+
+            localStorage.setItem('clients', JSON.stringify(clients));
+            PrismaAutoSave.clear('prisma_autosave_client_form'); // Effacer l'auto-save
+
+            // Réinitialiser le formulaire
+            document.getElementById('addForm').querySelector('form').reset();
+            hideAddForm();
+            loadClients();
+            PrismaToast.success('Client modifié avec succès !');
+            notifyIncompleteClientRecord(clients[index], 'mis a jour');
+        }
+
+        // ============================================
+        // FONCTIONS D'IMPORT
+        // ============================================
+
+        let importData = []; // Données à importer
+
+        // Afficher le formulaire d'import
+        function showImportForm() {
+            document.getElementById('importForm').classList.remove('hidden');
+            document.getElementById('importPreview').classList.add('hidden');
+            document.getElementById('importFile').value = '';
+            document.getElementById('importBtn').disabled = true;
+            importData = [];
+        }
+
+        // Masquer le formulaire d'import
+        function hideImportForm() {
+            document.getElementById('importForm').classList.add('hidden');
+            document.getElementById('importFile').value = '';
+            document.getElementById('importPreview').classList.add('hidden');
+            importData = [];
+        }
+
+        // Prévisualiser l'import
+        function previewImport() {
+            const file = document.getElementById('importFile').files[0];
+            if (!file) return;
+
+            const fileName = file.name.toLowerCase();
+            const reader = new FileReader();
+
+            if (fileName.endsWith('.json')) {
+                reader.onload = function(e) {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        processImportData(Array.isArray(data) ? data : [data]);
+                    } catch (err) {
+                        showImportError('Erreur de parsing JSON : ' + err.message);
+                    }
+                };
+                reader.readAsText(file);
+            } else if (fileName.endsWith('.csv')) {
+                reader.onload = function(e) {
+                    try {
+                        const data = parseCSV(e.target.result);
+                        processImportData(data);
+                    } catch (err) {
+                        showImportError('Erreur de parsing CSV : ' + err.message);
+                    }
+                };
+                reader.readAsText(file);
+            } else if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+                reader.onload = function(e) {
+                    try {
+                        const data = parseExcel(e.target.result);
+                        processImportData(data);
+                    } catch (err) {
+                        showImportError('Erreur de parsing Excel : ' + err.message);
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            } else {
+                showImportError('Format de fichier non supporté. Utilisez CSV, XLSX ou JSON.');
+            }
+        }
+
+        // Parser un fichier CSV
+        function parseCSV(content) {
+            const lines = content.split(/\r?\n/).filter(line => line.trim());
+            if (lines.length < 2) {
+                throw new Error('Le fichier doit contenir au moins un en-tête et une ligne de données');
+            }
+
+            // Détecter le séparateur (virgule ou point-virgule)
+            const firstLine = lines[0];
+            const separator = firstLine.includes(';') ? ';' : ',';
+
+            const headers = lines[0].split(separator).map(h => h.trim().toLowerCase().replace(/"/g, ''));
+            const data = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                const values = parseCSVLine(lines[i], separator);
+                if (values.length === headers.length) {
+                    const row = {};
+                    headers.forEach((h, idx) => {
+                        row[normalizeHeader(h)] = values[idx].trim().replace(/"/g, '');
+                    });
+                    data.push(row);
+                }
+            }
+
+            return data;
+        }
+
+        // Parser une ligne CSV (gère les guillemets)
+        function parseCSVLine(line, separator) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === separator && !inQuotes) {
+                    result.push(current);
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            result.push(current);
+            return result;
+        }
+
+        // Parser un fichier Excel
+        function parseExcel(content) {
+            const workbook = XLSX.read(content, { type: 'array' });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const jsonData = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
+
+            // Normaliser les en-têtes
+            return jsonData.map(row => {
+                const normalized = {};
+                Object.keys(row).forEach(key => {
+                    normalized[normalizeHeader(key)] = String(row[key]).trim();
+                });
+                return normalized;
+            });
+        }
+
+        // Normaliser les noms de colonnes
+        function normalizeHeader(header) {
+            const mappings = {
+                // Nom
+                'nom': 'name',
+                'raison sociale': 'name',
+                'raison_sociale': 'name',
+                'nom / raison sociale': 'name',
+                // Téléphone
+                'telephone': 'phone',
+                'téléphone': 'phone',
+                'tel': 'phone',
+                // Email
+                'e-mail': 'email',
+                'mail': 'email',
+                'courriel': 'email',
+                // Ville
+                'adresse': 'ville',
+                'city': 'ville',
+                // Secteur d'activité
+                'activité': 'secteur',
+                'activite': 'secteur',
+                'secteur d\'activité': 'secteur',
+                'secteuractivite': 'secteur',
+                'sector': 'secteur',
+                // Statut
+                'status': 'statut',
+                'état': 'statut',
+                'etat': 'statut',
+                // Centre des impôts (CDI)
+                'centre fiscal': 'cdi',
+                'centre rattachement': 'cdi',
+                'centrerattachement': 'cdi',
+                'centre_rattachement': 'cdi',
+                'centre des impots': 'cdi',
+                'centre des impôts': 'cdi',
+                // Contact
+                'personne contact': 'contact',
+                'contact principal': 'contact',
+                // Civilité
+                'civilite': 'civilite',
+                'civilité': 'civilite',
+                'genre': 'civilite',
+                'sexe': 'civilite',
+                // Type
+                'type client': 'type',
+                'type_client': 'type',
+                // Gestion externalisée
+                'externe': 'externalise',
+                'externalise': 'externalise',
+                'externalisé': 'externalise',
+                'gestionexternalisee': 'externalise',
+                'gestion_externalisee': 'externalise',
+                'gestion externalisée': 'externalise',
+                // CNPS
+                'numerocnps': 'cnps',
+                'numero_cnps': 'cnps',
+                'numéro cnps': 'cnps',
+                // ID (ignoré mais mappé)
+                'id': 'importId',
+                // Date création
+                'datecreation': 'createdAt',
+                'date_creation': 'createdAt',
+                'date création': 'createdAt'
+            };
+
+            const normalized = header.toLowerCase().trim();
+            return mappings[normalized] || normalized;
+        }
+
+        // Normaliser les valeurs de CDI
+        function normalizeCDI(value) {
+            if (!value) return '';
+            const upper = value.toUpperCase().trim();
+
+            // Liste des CDI connus
+            const knownCDI = [
+                'CDI YDE 1', 'CDI YDE 2', 'CDI YDE 3', 'CDI YDE 4', 'CDI YDE 5', 'CDI YDE 6',
+                'CIME YDE EST', 'CIME YDE OUEST',
+                'CSIPLI MFOUNDI',
+                'CDI MEFOU ET AFAMBA',
+                'CDI Douala', 'CDI Bafoussam', 'CDI Garoua'
+            ];
+
+            // Recherche exacte (insensible à la casse)
+            const found = knownCDI.find(cdi => cdi.toUpperCase() === upper);
+            if (found) return found;
+
+            // Recherche partielle
+            const partial = knownCDI.find(cdi => upper.includes(cdi.toUpperCase()) || cdi.toUpperCase().includes(upper));
+            if (partial) return partial;
+
+            return value; // Retourner la valeur originale si non trouvée
+        }
+
+        // Traiter les données importées
+        function processImportData(data) {
+            if (!data || data.length === 0) {
+                showImportError('Aucune donnée trouvée dans le fichier');
+                return;
+            }
+
+            importData = [];
+            const errors = [];
+            const existingClients = JSON.parse(localStorage.getItem('clients') || '[]');
+            const existingNius = existingClients.map(c => c.niu?.toLowerCase());
+
+            data.forEach((row, index) => {
+                // Normaliser le type de client
+                let clientType = row.type || 'Personne morale';
+                if (clientType.toLowerCase().includes('physique') || clientType.toLowerCase() === 'pp') {
+                    clientType = 'Personne physique';
+                } else if (clientType.toLowerCase().includes('morale') || clientType.toLowerCase() === 'pm') {
+                    clientType = 'Personne morale';
+                }
+
+                // Normaliser le statut
+                let clientStatut = row.statut || 'Actif';
+                if (clientStatut.toLowerCase() === 'actif' || clientStatut.toLowerCase() === 'active') {
+                    clientStatut = 'Actif';
+                } else if (clientStatut.toLowerCase() === 'inactif' || clientStatut.toLowerCase() === 'inactive') {
+                    clientStatut = 'Inactif';
+                }
+
+                // Normaliser la gestion externalisée
+                let externalise = row.externalise || 'Non';
+                if (externalise.toLowerCase() === 'oui' || externalise.toLowerCase() === 'yes' || externalise.toLowerCase() === 'true') {
+                    externalise = 'Oui';
+                } else {
+                    externalise = 'Non';
+                }
+
+                const client = {
+                    id: Date.now() + index,
+                    type: clientType,
+                    name: row.name || '',
+                    niu: row.niu || '',
+                    cdi: normalizeCDI(row.cdi),
+                    ville: row.ville || '',
+                    quartier: row.quartier || '',
+                    phone: row.phone || '',
+                    email: row.email || '',
+                    contact: row.contact || '',
+                    civilite: normalizeCivilite(row.civilite),
+                    secteur: row.secteur || '',
+                    cnps: row.cnps || '',
+                    externalise: externalise,
+                    statut: clientStatut,
+                    createdAt: row.createdAt || new Date().toISOString(),
+                    isValid: true,
+                    errors: []
+                };
+
+                // Validation
+                if (!client.name) {
+                    client.isValid = false;
+                    client.errors.push('Nom manquant');
+                }
+                if (!client.niu) {
+                    client.isValid = false;
+                    client.errors.push('NIU manquant');
+                }
+                if (client.niu && existingNius.includes(client.niu.toLowerCase())) {
+                    client.isValid = false;
+                    client.errors.push('NIU déjà existant');
+                }
+
+                importData.push(client);
+            });
+
+            // Afficher l'aperçu
+            displayImportPreview();
+        }
+
+        // Afficher l'aperçu des données
+        function displayImportPreview() {
+            const tbody = document.getElementById('previewTable');
+            const validCount = importData.filter(c => c.isValid).length;
+            const invalidCount = importData.length - validCount;
+
+            document.getElementById('previewCount').textContent = importData.length;
+
+            tbody.innerHTML = importData.map(c => `
+                <tr class="${c.isValid ? 'bg-green-50' : 'bg-red-50'}">
+                    <td class="px-2 py-2">${c.name || '-'}</td>
+                    <td class="px-2 py-2">${c.niu || '-'}</td>
+                    <td class="px-2 py-2">${c.type === 'Personne physique' ? 'PP' : 'PM'}</td>
+                    <td class="px-2 py-2">${c.cdi || '-'}</td>
+                    <td class="px-2 py-2">${c.ville || '-'}</td>
+                    <td class="px-2 py-2 text-center">
+                        ${c.isValid
+                            ? '<span class="text-green-600 font-bold">✓</span>'
+                            : '<span class="text-red-600 font-bold" title="' + c.errors.join(', ') + '">✗</span>'}
+                    </td>
+                </tr>
+            `).join('');
+
+            document.getElementById('importPreview').classList.remove('hidden');
+
+            // Afficher les erreurs s'il y en a
+            if (invalidCount > 0) {
+                document.getElementById('importErrors').classList.remove('hidden');
+                document.getElementById('importErrors').innerHTML = `
+                    <strong>${invalidCount} client(s) invalide(s)</strong> ne seront pas importés.<br>
+                    Survolez le ✗ pour voir les erreurs.
+                `;
+            } else {
+                document.getElementById('importErrors').classList.add('hidden');
+            }
+
+            // Activer le bouton si au moins un client valide
+            document.getElementById('importBtn').disabled = validCount === 0;
+        }
+
+        // Afficher une erreur d'import
+        function showImportError(message) {
+            document.getElementById('importPreview').classList.remove('hidden');
+            document.getElementById('previewTable').innerHTML = '';
+            document.getElementById('previewCount').textContent = '0';
+            document.getElementById('importErrors').classList.remove('hidden');
+            document.getElementById('importErrors').innerHTML = `<strong>Erreur :</strong> ${message}`;
+            document.getElementById('importBtn').disabled = true;
+        }
+
+        // Exécuter l'import
+        function executeImport() {
+            const validClients = importData.filter(c => c.isValid);
+            if (validClients.length === 0) {
+                PrismaToast.warning('Aucun client valide à importer');
+                return;
+            }
+
+            PrismaModal.confirm(`Importer ${validClients.length} client(s) ?`, () => {
+                // Nettoyer les propriétés de validation
+                const clientsToImport = validClients.map(c => {
+                    const { isValid, errors, ...client } = c;
+                    return client;
+                });
+
+                const existingClients = JSON.parse(localStorage.getItem('clients') || '[]');
+                const allClients = [...existingClients, ...clientsToImport];
+                localStorage.setItem('clients', JSON.stringify(allClients));
+
+                hideImportForm();
+                loadClients();
+                PrismaToast.success(`${clientsToImport.length} client(s) importé(s) avec succès !`);
+            });
+        }
+
+        // Télécharger un modèle CSV
+        function downloadTemplate() {
+            // Format compatible avec le fichier clients_2026-01-28.csv
+            const headers = ['Type', 'Nom', 'NIU', 'CentreRattachement', 'Ville', 'Quartier', 'Telephone', 'Email', 'Contact', 'Civilite', 'SecteurActivite', 'Statut', 'NumeroCNPS', 'GestionExternalisee'];
+            const example1 = ['Personne morale', 'ENTREPRISE EXEMPLE SARL', 'M123456789012Z', 'CDI YDE 1', 'YAOUNDE', 'BASTOS', '699123456', 'contact@exemple.cm', 'OBIANG Nathan', 'M.', 'commerce', 'actif', '', 'Oui'];
+            const example2 = ['Personne physique', 'DUPONT JEAN MARIE', 'P098765432109X', 'CDI YDE 5', 'YAOUNDE', 'NGOA EKELLE', '677889900', 'dupont@email.cm', 'DUPONT JEAN MARIE', 'Mme', 'service', 'actif', '', 'Non'];
+
+            const csvContent = headers.join(';') + '\n' + example1.join(';') + '\n' + example2.join(';');
+            const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'modele_import_clients.csv';
+            link.click();
+        }
+
+        // Charger au démarrage
+        loadClients();
+        toggleCiviliteLabel();
+
+        // Activer l'auto-save du formulaire client
+        PrismaAutoSave.init('clientForm', { key: 'client_form' });
+
+        // Synchroniser les clients entre onglets
+        PrismaSync.watch('clients', () => {
+            loadClients();
+            PrismaToast.info('Liste des clients mise à jour', 2000);
+        });
+    </script>
+</body>
+</html>

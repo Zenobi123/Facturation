@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Devis - PRISMA GESTION</title>
+    <script src="assets/css/tailwindcss.min.js"></script>
+    <link rel="stylesheet" href="prisma-print.css">
+    <link rel="stylesheet" href="assets/css/inter-font.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        @media print {
+            body { background: white; margin: 0; padding: 0; }
+            .no-print { display: none !important; }
+            .print-area { box-shadow: none !important; padding: 0 !important; }
+            @page { size: A4; margin: 10mm 10mm; }
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-blue-900 text-white p-4 shadow-lg no-print">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <a href="index.html" class="inline-flex items-center px-3 py-1.5 border border-white rounded-lg shadow-sm text-white hover:bg-white hover:text-blue-900 transition-colors duration-200">← PRISMA GESTION</a>
+            <span class="text-sm text-blue-200">Gestion des Devis / Proforma</span>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto p-6 no-print">
+        <!-- Liste des devis existants -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-gray-800">Liste des devis</h2>
+                <div class="flex gap-4">
+                    <select id="statusFilter" onchange="loadDevisList()" class="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+                        <option value="">Tous les statuts</option>
+                        <option value="brouillon">Brouillon</option>
+                        <option value="envoyé">Envoyé</option>
+                        <option value="accepté">Accepté</option>
+                        <option value="refusé">Refusé</option>
+                        <option value="converti">Converti en facture</option>
+                    </select>
+                    <button onclick="showCreateForm()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                        + Nouveau devis
+                    </button>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="px-4 py-3 text-left">Date</th>
+                            <th class="px-4 py-3 text-left">Numéro</th>
+                            <th class="px-4 py-3 text-left">Client</th>
+                            <th class="px-4 py-3 text-right">Total</th>
+                            <th class="px-4 py-3 text-center">Statut</th>
+                            <th class="px-4 py-3 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="devisTable">
+                        <tr>
+                            <td colspan="6" class="text-center py-8 text-gray-500">Aucun devis</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Formulaire de création -->
+        <div id="createForm" class="hidden bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Créer un nouveau devis</h2>
+
+            <!-- Toggle Mode Auto/Manuel -->
+            <div class="mb-4 flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <span class="text-sm font-semibold text-gray-700">Mode de saisie :</span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="manualModeToggle" onchange="toggleManualMode()" class="sr-only peer">
+                    <div class="w-11 h-6 bg-blue-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:bg-orange-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+                </label>
+                <span id="modeLabel" class="text-sm font-medium text-blue-700">Automatique</span>
+                <span id="modeHint" class="text-xs text-gray-500 ml-2">N° et date générés automatiquement</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Client *</label>
+                    <select id="clientSelect" onchange="loadClientInfo()" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+                        <option value="">-- Sélectionner un client --</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Numéro de devis *</label>
+                    <input type="text" id="devisNumber" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+
+            <!-- Date manuelle (visible uniquement en mode manuel) -->
+            <div id="manualDateSection" class="hidden mb-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-orange-700 mb-2">Date du devis *</label>
+                        <input type="date" id="manualDate" class="w-full border border-orange-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 bg-orange-50">
+                        <p class="text-xs text-orange-500 mt-1">Saisir la date figurant sur le devis original</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Impôts automatiques du client -->
+            <div id="immoTaxesSection" class="hidden mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <label class="block text-sm font-semibold text-blue-800 mb-2">Impôts du client (calculés automatiquement)</label>
+                <div id="immoTaxesButtons" class="flex flex-wrap gap-2">
+                    <!-- Boutons générés dynamiquement -->
+                </div>
+                <p class="text-xs text-blue-600 mt-2">Cliquez sur un impôt pour l'ajouter comme ligne de prestation</p>
+            </div>
+
+            <!-- Prestations prédéfinies selon le régime -->
+            <div id="prestationsSection" class="hidden mb-6 p-4 bg-purple-50 rounded-lg border border-purple-200">
+                <label class="block text-sm font-semibold text-purple-800 mb-2">Prestations selon le régime fiscal</label>
+                <div id="prestationsButtons" class="flex flex-wrap gap-2">
+                    <!-- Boutons générés dynamiquement -->
+                </div>
+                <p class="text-xs text-purple-600 mt-2">Cliquez pour ajouter une prestation prédéfinie</p>
+            </div>
+
+            <!-- Lignes de prestations -->
+            <div class="mb-4">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-lg font-bold text-gray-800">Prestations</h3>
+                    <button onclick="addLine()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">
+                        + Ajouter une ligne
+                    </button>
+                </div>
+                <div id="linesContainer" class="space-y-3"></div>
+            </div>
+
+            <!-- Totaux -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 bg-gray-50 p-4 rounded-lg">
+                <div class="text-center">
+                    <p class="text-sm text-gray-600">Total Impôts</p>
+                    <p class="text-2xl font-bold text-blue-900" id="totalImpots">0 F CFA</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-sm text-gray-600">Total Honoraires</p>
+                    <p class="text-2xl font-bold text-green-900" id="totalHonoraires">0 F CFA</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-sm text-gray-600">Total Général</p>
+                    <p class="text-2xl font-bold text-gray-900" id="totalGeneral">0 F CFA</p>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-4 mt-6">
+                <button onclick="hideCreateForm()" class="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition">
+                    Annuler
+                </button>
+                <button onclick="saveDevis()" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition">
+                    Enregistrer le devis
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Zone d'aperçu et d'impression -->
+    <div id="devisPreview" class="hidden">
+        <div class="max-w-4xl mx-auto bg-white p-5 print-area" id="printArea">
+            <!-- Contenu du devis généré dynamiquement -->
+        </div>
+        <div class="max-w-4xl mx-auto mt-6 mb-6 flex justify-center gap-4 no-print">
+            <button onclick="window.print()" class="bg-gray-700 text-white px-6 py-2 rounded-lg hover:bg-gray-800 transition">
+                Imprimer
+            </button>
+            <button onclick="downloadPDF()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
+                Télécharger PDF
+            </button>
+            <button onclick="backToList()" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition">
+                Retour
+            </button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="prisma-components.js"></script>
+    <script>
+        let lineCounter = 0;
+        let editingDevisId = null;
+        let isManualMode = false;
+        let currentPreviewDevis = null;
+
+        function sanitizePdfSegment(value, fallback = 'Document') {
+            return String(value || '')
+                .replace(/^N[°ºo]?\s*/i, '')
+                .replace(/[\/\\]/g, '-')
+                .replace(/[^a-zA-Z0-9\u00C0-\u00FF\s\-]/g, '')
+                .trim() || fallback;
+        }
+
+        function toggleManualMode() {
+            isManualMode = document.getElementById('manualModeToggle').checked;
+            const label = document.getElementById('modeLabel');
+            const hint = document.getElementById('modeHint');
+            const manualDateSection = document.getElementById('manualDateSection');
+
+            if (isManualMode) {
+                label.textContent = 'Manuel';
+                label.className = 'text-sm font-medium text-orange-700';
+                hint.textContent = 'Saisir le N° et la date du devis original';
+                manualDateSection.classList.remove('hidden');
+                document.getElementById('devisNumber').value = '';
+                document.getElementById('devisNumber').placeholder = 'Ex: DEVIS-0001/2025/06';
+            } else {
+                label.textContent = 'Automatique';
+                label.className = 'text-sm font-medium text-blue-700';
+                hint.textContent = 'N° et date générés automatiquement';
+                manualDateSection.classList.add('hidden');
+                document.getElementById('devisNumber').placeholder = '';
+                generateDevisNumber();
+            }
+        }
+
+        // Client sélectionné (pour adapter les prix selon le régime)
+        let selectedClient = null;
+
+        // Liste des impôts prédéfinis
+        const TDL_IMPOT_LABEL = 'Taxe de D\u00e9veloppement Local (TDL)';
+
+        const BAREME_TDL_DEVIS = [
+            { max: 30000, montant: 7500 },
+            { max: 60000, montant: 9000 },
+            { max: 100000, montant: 15000 },
+            { max: 150000, montant: 22500 },
+            { max: 200000, montant: 30000 },
+            { max: 300000, montant: 45000 },
+            { max: 400000, montant: 60000 },
+            { max: 500000, montant: 75000 },
+            { max: Infinity, montant: 90000 }
+        ];
+        const SOLDE_IR_TAUX = 0.001;
+        const SOLDE_IR_SEUIL = 15000000;
+
+        function calculateTDLDevis(montantIGSPrincipal) {
+            const montant = Math.round(montantIGSPrincipal || 0);
+            if (montant <= 0) {
+                return 0;
+            }
+
+            const tranche = BAREME_TDL_DEVIS.find((item) => montant <= item.max);
+            return tranche ? tranche.montant : 0;
+        }
+
+        function calculateSoldeIRDevis(client) {
+            const ca = Number(client.chiffreAffaires) || 0;
+            const regimeEligible = client.regimeFiscal === 'IGS' || client.regimeFiscal === 'Reel';
+            return regimeEligible && ca >= SOLDE_IR_SEUIL
+                ? Math.round(ca * SOLDE_IR_TAUX)
+                : 0;
+        }
+
+        function getSoldeTaxLabel(client = selectedClient) {
+            return client && client.type === 'Personne morale' ? 'Solde IS' : 'Solde IR';
+        }
+
+        function getListeImpots() {
+            const soldeTaxLabel = getSoldeTaxLabel();
+            return LISTE_IMPOTS.map((item) => item.designation === 'Solde IR'
+                ? { ...item, designation: soldeTaxLabel }
+                : item);
+        }
+
+        const LISTE_IMPOTS = [
+            { designation: 'Précompte sur Loyer (PSL)', montant: 0 },
+            { designation: 'Bail Commercial', montant: 0 },
+            { designation: 'Taxe Foncière (TF)', montant: 0 },
+            { designation: 'Impôt Général Synthétique (IGS)', montant: 0 },
+            { designation: TDL_IMPOT_LABEL, montant: 0 },
+            { designation: 'Solde IR', montant: 0 },
+            { designation: 'Patente', montant: 0 },
+            { designation: 'Impôt sur le Revenu des Personnes Physiques (IRPP)', montant: 0 },
+            { designation: 'Taxe sur la Valeur Ajoutée (TVA)', montant: 0 },
+            { designation: 'Acompte Impôt sur les Sociétés (AIS)', montant: 0 },
+            { designation: 'Contribution au Crédit Foncier (CCF)', montant: 0 },
+            { designation: 'Centimes Additionnels Communaux (CAC)', montant: 0 },
+            { designation: 'Redevance Audiovisuelle (RAV)', montant: 0 },
+            { designation: 'Obtention ACF (Attestation de Conformité Fiscale)', montant: 2100 },
+            { designation: 'Obtention ATTIM (Attestation Immatriculation)', montant: 2100 }
+        ];
+
+        // Honoraires communs à tous les régimes
+        const HONORAIRES_COMMUNS = [
+            { designation: 'Déclaration Annuelle des Revenus des Particuliers (DARP)', montant: 5000 },
+            { designation: 'Déclaration des Bénéficiaires Effectifs (DBEF)', montant: 5000 },
+            { designation: 'Conseil fiscal', montant: 25000 },
+            { designation: 'Création d\'entreprise', montant: 75000 },
+            { designation: 'Modification statutaire', montant: 50000 }
+        ];
+
+        // Honoraires spécifiques par régime fiscal
+        const HONORAIRES_PAR_REGIME = {
+            'Reel': [
+                { designation: 'Renouvellement du dossier fiscal', montant: 15000 },
+                { designation: 'Montage et mise en ligne DSF', montant: 100000 },
+                { designation: 'Forfait suivi gestion fiscal', montant: 120000 },
+                { designation: 'Tenue de comptabilité mensuelle', montant: 100000 },
+                { designation: 'Établissement des états financiers', montant: 150000 },
+                { designation: 'Assistance contrôle fiscal', montant: 200000 }
+            ],
+            'IGS': [
+                { designation: 'Renouvellement du dossier fiscal', montant: 10000 },
+                { designation: 'Montage et mise en ligne DSF', montant: 30000 },
+                { designation: 'Forfait suivi gestion fiscal', montant: 60000 },
+                { designation: 'Tenue de comptabilité mensuelle', montant: 50000 },
+                { designation: 'Établissement des états financiers', montant: 75000 },
+                { designation: 'Assistance contrôle fiscal', montant: 100000 }
+            ],
+            'NonPro': [
+                { designation: 'Déclaration des revenus fonciers', montant: 15000 },
+                { designation: 'Suivi fiscal annuel', montant: 30000 }
+            ],
+            'OBNL': [
+                { designation: 'Renouvellement du dossier fiscal', montant: 10000 },
+                { designation: 'Montage et mise en ligne DSF', montant: 50000 },
+                { designation: 'Tenue de comptabilité', montant: 60000 }
+            ]
+        };
+
+        // Obtenir la liste des honoraires selon le régime du client
+        function getListeHonoraires() {
+            if (!selectedClient || !selectedClient.regimeFiscal) {
+                // Si pas de régime défini, afficher les honoraires IGS par défaut
+                return [...HONORAIRES_PAR_REGIME['IGS'], ...HONORAIRES_COMMUNS];
+            }
+            const regime = selectedClient.regimeFiscal;
+            const honorairesRegime = HONORAIRES_PAR_REGIME[regime] || HONORAIRES_PAR_REGIME['IGS'];
+            return [...honorairesRegime, ...HONORAIRES_COMMUNS];
+        }
+
+        // Vérifier si la fiche client est complète
+        function verifierFicheClient(client) {
+            const champsObligatoires = [];
+
+            if (!client.name || client.name.trim() === '') champsObligatoires.push('Nom du client');
+            if (!client.type) champsObligatoires.push('Type (PM/PP)');
+            if (!client.niu || client.niu.trim() === '') champsObligatoires.push('NIU');
+            if (!client.ville || client.ville.trim() === '') champsObligatoires.push('Ville');
+            if (!client.contact || client.contact.trim() === '') champsObligatoires.push('Contact');
+            if (!client.regimeFiscal) champsObligatoires.push('Régime fiscal');
+
+            return champsObligatoires;
+        }
+
+        // Générer les options de la liste déroulante selon le type
+        function getDesignationOptions(type) {
+            const liste = type === 'Impôt' ? getListeImpots() : getListeHonoraires();
+            let options = '<option value="">-- Sélectionner --</option>';
+            liste.forEach(item => {
+                const montantStr = item.montant > 0 ? ` (${item.montant.toLocaleString('fr-FR')} F CFA)` : '';
+                options += `<option value="${item.designation}" data-montant="${item.montant}">${item.designation}${montantStr}</option>`;
+            });
+            options += '<option value="__AUTRE__">Autre (saisie libre)</option>';
+            return options;
+        }
+
+        // Mettre à jour la liste de désignations quand le type change
+        function updateDesignationList(lineId) {
+            const line = document.getElementById(`line-${lineId}`);
+            if (!line) return;
+            const type = line.querySelector('.line-type').value;
+            const selectDesignation = line.querySelector('.line-designation-select');
+            const inputDesignation = line.querySelector('.line-designation-input');
+
+            selectDesignation.innerHTML = getDesignationOptions(type);
+            selectDesignation.classList.remove('hidden');
+            inputDesignation.classList.add('hidden');
+            inputDesignation.value = '';
+
+            // Réinitialiser le prix
+            line.querySelector('.line-price').value = 0;
+            updateLineTotal(lineId);
+            updateTotals();
+        }
+
+        // Quand une désignation est sélectionnée
+        function onDesignationChange(lineId) {
+            const line = document.getElementById(`line-${lineId}`);
+            if (!line) return;
+            const selectDesignation = line.querySelector('.line-designation-select');
+            const inputDesignation = line.querySelector('.line-designation-input');
+            const priceInput = line.querySelector('.line-price');
+            const selectedValue = selectDesignation.value;
+
+            if (selectedValue === '__AUTRE__') {
+                selectDesignation.classList.add('hidden');
+                inputDesignation.classList.remove('hidden');
+                inputDesignation.focus();
+                priceInput.value = 0;
+            } else if (selectedValue) {
+                const selectedOption = selectDesignation.options[selectDesignation.selectedIndex];
+                const montant = parseInt(selectedOption.dataset.montant) || 0;
+                priceInput.value = montant;
+                inputDesignation.classList.add('hidden');
+            }
+            updateLineTotal(lineId);
+            updateTotals();
+        }
+
+        // Fonction pour récupérer la désignation d'une ligne
+        function getLineDesignation(line) {
+            const selectDesignation = line.querySelector('.line-designation-select');
+            const inputDesignation = line.querySelector('.line-designation-input');
+
+            // Vérifier d'abord le select s'il a une valeur valide
+            if (selectDesignation && selectDesignation.value && selectDesignation.value !== '__AUTRE__' && selectDesignation.value !== '') {
+                return selectDesignation.value;
+            }
+            // Sinon vérifier l'input (mode "Autre" ou saisie libre)
+            if (inputDesignation && inputDesignation.value.trim() !== '') {
+                return inputDesignation.value.trim();
+            }
+            return '';
+        }
+
+        // Charger les clients
+        function loadClientSelect() {
+            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+            const select = document.getElementById('clientSelect');
+            select.innerHTML = '<option value="">-- Sélectionner un client --</option>';
+
+            clients.forEach((client, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = client.name;
+                select.appendChild(option);
+            });
+        }
+
+        // Charger les infos du client sélectionné
+        function loadClientInfo() {
+            const index = document.getElementById('clientSelect').value;
+            if (!index) {
+                selectedClient = null;
+                return;
+            }
+
+            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+            selectedClient = clients[index];
+
+            // Vérifier si la fiche client est complète
+            const champsManquants = verifierFicheClient(selectedClient);
+            if (champsManquants.length > 0) {
+                PrismaToast.warning(`Fiche client incomplète ! Champs manquants : ${champsManquants.join(', ')}`);
+            }
+
+            // Rafraîchir les listes déroulantes des lignes existantes pour adapter les prix au régime
+            refreshAllDesignationLists();
+
+            // Afficher les impôts du client
+            displayImmoTaxes(selectedClient);
+
+            // Afficher les prestations selon le régime
+            displayPrestations(selectedClient);
+
+            if (!isManualMode) generateDevisNumber();
+        }
+
+        // Afficher les boutons d'impôts immobiliers et fiscaux du client
+        function displayImmoTaxes(client) {
+            const section = document.getElementById('immoTaxesSection');
+            const container = document.getElementById('immoTaxesButtons');
+            container.innerHTML = '';
+            const tdl = typeof client.tdl === 'number'
+                ? client.tdl
+                : (client.regimeFiscal === 'IGS' && client.igs
+                    ? calculateTDLDevis(client.isCGA ? client.igs * 2 : client.igs)
+                    : 0);
+            const soldeIR = typeof client.soldeIR === 'number'
+                ? client.soldeIR
+                : calculateSoldeIRDevis(client);
+            const soldeTaxLabel = getSoldeTaxLabel(client);
+
+            const hasImmoTaxes = (client.psl && client.psl > 0) || (client.bail && client.bail > 0) || (client.tf && client.tf > 0);
+            const hasFiscalTaxes = (client.igs && client.igs > 0) || tdl > 0 || soldeIR > 0 || (client.patente && client.patente > 0);
+
+            if (!hasImmoTaxes && !hasFiscalTaxes) {
+                section.classList.add('hidden');
+                return;
+            }
+
+            section.classList.remove('hidden');
+
+            // PSL
+            if (client.psl && client.psl > 0) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm flex items-center gap-2';
+                btn.innerHTML = `<span>+ PSL</span><span class="bg-blue-800 px-2 py-1 rounded">${client.psl.toLocaleString('fr-FR')} F CFA</span>`;
+                btn.onclick = () => addImmoTaxLine('Précompte sur Loyer (PSL)', client.psl, 'Impôt');
+                container.appendChild(btn);
+            }
+
+            // Bail
+            if (client.bail && client.bail > 0) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 text-sm flex items-center gap-2';
+                btn.innerHTML = `<span>+ Bail</span><span class="bg-teal-800 px-2 py-1 rounded">${client.bail.toLocaleString('fr-FR')} F CFA</span>`;
+                btn.onclick = () => addImmoTaxLine('Bail Commercial', client.bail, 'Impôt');
+                container.appendChild(btn);
+            }
+
+            // TF
+            if (client.tf && client.tf > 0) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 text-sm flex items-center gap-2';
+                btn.innerHTML = `<span>+ TF</span><span class="bg-orange-800 px-2 py-1 rounded">${client.tf.toLocaleString('fr-FR')} F CFA</span>`;
+                btn.onclick = () => addImmoTaxLine('Taxe Foncière (TF)', client.tf, 'Impôt');
+                container.appendChild(btn);
+            }
+
+            // IGS
+            if (client.igs && client.igs > 0) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm flex items-center gap-2';
+                const cgaLabel = client.isCGA ? ' (CGA)' : '';
+                btn.innerHTML = `<span>+ IGS C${client.igsClasse}${cgaLabel}</span><span class="bg-green-800 px-2 py-1 rounded">${client.igs.toLocaleString('fr-FR')} F CFA</span>`;
+                btn.onclick = () => addImmoTaxLine(`Impôt Général Synthétique (IGS) - Classe ${client.igsClasse}`, client.igs, 'Impôt');
+                container.appendChild(btn);
+            }
+
+            // TDL
+            if (tdl > 0) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 text-sm flex items-center gap-2';
+                btn.innerHTML = `<span>+ TDL</span><span class="bg-teal-800 px-2 py-1 rounded">${tdl.toLocaleString('fr-FR')} F CFA</span>`;
+                btn.onclick = () => addImmoTaxLine(TDL_IMPOT_LABEL, tdl, 'Impôt');
+                container.appendChild(btn);
+            }
+
+            // Solde IR / IS
+            if (soldeIR > 0) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 text-sm flex items-center gap-2';
+                btn.innerHTML = `<span>+ ${soldeTaxLabel}</span><span class="bg-indigo-800 px-2 py-1 rounded">${soldeIR.toLocaleString('fr-FR')} F CFA</span>`;
+                btn.onclick = () => addImmoTaxLine(soldeTaxLabel, soldeIR, 'Impôt');
+                container.appendChild(btn);
+            }
+
+            // Patente
+            if (client.patente && client.patente > 0) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700 text-sm flex items-center gap-2';
+                btn.innerHTML = `<span>+ Patente</span><span class="bg-amber-800 px-2 py-1 rounded">${client.patente.toLocaleString('fr-FR')} F CFA</span>`;
+                btn.onclick = () => addImmoTaxLine('Patente (Régime Réel)', client.patente, 'Impôt');
+                container.appendChild(btn);
+            }
+        }
+
+        // Afficher les prestations prédéfinies selon le régime
+        function displayPrestations(client) {
+            const section = document.getElementById('prestationsSection');
+            const container = document.getElementById('prestationsButtons');
+            container.innerHTML = '';
+
+            const honorairesRegime = client.regimeFiscal && HONORAIRES_PAR_REGIME[client.regimeFiscal]
+                ? HONORAIRES_PAR_REGIME[client.regimeFiscal]
+                : [];
+
+            if (HONORAIRES_COMMUNS.length === 0 && honorairesRegime.length === 0) {
+                section.classList.add('hidden');
+                return;
+            }
+
+            section.classList.remove('hidden');
+
+            // Afficher le nom du régime
+            const regimeNames = {
+                'Reel': 'Régime Réel',
+                'IGS': 'IGS',
+                'NonPro': 'Non Professionnel',
+                'OBNL': 'OBNL'
+            };
+
+            const regimeLabel = client.regimeFiscal ? regimeNames[client.regimeFiscal] || client.regimeFiscal : 'Tous régimes';
+            document.querySelector('#prestationsSection label').textContent = `Prestations - ${regimeLabel}`;
+
+            // Prestations spécifiques au régime (en violet)
+            if (honorairesRegime.length > 0) {
+                honorairesRegime.forEach(prestation => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'bg-purple-600 text-white px-3 py-2 rounded-lg hover:bg-purple-700 text-sm flex items-center gap-2';
+                    btn.innerHTML = `<span>+ ${prestation.designation}</span><span class="bg-purple-800 px-2 py-1 rounded">${prestation.montant.toLocaleString('fr-FR')} F CFA</span>`;
+                    btn.onclick = () => addImmoTaxLine(prestation.designation, prestation.montant, 'Honoraire');
+                    container.appendChild(btn);
+                });
+            }
+
+            // Séparateur si on a les deux types
+            if (honorairesRegime.length > 0 && HONORAIRES_COMMUNS.length > 0) {
+                const separator = document.createElement('div');
+                separator.className = 'w-full border-t border-purple-300 my-2';
+                container.appendChild(separator);
+
+                const label = document.createElement('span');
+                label.className = 'text-xs text-purple-600 font-semibold';
+                label.textContent = 'Services communs :';
+                container.appendChild(label);
+            }
+
+            // Prestations communes (en indigo)
+            HONORAIRES_COMMUNS.forEach(prestation => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'bg-indigo-500 text-white px-3 py-2 rounded-lg hover:bg-indigo-600 text-sm flex items-center gap-2';
+                btn.innerHTML = `<span>+ ${prestation.designation}</span><span class="bg-indigo-700 px-2 py-1 rounded">${prestation.montant.toLocaleString('fr-FR')} F CFA</span>`;
+                btn.onclick = () => addImmoTaxLine(prestation.designation, prestation.montant, 'Honoraire');
+                container.appendChild(btn);
+            });
+        }
+
+        // Ajouter une ligne d'impôt ou prestation (depuis les boutons rapides)
+        function addImmoTaxLine(designation, amount, type = 'Impôt') {
+            lineCounter++;
+            const container = document.getElementById('linesContainer');
+            const lineDiv = document.createElement('div');
+            lineDiv.className = 'grid grid-cols-12 gap-2 items-end';
+            lineDiv.id = `line-${lineCounter}`;
+            const currentLineId = lineCounter;
+            const isImpot = type === 'Impôt';
+
+            // Générer les options avec la désignation présélectionnée
+            const liste = isImpot ? getListeImpots() : getListeHonoraires();
+            let selectOptions = '<option value="">-- Sélectionner --</option>';
+            let designationFound = false;
+            liste.forEach(item => {
+                const montantStr = item.montant > 0 ? ` (${item.montant.toLocaleString('fr-FR')} F CFA)` : '';
+                const selected = item.designation === designation ? 'selected' : '';
+                if (item.designation === designation) designationFound = true;
+                selectOptions += `<option value="${item.designation}" data-montant="${item.montant}" ${selected}>${item.designation}${montantStr}</option>`;
+            });
+            selectOptions += '<option value="__AUTRE__">Autre (saisie libre)</option>';
+
+            // Si la désignation n'est pas dans la liste, utiliser le mode "Autre"
+            const useOther = !designationFound;
+
+            lineDiv.innerHTML = `
+                <div class="col-span-2">
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Type</label>
+                    <select class="w-full border border-gray-300 rounded px-3 py-2 text-sm line-type" onchange="updateDesignationList(${currentLineId})">
+                        <option value="Honoraire" ${!isImpot ? 'selected' : ''}>Honoraire</option>
+                        <option value="Impôt" ${isImpot ? 'selected' : ''}>Impôt</option>
+                    </select>
+                </div>
+                <div class="col-span-4">
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Désignation</label>
+                    <select class="w-full border border-gray-300 rounded px-3 py-2 text-sm line-designation-select ${useOther ? 'hidden' : ''}" onchange="onDesignationChange(${currentLineId})">
+                        ${selectOptions}
+                    </select>
+                    <input type="text" class="w-full border border-gray-300 rounded px-3 py-2 text-sm line-designation-input ${useOther ? '' : 'hidden'}" value="${useOther ? designation : ''}" placeholder="Saisir la désignation...">
+                </div>
+                <div class="col-span-1">
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Qté</label>
+                    <input type="number" value="1" min="1" class="w-full border border-gray-300 rounded px-3 py-2 text-sm line-qty" onchange="updateLineTotal(${currentLineId}); updateTotals()">
+                </div>
+                <div class="col-span-2">
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Prix unitaire</label>
+                    <input type="number" value="${amount}" min="0" class="w-full border border-gray-300 rounded px-3 py-2 text-sm line-price" onchange="updateLineTotal(${currentLineId}); updateTotals()">
+                </div>
+                <div class="col-span-2">
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Total</label>
+                    <input type="number" readonly value="${amount}" class="w-full border border-gray-300 rounded px-3 py-2 text-sm bg-gray-100 line-total">
+                </div>
+                <div class="col-span-1">
+                    <button type="button" onclick="removeLine(${currentLineId})" class="w-full bg-red-600 text-white px-2 py-2 rounded hover:bg-red-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mx-auto">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+            `;
+            container.appendChild(lineDiv);
+
+            // Définir explicitement la valeur du select après l'ajout au DOM
+            if (!useOther) {
+                const select = lineDiv.querySelector('.line-designation-select');
+                if (select) {
+                    select.value = designation;
+                }
+            }
+
+            updateTotals();
+            PrismaToast.success(`${designation} ajouté !`);
+        }
+
+        // Rafraîchir toutes les listes de désignations (quand le client change)
+        function refreshAllDesignationLists() {
+            const lines = document.querySelectorAll('#linesContainer > div');
+            lines.forEach(line => {
+                const lineId = parseInt(line.id.replace('line-', ''));
+                const type = line.querySelector('.line-type').value;
+                const selectDesignation = line.querySelector('.line-designation-select');
+                const inputDesignation = line.querySelector('.line-designation-input');
+
+                // Si on est en mode saisie libre, ne pas changer
+                if (!inputDesignation.classList.contains('hidden')) return;
+
+                // Sauvegarder la valeur actuelle
+                const currentValue = selectDesignation.value;
+
+                // Mettre à jour les options
+                selectDesignation.innerHTML = getDesignationOptions(type);
+
+                // Restaurer la valeur si elle existe toujours
+                const optionExists = Array.from(selectDesignation.options).some(opt => opt.value === currentValue);
+                if (optionExists && currentValue) {
+                    selectDesignation.value = currentValue;
+                    // Mettre à jour le prix avec le nouveau montant du régime
+                    const selectedOption = selectDesignation.options[selectDesignation.selectedIndex];
+                    const montant = parseInt(selectedOption.dataset.montant) || 0;
+                    line.querySelector('.line-price').value = montant;
+                    updateLineTotal(lineId);
+                }
+            });
+            updateTotals();
+        }
+
+        // Générer le numéro de devis
+        function generateDevisNumber() {
+            const devis = JSON.parse(localStorage.getItem('devis') || '[]');
+            const num = String(devis.length + 1).padStart(4, '0');
+            const date = new Date();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            document.getElementById('devisNumber').value = `DEVIS-${num}/${date.getFullYear()}/${month}`;
+        }
+
+        // Charger la liste des devis
+        function loadDevisList() {
+            const devis = JSON.parse(localStorage.getItem('devis') || '[]');
+            const statusFilter = document.getElementById('statusFilter').value;
+
+            let filteredDevis = devis;
+            if (statusFilter) {
+                filteredDevis = devis.filter(d => d.status === statusFilter);
+            }
+
+            const table = document.getElementById('devisTable');
+
+            if (filteredDevis.length === 0) {
+                table.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-500">Aucun devis</td></tr>';
+                return;
+            }
+
+            table.innerHTML = filteredDevis.map(d => {
+                const date = new Date(d.date);
+                const dateStr = date.toLocaleDateString('fr-FR');
+                const statusColors = {
+                    'brouillon': 'bg-gray-100 text-gray-800',
+                    'envoyé': 'bg-blue-100 text-blue-800',
+                    'accepté': 'bg-green-100 text-green-800',
+                    'refusé': 'bg-red-100 text-red-800',
+                    'converti': 'bg-purple-100 text-purple-800'
+                };
+                const statusColor = statusColors[d.status] || 'bg-gray-100 text-gray-800';
+
+                return `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="px-4 py-3">${dateStr}</td>
+                        <td class="px-4 py-3 font-semibold">${d.number}</td>
+                        <td class="px-4 py-3">${d.client}</td>
+                        <td class="px-4 py-3 text-right font-bold text-blue-900">${d.total.toLocaleString('fr-FR')} F CFA</td>
+                        <td class="px-4 py-3 text-center">
+                            ${d.status === 'converti' ?
+                                `<div>
+                                    <span class="px-3 py-1 rounded-full text-xs font-semibold ${statusColor}">${d.status}</span>
+                                    ${d.convertedToFacture ? `<div class="text-xs text-green-600 mt-1">→ ${d.convertedToFacture}</div>` : ''}
+                                </div>` :
+                                `<select onchange="changeStatus(${d.id}, this.value)" class="border border-gray-300 rounded-lg px-2 py-1 text-sm font-semibold focus:ring-2 focus:ring-blue-500 ${statusColor}">
+                                    <option value="brouillon" ${d.status === 'brouillon' ? 'selected' : ''}>Brouillon</option>
+                                    <option value="envoyé" ${d.status === 'envoyé' ? 'selected' : ''}>Envoyé</option>
+                                    <option value="accepté" ${d.status === 'accepté' ? 'selected' : ''}>Accepté</option>
+                                    <option value="refusé" ${d.status === 'refusé' ? 'selected' : ''}>Refusé</option>
+                                </select>`
+                            }
+                        </td>
+                        <td class="px-4 py-3 text-center">
+                            <div class="flex justify-center gap-2">
+                                <button onclick="viewDevis(${d.id})" class="bg-gray-600 text-white px-3 py-1 rounded text-sm hover:bg-gray-700">Voir</button>
+                                ${d.status !== 'converti' ? `
+                                    <button onclick="editDevis(${d.id})" class="bg-yellow-600 text-white px-3 py-1 rounded text-sm hover:bg-yellow-700">Modifier</button>
+                                    <button onclick="convertToFacture(${d.id})" class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700">Convertir</button>
+                                ` : ''}
+                                <button onclick="deleteDevis(${d.id})" class="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700">Suppr.</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Afficher le formulaire de création
+        function showCreateForm() {
+            editingDevisId = null;
+            isManualMode = false;
+            document.getElementById('manualModeToggle').checked = false;
+            document.getElementById('modeLabel').textContent = 'Automatique';
+            document.getElementById('modeLabel').className = 'text-sm font-medium text-blue-700';
+            document.getElementById('modeHint').textContent = 'N° et date générés automatiquement';
+            document.getElementById('manualDateSection').classList.add('hidden');
+            document.getElementById('manualDate').value = '';
+            document.getElementById('devisNumber').placeholder = '';
+            document.getElementById('createForm').classList.remove('hidden');
+            document.getElementById('linesContainer').innerHTML = '';
+            lineCounter = 0;
+            selectedClient = null;
+            // Réinitialiser le titre du formulaire
+            document.querySelector('#createForm h2').textContent = 'Créer un nouveau devis';
+            // Réinitialiser le select client
+            document.getElementById('clientSelect').value = '';
+            // Masquer les sections d'impôts et prestations jusqu'à la sélection d'un client
+            document.getElementById('immoTaxesSection').classList.add('hidden');
+            document.getElementById('prestationsSection').classList.add('hidden');
+            loadClientSelect();
+            generateDevisNumber();
+            // Ne pas ajouter de ligne vide - l'utilisateur utilisera les boutons rapides ou "+ Ajouter une ligne"
+            updateTotals();
+        }
+
+        // Masquer le formulaire
+        function hideCreateForm() {
+            document.getElementById('createForm').classList.add('hidden');
+            editingDevisId = null;
+        }
+
+        // Ajouter une ligne de prestation
+        function addLine() {
+            lineCounter++;
+            const container = document.getElementById('linesContainer');
+            const lineDiv = document.createElement('div');
+            lineDiv.className = 'grid grid-cols-12 gap-2 items-end';
+            lineDiv.id = `line-${lineCounter}`;
+            const currentLineId = lineCounter;
+            lineDiv.innerHTML = `
+                <div class="col-span-2">
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Type</label>
+                    <select class="w-full border border-gray-300 rounded px-3 py-2 text-sm line-type" onchange="updateDesignationList(${currentLineId})">
+                        <option value="Honoraire">Honoraire</option>
+                        <option value="Impôt">Impôt</option>
+                    </select>
+                </div>
+                <div class="col-span-4">
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Désignation</label>
+                    <select class="w-full border border-gray-300 rounded px-3 py-2 text-sm line-designation-select" onchange="onDesignationChange(${currentLineId})">
+                        ${getDesignationOptions('Honoraire')}
+                    </select>
+                    <input type="text" class="w-full border border-gray-300 rounded px-3 py-2 text-sm line-designation-input hidden" placeholder="Saisir la désignation...">
+                </div>
+                <div class="col-span-1">
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Qté</label>
+                    <input type="number" value="1" min="1" class="w-full border border-gray-300 rounded px-3 py-2 text-sm line-qty" onchange="updateLineTotal(${currentLineId}); updateTotals()">
+                </div>
+                <div class="col-span-2">
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Prix unitaire</label>
+                    <input type="number" value="0" min="0" class="w-full border border-gray-300 rounded px-3 py-2 text-sm line-price" onchange="updateLineTotal(${currentLineId}); updateTotals()">
+                </div>
+                <div class="col-span-2">
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Total</label>
+                    <input type="number" readonly class="w-full border border-gray-300 rounded px-3 py-2 text-sm bg-gray-100 line-total">
+                </div>
+                <div class="col-span-1">
+                    <button type="button" onclick="removeLine(${currentLineId})" class="w-full bg-red-600 text-white px-2 py-2 rounded hover:bg-red-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mx-auto">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+            `;
+            container.appendChild(lineDiv);
+        }
+
+        // Mettre à jour le total d'une ligne
+        function updateLineTotal(lineId) {
+            const line = document.getElementById(`line-${lineId}`);
+            if (!line) return;
+            const qty = parseFloat(line.querySelector('.line-qty').value) || 0;
+            const price = parseFloat(line.querySelector('.line-price').value) || 0;
+            line.querySelector('.line-total').value = qty * price;
+        }
+
+        // Supprimer une ligne
+        function removeLine(lineId) {
+            document.getElementById(`line-${lineId}`).remove();
+            updateTotals();
+        }
+
+        // Mettre à jour les totaux
+        function updateTotals() {
+            const lines = document.querySelectorAll('#linesContainer > div');
+            let totalImpots = 0;
+            let totalHonoraires = 0;
+
+            lines.forEach(line => {
+                const type = line.querySelector('.line-type').value;
+                const total = parseFloat(line.querySelector('.line-total').value) || 0;
+
+                if (type === 'Impôt') {
+                    totalImpots += total;
+                } else {
+                    totalHonoraires += total;
+                }
+            });
+
+            document.getElementById('totalImpots').textContent = totalImpots.toLocaleString('fr-FR') + ' F CFA';
+            document.getElementById('totalHonoraires').textContent = totalHonoraires.toLocaleString('fr-FR') + ' F CFA';
+            document.getElementById('totalGeneral').textContent = (totalImpots + totalHonoraires).toLocaleString('fr-FR') + ' F CFA';
+        }
+
+        // Sauvegarder le devis
+        function saveDevis() {
+            const clientIndex = document.getElementById('clientSelect').value;
+            const devisNumber = document.getElementById('devisNumber').value;
+
+            if (!clientIndex || !devisNumber) {
+                PrismaToast.warning('Veuillez sélectionner un client et saisir un numéro de devis');
+                return;
+            }
+
+            if (isManualMode && !document.getElementById('manualDate').value) {
+                PrismaToast.warning('En mode manuel, veuillez saisir la date du devis');
+                return;
+            }
+
+            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+            const client = clients[clientIndex];
+
+            // Vérifier que la fiche client est complète
+            const champsManquants = verifierFicheClient(client);
+            if (champsManquants.length > 0) {
+                PrismaToast.error(`Impossible d'émettre le devis. Fiche client incomplète : ${champsManquants.join(', ')}`);
+                return;
+            }
+
+            const lines = document.querySelectorAll('#linesContainer > div');
+            if (lines.length === 0) {
+                PrismaToast.warning('Veuillez ajouter au moins une prestation');
+                return;
+            }
+
+            // Vérifier que toutes les lignes ont une désignation
+            let hasEmptyDesignation = false;
+            lines.forEach(line => {
+                const designation = getLineDesignation(line);
+                if (!designation) {
+                    hasEmptyDesignation = true;
+                }
+            });
+
+            if (hasEmptyDesignation) {
+                PrismaToast.warning('Veuillez remplir toutes les désignations');
+                return;
+            }
+
+            // Collecter les lignes
+            const prestations = [];
+            let total = 0;
+            let totalImpots = 0;
+            let totalHonoraires = 0;
+
+            lines.forEach(line => {
+                const type = line.querySelector('.line-type').value;
+                const designation = getLineDesignation(line);
+                const qty = parseFloat(line.querySelector('.line-qty').value);
+                const price = parseFloat(line.querySelector('.line-price').value);
+                const lineTotal = qty * price;
+                total += lineTotal;
+
+                if (type === 'Impôt') {
+                    totalImpots += lineTotal;
+                } else {
+                    totalHonoraires += lineTotal;
+                }
+
+                prestations.push({ type, designation, qty, price, total: lineTotal });
+            });
+
+            const allDevis = JSON.parse(localStorage.getItem('devis') || '[]');
+
+            if (editingDevisId) {
+                // Mode modification : mettre à jour le devis existant
+                const index = allDevis.findIndex(d => d.id === editingDevisId);
+                if (index !== -1) {
+                    const existingDevis = allDevis[index];
+                    allDevis[index] = {
+                        ...existingDevis,
+                        number: devisNumber,
+                        client: client.name,
+                        clientData: client,
+                        prestations,
+                        total,
+                        totalImpots,
+                        totalHonoraires,
+                        dateModification: new Date().toISOString()
+                    };
+                    localStorage.setItem('devis', JSON.stringify(allDevis));
+                    hideCreateForm();
+                    loadDevisList();
+                    PrismaToast.success('Devis modifié avec succès !');
+                    displayDevis(allDevis[index]);
+                }
+            } else {
+                // Mode création : ajouter un nouveau devis
+                const manualDateVal = document.getElementById('manualDate').value;
+                const devisDate = (isManualMode && manualDateVal) ? new Date(manualDateVal + 'T12:00:00').toISOString() : new Date().toISOString();
+
+                const devis = {
+                    id: Date.now(),
+                    number: devisNumber,
+                    client: client.name,
+                    clientData: client,
+                    prestations,
+                    total,
+                    totalImpots,
+                    totalHonoraires,
+                    date: devisDate,
+                    isManual: isManualMode || false,
+                    status: 'brouillon'
+                };
+
+                allDevis.push(devis);
+                localStorage.setItem('devis', JSON.stringify(allDevis));
+                hideCreateForm();
+                loadDevisList();
+                PrismaToast.success('Devis enregistré avec succès !');
+                displayDevis(devis);
+            }
+
+            editingDevisId = null;
+        }
+
+        // Voir un devis
+        function viewDevis(id) {
+            const devis = JSON.parse(localStorage.getItem('devis') || '[]');
+            const d = devis.find(x => x.id === id);
+            if (!d) return;
+
+            displayDevis(d);
+        }
+
+        // Modifier un devis
+        function editDevis(id) {
+            loadClientSelect();
+            const allDevis = JSON.parse(localStorage.getItem('devis') || '[]');
+            const devis = allDevis.find(x => x.id === id);
+            if (!devis) return;
+
+            // Marquer qu'on est en mode édition
+            editingDevisId = id;
+
+            // Afficher le formulaire
+            document.getElementById('createForm').classList.remove('hidden');
+            document.getElementById('devisPreview').classList.add('hidden');
+
+            // Charger les données du client
+            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+            const clientIndex = clients.findIndex(c => c.name === devis.client || (devis.clientData && c.id === devis.clientData.id));
+
+            if (clientIndex !== -1) {
+                document.getElementById('clientSelect').value = clientIndex;
+                loadClientInfo(); // Charger les infos du client (impôts, etc.)
+            }
+
+            // Charger le numéro de devis
+            document.getElementById('devisNumber').value = devis.number;
+
+            // Vider les lignes existantes et recharger
+            document.getElementById('linesContainer').innerHTML = '';
+            lineCounter = 0;
+
+            // Ajouter les lignes de prestations
+            devis.prestations.forEach(p => {
+                addLine();
+                const lines = document.querySelectorAll('#linesContainer > div');
+                const lastLine = lines[lines.length - 1];
+
+                // Définir le type
+                lastLine.querySelector('.line-type').value = p.type;
+
+                // Définir la désignation
+                const select = lastLine.querySelector('.line-designation-select');
+                const input = lastLine.querySelector('.line-designation-input');
+
+                // Chercher si la désignation existe dans les options du select
+                let found = false;
+                for (let option of select.options) {
+                    if (option.value === p.designation) {
+                        select.value = p.designation;
+                        input.classList.add('hidden');
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found) {
+                    // C'est une saisie libre
+                    select.value = '__autre__';
+                    input.classList.remove('hidden');
+                    input.value = p.designation;
+                }
+
+                // Définir quantité et prix
+                lastLine.querySelector('.line-qty').value = p.qty;
+                lastLine.querySelector('.line-price').value = p.price;
+
+                // Mettre à jour le total de la ligne
+                const lineId = lastLine.id.replace('line-', '');
+                updateLineTotal(lineId);
+            });
+
+            // Changer le titre du formulaire
+            document.querySelector('#createForm h2').textContent = 'Modifier le devis';
+
+            // Mettre à jour les totaux
+            updateTotals();
+
+            window.scrollTo(0, 0);
+            PrismaToast.info('Devis chargé pour modification');
+        }
+
+        // Afficher le devis
+        function displayDevis(devis) {
+            currentPreviewDevis = devis;
+            const date = new Date(devis.date);
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            const dateStr = date.toLocaleDateString('fr-FR', options);
+
+            const prestationsHTML = devis.prestations.map((p, i) => `
+                <tr class="border-b">
+                    <td class="px-2 py-1 text-center">${i + 1}</td>
+                    <td class="px-2 py-1">
+                        <span class="inline-block px-1 py-0.5 text-xs font-semibold rounded ${p.type === 'Impôt' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}">${p.type}</span>
+                        <span class="ml-1">${p.designation}</span>
+                    </td>
+                    <td class="px-2 py-1 text-center">${p.qty}</td>
+                    <td class="px-2 py-1 text-right">${p.price.toLocaleString('fr-FR')}</td>
+                    <td class="px-2 py-1 text-right font-semibold text-blue-900">${p.total.toLocaleString('fr-FR')}</td>
+                </tr>
+            `).join('');
+
+            const statusColors = {
+                'brouillon': 'bg-gray-200 text-gray-800',
+                'envoyé': 'bg-blue-200 text-blue-800',
+                'accepté': 'bg-green-200 text-green-800',
+                'refusé': 'bg-red-200 text-red-800',
+                'converti': 'bg-purple-200 text-purple-800'
+            };
+            const statusColor = statusColors[devis.status] || 'bg-gray-200 text-gray-800';
+
+            document.getElementById('printArea').innerHTML = `
+                <div class="flex justify-between items-start mb-3">
+                    <div>
+                        <h1 class="text-xl font-bold text-blue-900">PRISMA GESTION</h1>
+                        <p class="text-xs text-gray-600 uppercase tracking-widest">Comptabilité - Finance - Fiscalité</p>
+                        <div class="text-xs mt-1 text-gray-700">
+                            <p>Siège Social : Yaoundé - Bata Longkak</p>
+                            <p>Tél : (237) 656 752 475 / 671 050 546</p>
+                            <p>N.I.U : M052116042979Z</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-2xl font-bold text-blue-900">DEVIS / PROFORMA</div>
+                        <p class="text-xs text-gray-600 mt-1">Date : ${dateStr}</p>
+                        <span class="inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-semibold ${statusColor}">${devis.status}</span>
+                    </div>
+                </div>
+
+                <div style="border-bottom: 2px solid #1e3a8a; margin-bottom: 0.75rem;"></div>
+
+                <div class="grid grid-cols-2 gap-3 mb-3">
+                    <div style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; padding: 0.5rem; border-radius: 6px;">
+                        <p class="text-xs opacity-90">Numéro de devis</p>
+                        <p class="text-lg font-bold">${devis.number}</p>
+                    </div>
+                    <div style="background-color: #f9fafb; padding: 0.5rem; border-radius: 6px; border: 1px solid #e5e7eb;">
+                        <p class="text-xs font-semibold text-gray-600 uppercase">Destinataire :</p>
+                        <p class="font-bold text-sm">${devis.clientData.name}</p>
+                        ${devis.clientData.niu ? `<p class="text-xs text-gray-700">NIU : ${devis.clientData.niu}</p>` : ''}
+                        ${devis.clientData.ville ? `<p class="text-xs text-gray-700">${devis.clientData.ville}${devis.clientData.quartier ? ' - ' + devis.clientData.quartier : ''}</p>` : ''}
+                        ${devis.clientData.contact ? `<p class="text-xs text-gray-700">Contact : ${devis.clientData.contact}</p>` : ''}
+                    </div>
+                </div>
+
+                <table class="w-full border-collapse mb-3" style="font-size: 0.8rem;">
+                    <thead>
+                        <tr style="background-color: #1e3a8a; color: white;">
+                            <th class="px-2 py-1.5 text-center" style="width: 8%;">N°</th>
+                            <th class="px-2 py-1.5 text-left" style="width: 47%;">Désignation</th>
+                            <th class="px-2 py-1.5 text-center" style="width: 12%;">Qté</th>
+                            <th class="px-2 py-1.5 text-right" style="width: 16%;">P.U.</th>
+                            <th class="px-2 py-1.5 text-right" style="width: 17%;">Montant</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${prestationsHTML}
+                        <tr class="total-row" style="background-color: #1e3a8a; color: white; font-weight: bold;">
+                            <td colspan="4" class="px-2 py-1.5 text-right">TOTAL</td>
+                            <td class="px-2 py-1.5 text-right text-base">${devis.total.toLocaleString('fr-FR')} F CFA</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="grid grid-cols-2 gap-3 mb-3">
+                    <div style="background-color: #dbeafe; border-left: 3px solid #3b82f6; padding: 0.5rem;">
+                        <p class="text-xs text-blue-900 font-semibold">Total Impôts</p>
+                        <p class="text-lg font-bold text-blue-900">${(devis.totalImpots || 0).toLocaleString('fr-FR')} F CFA</p>
+                    </div>
+                    <div style="background-color: #d1fae5; border-left: 3px solid #10b981; padding: 0.5rem;">
+                        <p class="text-xs text-green-900 font-semibold">Total Honoraires</p>
+                        <p class="text-lg font-bold text-green-900">${(devis.totalHonoraires || 0).toLocaleString('fr-FR')} F CFA</p>
+                    </div>
+                </div>
+
+                <div style="background-color: #fef3c7; border-left: 3px solid #f59e0b; padding: 0.5rem; margin-bottom: 0.5rem;">
+                    <h3 class="font-bold text-yellow-900 text-sm mb-1">Conditions du devis</h3>
+                    <div class="text-xs text-yellow-900">
+                        <p><strong>Validité :</strong> Ce devis est valable 30 jours à compter de sa date d'émission</p>
+                        <p><strong>Moyen de paiement :</strong> 656 75 24 75 / 694 31 05 54 — OBIANG TIME Nathan</p>
+                        <p class="mt-1 italic" style="font-size: 0.65rem;">Ce devis ne constitue pas une facture et n'engage le client qu'après acceptation formelle.</p>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-end mt-2">
+                    <div class="text-center">
+                        <p class="text-xs font-semibold text-gray-700">Bon pour accord</p>
+                        <p class="text-xs text-gray-500">Date et signature du client</p>
+                        <div style="height: 40px; width: 150px; border: 1px dashed #9ca3af; margin-top: 0.25rem; border-radius: 4px;"></div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <img id="cachetImg" src="" alt="" style="max-height: 60px; display: none;">
+                        <div class="text-center">
+                            <p class="font-bold text-blue-900 text-sm">Pour PRISMA GESTION</p>
+                            <img id="signatureImg" src="" alt="" style="max-height: 40px; display: none; margin: 0.25rem auto;">
+                            <div style="border-top: 1px solid #9ca3af; padding-top: 0.25rem; margin-top: 0.25rem;">
+                                <p class="font-bold text-sm" id="signataireNom">OBIANG TIME Nathan</p>
+                                <p class="text-xs text-gray-600" id="signataireTitre">Directeur Associé</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pied de page -->
+                <div style="margin-top: 1.5rem; padding-top: 0.5rem; border-top: 1px solid #e5e7eb; text-align: center;">
+                    <p style="font-size: 0.7rem; color: #6b7280; margin: 0;">
+                        <span style="font-weight: 600; color: #1e3a8a;">PRISMA Manager</span> — PRISMA GESTION : L'expertise qui sécurise votre gestion.
+                    </p>
+                </div>
+            `;
+
+            document.querySelector('.no-print').classList.add('hidden');
+            document.getElementById('devisPreview').classList.remove('hidden');
+
+            // Charger la signature et le cachet du cabinet
+            loadCabinetSignatures();
+
+            window.scrollTo(0, 0);
+        }
+
+        function loadCabinetSignatures() {
+            const config = JSON.parse(localStorage.getItem('cabinetConfig') || '{}');
+
+            const signatureImg = document.getElementById('signatureImg');
+            const cachetImg = document.getElementById('cachetImg');
+            const signataireNom = document.getElementById('signataireNom');
+            const signataireTitre = document.getElementById('signataireTitre');
+
+            if (config.signature && signatureImg) {
+                signatureImg.src = config.signature;
+                signatureImg.style.display = 'block';
+            }
+
+            if (config.cachet && cachetImg) {
+                cachetImg.src = config.cachet;
+                cachetImg.style.display = 'block';
+            }
+
+            if (config.signataireNom && signataireNom) {
+                signataireNom.textContent = config.signataireNom;
+            }
+
+            if (config.signataireTitre && signataireTitre) {
+                signataireTitre.textContent = config.signataireTitre;
+            }
+        }
+
+        // Retour à la liste
+        function backToList() {
+            document.querySelector('.no-print').classList.remove('hidden');
+            document.getElementById('devisPreview').classList.add('hidden');
+            currentPreviewDevis = null;
+            window.scrollTo(0, 0);
+        }
+
+        // Changer le statut via la liste déroulante
+        function changeStatus(id, newStatus) {
+            const statuses = ['brouillon', 'envoyé', 'accepté', 'refusé'];
+
+            if (!newStatus || !statuses.includes(newStatus)) {
+                PrismaToast.error('Statut invalide');
+                return;
+            }
+
+            const devis = JSON.parse(localStorage.getItem('devis') || '[]');
+            const index = devis.findIndex(d => d.id === id);
+            if (index !== -1) {
+                devis[index].status = newStatus;
+                localStorage.setItem('devis', JSON.stringify(devis));
+                loadDevisList();
+                PrismaToast.success(`Statut modifié : ${newStatus}`);
+            }
+        }
+
+        // Convertir en facture
+        function convertToFacture(id) {
+            PrismaModal.confirm('Convertir ce devis en facture ?', () => {
+                const devis = JSON.parse(localStorage.getItem('devis') || '[]');
+                const d = devis.find(x => x.id === id);
+                if (!d) return;
+
+                // Créer la facture
+                const factures = JSON.parse(localStorage.getItem('factures') || '[]');
+                const num = String(factures.length + 1).padStart(4, '0');
+                const date = new Date();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+
+                const facture = {
+                    id: Date.now(),
+                    number: `N° ${num}/${date.getFullYear()}/${month}`,
+                    client: d.client,
+                    clientData: d.clientData,
+                    prestations: d.prestations,
+                    total: d.total,
+                    totalImpots: d.totalImpots,
+                    totalHonoraires: d.totalHonoraires,
+                    date: new Date().toISOString(),
+                    status: 'émise',
+                    fromDevis: true,
+                    fromDevisId: d.id,
+                    fromDevisNumber: d.number
+                };
+
+                factures.push(facture);
+                localStorage.setItem('factures', JSON.stringify(factures));
+
+                // Mettre à jour le statut du devis
+                const index = devis.findIndex(x => x.id === id);
+                if (index !== -1) {
+                    devis[index].status = 'converti';
+                    devis[index].convertedToFacture = facture.number;
+                    devis[index].convertedToFactureId = facture.id;
+                    localStorage.setItem('devis', JSON.stringify(devis));
+                }
+
+                loadDevisList();
+                PrismaToast.success('Devis converti en facture avec succès ! Numéro : ' + facture.number);
+            });
+        }
+
+        // Supprimer un devis
+        function deleteDevis(id) {
+            PrismaModal.confirmDelete('Supprimer ce devis ?', () => {
+                const devis = JSON.parse(localStorage.getItem('devis') || '[]');
+                const filtered = devis.filter(d => d.id !== id);
+                localStorage.setItem('devis', JSON.stringify(filtered));
+                loadDevisList();
+                PrismaToast.success('Devis supprimé');
+            });
+        }
+
+        // Télécharger en PDF
+        function downloadPDF() {
+            if (typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') {
+                PrismaToast.error('Erreur : Bibliothèques non chargées.');
+                return;
+            }
+
+            PrismaLoader.show('Génération du PDF...');
+
+            html2canvas(document.getElementById('printArea'), { scale: 2 }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
+                const imgWidth = 210;
+                const imgHeight = canvas.height * imgWidth / canvas.width;
+                pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+                PrismaLoader.hide();
+                const devis = currentPreviewDevis || {};
+                const fileNumber = sanitizePdfSegment(devis.number, 'Devis');
+                const fileClient = sanitizePdfSegment((devis.clientData && devis.clientData.name) || devis.client, 'Client');
+                pdf.save(`Devis_${fileNumber}_${fileClient}.pdf`);
+                PrismaToast.success('PDF téléchargé avec succès !');
+            }).catch(err => {
+                PrismaLoader.hide();
+                PrismaToast.error('Erreur lors de la génération du PDF');
+            });
+        }
+
+        // Initialisation
+        loadDevisList();
+
+        // Synchroniser les données entre onglets
+        PrismaSync.watch('devis', () => {
+            loadDevisList();
+            PrismaToast.info('Liste des devis mise à jour', 2000);
+        });
+        PrismaSync.watch('clients', () => {
+            loadClientSelect();
+        });
+    </script>
+</body>
+</html>

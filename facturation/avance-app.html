@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proposition de Paiement - PRISMA GESTION</title>
+    <script src="assets/css/tailwindcss.min.js"></script>
+    <link rel="stylesheet" href="prisma-print.css">
+    <link rel="stylesheet" href="assets/css/inter-font.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .bg-section { background-color: #dbeafe; color: #1e3a8a; font-weight: bold; }
+        @media print {
+            body { background: white; margin: 0; padding: 0; }
+            .no-print { display: none !important; }
+            .print-area { box-shadow: none !important; padding: 0 !important; }
+            @page { size: A4; margin: 10mm 10mm; }
+            th { background-color: #c9dcfb !important; color: #1e3a8a !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .bg-section { background-color: #dbeafe !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <nav class="bg-blue-900 text-white p-4 shadow-lg no-print">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <a href="index.html" class="inline-flex items-center px-3 py-1.5 border border-white rounded-lg shadow-sm text-white hover:bg-white hover:text-blue-900 transition-colors duration-200">← PRISMA GESTION</a>
+            <span class="text-sm text-blue-200">Proposition de Paiement</span>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto p-6 no-print">
+        <!-- Liste des propositions existantes -->
+        <div id="proposalListSection" class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-gray-800">Propositions de paiement</h2>
+                <button onclick="showCreateForm()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                    + Nouvelle proposition
+                </button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="px-4 py-3 text-left">Date</th>
+                            <th class="px-4 py-3 text-left">Client</th>
+                            <th class="px-4 py-3 text-right">Impôts</th>
+                            <th class="px-4 py-3 text-right">Honoraires</th>
+                            <th class="px-4 py-3 text-right">Total</th>
+                            <th class="px-4 py-3 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="proposalTable">
+                        <tr>
+                            <td colspan="6" class="text-center py-8 text-gray-500">Aucune proposition</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Formulaire de création / modification -->
+        <div id="createForm" class="hidden bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 id="formTitle" class="text-2xl font-bold text-gray-800 mb-4">Créer une proposition de paiement</h2>
+
+            <!-- Toggle Mode Auto/Manuel -->
+            <div class="mb-4 flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <span class="text-sm font-semibold text-gray-700">Mode de saisie :</span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="manualModeToggle" onchange="toggleManualMode()" class="sr-only peer">
+                    <div class="w-11 h-6 bg-blue-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:bg-orange-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+                </label>
+                <span id="modeLabel" class="text-sm font-medium text-blue-700">Automatique</span>
+                <span id="modeHint" class="text-xs text-gray-500 ml-2">Date générée automatiquement</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Client *</label>
+                    <select id="clientSelect" onchange="onClientChange()" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+                        <option value="">-- Sélectionner un client --</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Date manuelle (visible uniquement en mode manuel) -->
+            <div id="manualDateSection" class="hidden mb-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-orange-700 mb-2">Date de la proposition *</label>
+                        <input type="date" id="manualDate" class="w-full border border-orange-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 bg-orange-50">
+                        <p class="text-xs text-orange-500 mt-1">Saisir la date figurant sur le document original</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Importer depuis un devis ou une facture -->
+            <div id="documentSection" class="hidden mb-4 p-4 bg-orange-50 rounded-lg border border-orange-200">
+                <label class="block text-sm font-semibold text-orange-800 mb-2">Importer depuis un devis ou une facture (optionnel)</label>
+                <select id="documentSelect" onchange="importFromDocument()" class="w-full border border-orange-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 bg-white">
+                    <option value="">-- Sélectionner un document --</option>
+                </select>
+                <p class="text-xs text-orange-600 mt-1">Les prestations seront importées avec leur base annuelle</p>
+            </div>
+
+            <div class="mb-4">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-lg font-bold text-gray-800">Lignes de paiement</h3>
+                    <button onclick="addPaymentLine()" class="bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 text-sm">
+                        + Ajouter une ligne
+                    </button>
+                </div>
+                <div id="linesContainer" class="space-y-2"></div>
+            </div>
+
+            <div class="bg-gray-100 p-4 rounded-lg mb-4">
+                <div class="flex justify-between items-center">
+                    <span class="text-lg font-bold text-gray-700">TOTAL À PAYER</span>
+                    <span class="text-2xl font-bold text-blue-900" id="totalDisplay">0 F CFA</span>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Note (optionnelle)</label>
+                <textarea id="noteText" rows="3" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500" placeholder="Ajoutez une note explicative..."></textarea>
+            </div>
+
+            <div class="flex justify-end gap-4 mt-6">
+                <button onclick="hideCreateForm()" class="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition">
+                    Annuler
+                </button>
+                <button onclick="generateProposal()" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition">
+                    Enregistrer la proposition
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="proposalPreview" class="hidden">
+        <div class="max-w-4xl mx-auto bg-white p-8 print-area" id="printArea"></div>
+        <div class="max-w-4xl mx-auto mt-6 mb-6 flex justify-center gap-4 no-print">
+            <button onclick="window.print()" class="bg-gray-700 text-white px-6 py-2 rounded-lg hover:bg-gray-800 transition">Imprimer</button>
+            <button onclick="downloadPDF()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">Télécharger PDF</button>
+            <button onclick="backToForm()" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition">Retour</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="prisma-components.js"></script>
+    <script>
+        let lineCounter = 0;
+        let selectedDocument = null;
+        let editingProposalId = null;
+        let isManualMode = false;
+        let currentPreviewProposal = null;
+
+        function sanitizePdfSegment(value, fallback = 'Document') {
+            return String(value || '')
+                .replace(/^N[°ºo]?\s*/i, '')
+                .replace(/[\/\\]/g, '-')
+                .replace(/[^a-zA-Z0-9\u00C0-\u00FF\s\-]/g, '')
+                .trim() || fallback;
+        }
+
+        function toggleManualMode() {
+            isManualMode = document.getElementById('manualModeToggle').checked;
+            const label = document.getElementById('modeLabel');
+            const hint = document.getElementById('modeHint');
+            const manualDateSection = document.getElementById('manualDateSection');
+
+            if (isManualMode) {
+                label.textContent = 'Manuel';
+                label.className = 'text-sm font-medium text-orange-700';
+                hint.textContent = 'Saisir la date du document original';
+                manualDateSection.classList.remove('hidden');
+            } else {
+                label.textContent = 'Automatique';
+                label.className = 'text-sm font-medium text-blue-700';
+                hint.textContent = 'Date générée automatiquement';
+                manualDateSection.classList.add('hidden');
+            }
+        }
+
+        function loadClientSelect() {
+            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+            const select = document.getElementById('clientSelect');
+            clients.forEach((client, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = client.name;
+                select.appendChild(option);
+            });
+        }
+
+        function onClientChange() {
+            const clientIndex = document.getElementById('clientSelect').value;
+            if (!clientIndex) {
+                document.getElementById('documentSection').classList.add('hidden');
+                selectedDocument = null;
+                return;
+            }
+
+            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+            const client = clients[clientIndex];
+            loadDocumentSelect(client.name);
+        }
+
+        function loadDocumentSelect(clientName) {
+            const devis = JSON.parse(localStorage.getItem('devis') || '[]');
+            const factures = JSON.parse(localStorage.getItem('factures') || '[]');
+            const select = document.getElementById('documentSelect');
+
+            // Filtrer les documents du client
+            const clientDevis = devis.filter(d => d.client === clientName && d.status !== 'converti');
+            const clientFactures = factures.filter(f => f.client === clientName);
+
+            select.innerHTML = '<option value="">-- Sélectionner un document --</option>';
+
+            if (clientDevis.length === 0 && clientFactures.length === 0) {
+                document.getElementById('documentSection').classList.add('hidden');
+                return;
+            }
+
+            // Ajouter les devis
+            if (clientDevis.length > 0) {
+                const optgroupDevis = document.createElement('optgroup');
+                optgroupDevis.label = 'Devis';
+                clientDevis.forEach(d => {
+                    const option = document.createElement('option');
+                    option.value = `devis_${d.id}`;
+                    const dateStr = new Date(d.date).toLocaleDateString('fr-FR');
+                    option.textContent = `${d.number} - ${dateStr} - ${d.total.toLocaleString('fr-FR')} F CFA`;
+                    optgroupDevis.appendChild(option);
+                });
+                select.appendChild(optgroupDevis);
+            }
+
+            // Ajouter les factures
+            if (clientFactures.length > 0) {
+                const optgroupFactures = document.createElement('optgroup');
+                optgroupFactures.label = 'Factures';
+                clientFactures.forEach(f => {
+                    const option = document.createElement('option');
+                    option.value = `facture_${f.id}`;
+                    const dateStr = new Date(f.date).toLocaleDateString('fr-FR');
+                    option.textContent = `${f.number} - ${dateStr} - ${f.total.toLocaleString('fr-FR')} F CFA`;
+                    optgroupFactures.appendChild(option);
+                });
+                select.appendChild(optgroupFactures);
+            }
+
+            document.getElementById('documentSection').classList.remove('hidden');
+        }
+
+        function importFromDocument() {
+            const documentValue = document.getElementById('documentSelect').value;
+
+            if (!documentValue) {
+                selectedDocument = null;
+                return;
+            }
+
+            const [type, id] = documentValue.split('_');
+            const idNum = parseInt(id);
+
+            let document_data;
+            if (type === 'devis') {
+                const devis = JSON.parse(localStorage.getItem('devis') || '[]');
+                document_data = devis.find(d => d.id === idNum);
+            } else {
+                const factures = JSON.parse(localStorage.getItem('factures') || '[]');
+                document_data = factures.find(f => f.id === idNum);
+            }
+
+            if (!document_data) return;
+
+            selectedDocument = { type, id: idNum, number: document_data.number };
+
+            // Vider les lignes existantes
+            document.getElementById('linesContainer').innerHTML = '';
+            lineCounter = 0;
+
+            // Importer les prestations
+            if (document_data.prestations && document_data.prestations.length > 0) {
+                document_data.prestations.forEach(p => {
+                    const total = p.total || (p.qty * p.price);
+                    addPaymentLineWithData(p.type, p.designation, total, 100, total);
+                });
+            }
+
+            updateTotal();
+            PrismaToast.success(`Lignes du ${type} importées !`);
+        }
+
+        function addPaymentLineWithData(type, designation, base, fraction, amount) {
+            lineCounter++;
+            const currentLineId = lineCounter;
+            const container = document.getElementById('linesContainer');
+            const div = document.createElement('div');
+            div.className = 'grid grid-cols-12 gap-2';
+            div.id = `line-${lineCounter}`;
+            div.innerHTML = `
+                <div class="col-span-2">
+                    <select class="w-full border border-gray-300 rounded px-3 py-2 text-sm line-type">
+                        <option value="Impôt" ${type === 'Impôt' ? 'selected' : ''}>Impôt</option>
+                        <option value="Honoraire" ${type === 'Honoraire' ? 'selected' : ''}>Honoraire</option>
+                    </select>
+                </div>
+                <div class="col-span-4">
+                    <input type="text" placeholder="Désignation" value="${designation || ''}" class="w-full border border-gray-300 rounded px-3 py-2 text-sm line-designation">
+                </div>
+                <div class="col-span-2">
+                    <input type="number" placeholder="Base annuelle" value="${base || 0}" class="w-full border border-gray-300 rounded px-3 py-2 text-sm line-base" onchange="computeAmount(${currentLineId})">
+                </div>
+                <div class="col-span-1">
+                    <input type="number" placeholder="%" min="0" max="100" value="${fraction != null ? fraction : 100}" class="w-full border border-gray-300 rounded px-3 py-2 text-sm line-fraction" onchange="computeAmount(${currentLineId})">
+                </div>
+                <div class="col-span-2">
+                    <input type="number" value="${amount || 0}" readonly class="w-full border border-gray-300 rounded px-3 py-2 text-sm bg-gray-100 line-amount">
+                </div>
+                <div class="col-span-1">
+                    <button onclick="document.getElementById('line-${lineCounter}').remove(); updateTotal()" class="w-full bg-red-600 text-white px-2 py-2 rounded hover:bg-red-700">×</button>
+                </div>
+            `;
+            container.appendChild(div);
+        }
+
+        function addPaymentLine() {
+            lineCounter++;
+            const currentLineId = lineCounter;
+            const container = document.getElementById('linesContainer');
+            const div = document.createElement('div');
+            div.className = 'grid grid-cols-12 gap-2';
+            div.id = `line-${lineCounter}`;
+            div.innerHTML = `
+                <div class="col-span-2">
+                    <select class="w-full border border-gray-300 rounded px-3 py-2 text-sm line-type">
+                        <option value="Impôt">Impôt</option>
+                        <option value="Honoraire">Honoraire</option>
+                    </select>
+                </div>
+                <div class="col-span-4">
+                    <input type="text" placeholder="Désignation" class="w-full border border-gray-300 rounded px-3 py-2 text-sm line-designation">
+                </div>
+                <div class="col-span-2">
+                    <input type="number" placeholder="Base annuelle" value="0" class="w-full border border-gray-300 rounded px-3 py-2 text-sm line-base" onchange="computeAmount(${currentLineId})">
+                </div>
+                <div class="col-span-1">
+                    <input type="number" placeholder="%" min="0" max="100" value="100" class="w-full border border-gray-300 rounded px-3 py-2 text-sm line-fraction" onchange="computeAmount(${currentLineId})">
+                </div>
+                <div class="col-span-2">
+                    <input type="number" value="0" readonly class="w-full border border-gray-300 rounded px-3 py-2 text-sm bg-gray-100 line-amount">
+                </div>
+                <div class="col-span-1">
+                    <button onclick="document.getElementById('line-${lineCounter}').remove(); updateTotal()" class="w-full bg-red-600 text-white px-2 py-2 rounded hover:bg-red-700">×</button>
+                </div>
+            `;
+            container.appendChild(div);
+        }
+
+        function computeAmount(lineId) {
+            const line = document.getElementById(`line-${lineId}`);
+            if (!line) return;
+            const base = parseFloat(line.querySelector('.line-base').value) || 0;
+            const fraction = parseFloat(line.querySelector('.line-fraction').value) || 0;
+            line.querySelector('.line-amount').value = Math.round(base * fraction / 100);
+            updateTotal();
+        }
+
+        function updateTotal() {
+            const amounts = Array.from(document.querySelectorAll('.line-amount')).reduce((sum, input) => sum + (parseFloat(input.value) || 0), 0);
+            document.getElementById('totalDisplay').textContent = amounts.toLocaleString('fr-FR') + ' F CFA';
+        }
+
+        function generateProposal() {
+            const clientIndex = document.getElementById('clientSelect').value;
+            if (!clientIndex) {
+                PrismaToast.warning('Veuillez sélectionner un client');
+                return;
+            }
+
+            if (isManualMode && !document.getElementById('manualDate').value) {
+                PrismaToast.warning('En mode manuel, veuillez saisir la date du document');
+                return;
+            }
+
+            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+            const client = clients[clientIndex];
+
+            const lines = Array.from(document.querySelectorAll('#linesContainer > div')).map(div => ({
+                type: div.querySelector('.line-type').value,
+                designation: div.querySelector('.line-designation').value,
+                base: parseFloat(div.querySelector('.line-base').value),
+                fraction: parseFloat(div.querySelector('.line-fraction').value) || 0,
+                amount: parseFloat(div.querySelector('.line-amount').value)
+            }));
+
+            if (lines.length === 0) {
+                PrismaToast.warning('Veuillez ajouter au moins une ligne');
+                return;
+            }
+
+            const fiscalLines = lines.filter(l => l.type === 'Impôt');
+            const honorairesLines = lines.filter(l => l.type === 'Honoraire');
+
+            const total = lines.reduce((sum, l) => sum + l.amount, 0);
+            const totalImpots = fiscalLines.reduce((sum, l) => sum + l.amount, 0);
+            const totalHonoraires = honorairesLines.reduce((sum, l) => sum + l.amount, 0);
+            const note = document.getElementById('noteText').value;
+
+            const propositions = JSON.parse(localStorage.getItem('propositions') || '[]');
+
+            if (editingProposalId) {
+                // Mode modification
+                const index = propositions.findIndex(p => p.id === editingProposalId);
+                if (index !== -1) {
+                    propositions[index] = {
+                        ...propositions[index],
+                        client: client.name,
+                        clientData: client,
+                        lignes: lines,
+                        totalImpots,
+                        totalHonoraires,
+                        total,
+                        note,
+                        dateModification: new Date().toISOString(),
+                        sourceType: selectedDocument ? selectedDocument.type : propositions[index].sourceType,
+                        sourceId: selectedDocument ? selectedDocument.id : propositions[index].sourceId,
+                        sourceNumber: selectedDocument ? selectedDocument.number : propositions[index].sourceNumber
+                    };
+                    localStorage.setItem('propositions', JSON.stringify(propositions));
+                    PrismaToast.success('Proposition modifiée avec succès !');
+                    hideCreateForm();
+                    loadProposalsList();
+                    displayProposalFromData(propositions[index]);
+                }
+            } else {
+                // Mode création
+                const manualDateVal = document.getElementById('manualDate').value;
+                const propositionDate = (isManualMode && manualDateVal) ? new Date(manualDateVal + 'T12:00:00').toISOString() : new Date().toISOString();
+
+                const proposition = {
+                    id: Date.now(),
+                    client: client.name,
+                    clientData: client,
+                    lignes: lines,
+                    totalImpots,
+                    totalHonoraires,
+                    total,
+                    note,
+                    date: propositionDate,
+                    isManual: isManualMode || false,
+                    sourceType: selectedDocument ? selectedDocument.type : null,
+                    sourceId: selectedDocument ? selectedDocument.id : null,
+                    sourceNumber: selectedDocument ? selectedDocument.number : null
+                };
+
+                propositions.push(proposition);
+                localStorage.setItem('propositions', JSON.stringify(propositions));
+                PrismaToast.success('Proposition enregistrée avec succès !');
+                hideCreateForm();
+                loadProposalsList();
+                displayProposalFromData(proposition);
+            }
+
+            editingProposalId = null;
+        }
+
+        // Charger la liste des propositions
+        function loadProposalsList() {
+            const propositions = JSON.parse(localStorage.getItem('propositions') || '[]');
+            const table = document.getElementById('proposalTable');
+
+            if (propositions.length === 0) {
+                table.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-500">Aucune proposition</td></tr>';
+                return;
+            }
+
+            table.innerHTML = propositions.slice().reverse().map(p => {
+                const date = new Date(p.date);
+                const dateStr = date.toLocaleDateString('fr-FR');
+                return `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="px-4 py-3 text-sm">${dateStr}</td>
+                        <td class="px-4 py-3 font-semibold">${p.client}</td>
+                        <td class="px-4 py-3 text-right text-sm text-blue-800">${(p.totalImpots || 0).toLocaleString('fr-FR')} F CFA</td>
+                        <td class="px-4 py-3 text-right text-sm text-green-800">${(p.totalHonoraires || 0).toLocaleString('fr-FR')} F CFA</td>
+                        <td class="px-4 py-3 text-right font-bold text-blue-900">${p.total.toLocaleString('fr-FR')} F CFA</td>
+                        <td class="px-4 py-3 text-center">
+                            <div class="flex justify-center gap-2">
+                                <button onclick="viewProposal(${p.id})" class="bg-gray-600 text-white px-3 py-1 rounded text-sm hover:bg-gray-700">Voir</button>
+                                <button onclick="editProposal(${p.id})" class="bg-yellow-600 text-white px-3 py-1 rounded text-sm hover:bg-yellow-700">Modifier</button>
+                                <button onclick="deleteProposal(${p.id})" class="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700">Suppr.</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Afficher le formulaire de création
+        function showCreateForm() {
+            editingProposalId = null;
+            selectedDocument = null;
+            isManualMode = false;
+            document.getElementById('manualModeToggle').checked = false;
+            document.getElementById('modeLabel').textContent = 'Automatique';
+            document.getElementById('modeLabel').className = 'text-sm font-medium text-blue-700';
+            document.getElementById('modeHint').textContent = 'Date générée automatiquement';
+            document.getElementById('manualDateSection').classList.add('hidden');
+            document.getElementById('manualDate').value = '';
+            document.getElementById('formTitle').textContent = 'Créer une proposition de paiement';
+            document.getElementById('clientSelect').value = '';
+            document.getElementById('noteText').value = '';
+            document.getElementById('linesContainer').innerHTML = '';
+            document.getElementById('documentSection').classList.add('hidden');
+            lineCounter = 0;
+            // Recharger la liste des clients
+            document.getElementById('clientSelect').innerHTML = '<option value="">-- Sélectionner un client --</option>';
+            loadClientSelect();
+            addPaymentLine();
+            updateTotal();
+            document.getElementById('createForm').classList.remove('hidden');
+            document.getElementById('proposalListSection').classList.add('hidden');
+            window.scrollTo(0, 0);
+        }
+
+        // Masquer le formulaire
+        function hideCreateForm() {
+            document.getElementById('createForm').classList.add('hidden');
+            document.getElementById('proposalListSection').classList.remove('hidden');
+            editingProposalId = null;
+            selectedDocument = null;
+        }
+
+        // Voir une proposition
+        function viewProposal(id) {
+            const propositions = JSON.parse(localStorage.getItem('propositions') || '[]');
+            const p = propositions.find(x => x.id === id);
+            if (!p) return;
+            displayProposalFromData(p);
+        }
+
+        // Afficher une proposition depuis les données sauvegardées
+        function displayProposalFromData(proposal) {
+            currentPreviewProposal = proposal;
+            const fiscal = proposal.lignes.filter(l => l.type === 'Impôt');
+            const honoraires = proposal.lignes.filter(l => l.type === 'Honoraire');
+            displayProposal(proposal.clientData, fiscal, honoraires, proposal.total, proposal.note, proposal.date);
+        }
+
+        // Modifier une proposition
+        function editProposal(id) {
+            const propositions = JSON.parse(localStorage.getItem('propositions') || '[]');
+            const proposal = propositions.find(x => x.id === id);
+            if (!proposal) return;
+
+            editingProposalId = id;
+            selectedDocument = proposal.sourceType ? { type: proposal.sourceType, id: proposal.sourceId, number: proposal.sourceNumber } : null;
+
+            // Afficher le formulaire
+            document.getElementById('formTitle').textContent = 'Modifier la proposition';
+            document.getElementById('createForm').classList.remove('hidden');
+            document.getElementById('proposalListSection').classList.add('hidden');
+            document.getElementById('proposalPreview').classList.add('hidden');
+
+            // Recharger la liste des clients et sélectionner le bon
+            document.getElementById('clientSelect').innerHTML = '<option value="">-- Sélectionner un client --</option>';
+            loadClientSelect();
+            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+            const clientIndex = clients.findIndex(c => c.name === proposal.client);
+            if (clientIndex !== -1) {
+                document.getElementById('clientSelect').value = clientIndex;
+                onClientChange();
+            }
+
+            // Charger la note
+            document.getElementById('noteText').value = proposal.note || '';
+
+            // Vider et recharger les lignes
+            document.getElementById('linesContainer').innerHTML = '';
+            lineCounter = 0;
+
+            proposal.lignes.forEach(l => {
+                addPaymentLineWithData(l.type, l.designation, l.base, l.fraction, l.amount);
+            });
+
+            updateTotal();
+            window.scrollTo(0, 0);
+            PrismaToast.info('Proposition chargée pour modification');
+        }
+
+        // Supprimer une proposition
+        function deleteProposal(id) {
+            PrismaModal.confirmDelete('Supprimer cette proposition ?', () => {
+                const propositions = JSON.parse(localStorage.getItem('propositions') || '[]');
+                const filtered = propositions.filter(p => p.id !== id);
+                localStorage.setItem('propositions', JSON.stringify(filtered));
+                loadProposalsList();
+                PrismaToast.success('Proposition supprimée');
+            });
+        }
+
+        function getCiviliteDisplay(civilite) {
+            const normalized = String(civilite || '').trim().toLowerCase();
+
+            if (['mme', 'madame', 'f', 'femme', 'feminin', 'féminin'].includes(normalized)) {
+                return 'Madame';
+            }
+
+            if (['m.', 'm', 'mr', 'monsieur', 'h', 'homme', 'masculin'].includes(normalized)) {
+                return 'Monsieur';
+            }
+
+            return 'Monsieur';
+        }
+
+        function displayProposal(client, fiscal, honoraires, total, note, savedDate) {
+            const date = savedDate ? new Date(savedDate) : new Date();
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            const dateStr = date.toLocaleDateString('fr-FR', options);
+            const civiliteLabel = getCiviliteDisplay(client.civilite);
+
+            const fiscalHTML = fiscal.map(l => `
+                <tr>
+                    <td class="border border-gray-300 px-3 py-2"><strong>${l.designation}</strong></td>
+                    <td class="border border-gray-300 px-3 py-2 text-right">${l.base.toLocaleString('fr-FR')}</td>
+                    <td class="border border-gray-300 px-3 py-2 text-center">${l.fraction}%</td>
+                    <td class="border border-gray-300 px-3 py-2 text-right font-bold text-blue-900">${l.amount.toLocaleString('fr-FR')}</td>
+                </tr>
+            `).join('');
+
+            const honorairesHTML = honoraires.map(l => `
+                <tr>
+                    <td class="border border-gray-300 px-3 py-2"><strong>${l.designation}</strong></td>
+                    <td class="border border-gray-300 px-3 py-2 text-right">${l.base.toLocaleString('fr-FR')}</td>
+                    <td class="border border-gray-300 px-3 py-2 text-center">${l.fraction}%</td>
+                    <td class="border border-gray-300 px-3 py-2 text-right font-bold text-blue-900">${l.amount.toLocaleString('fr-FR')}</td>
+                </tr>
+            `).join('');
+
+            document.getElementById('printArea').innerHTML = `
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h1 class="text-xl font-bold text-blue-900">PRISMA GESTION</h1>
+                        <p class="text-gray-600 uppercase tracking-widest" style="font-size: 13pt;">Comptabilité - Finance - Fiscalité</p>
+                        <div class="mt-1 text-gray-700" style="font-size: 13pt;">
+                            <p>Siège Social : Yaoundé - Bata Longkak</p>
+                            <p>Tél : (237) 656 752 475 / 671 050 546</p>
+                            <p>N.I.U : M052116042979Z</p>
+                        </div>
+                    </div>
+                    <div class="text-right text-gray-600" style="font-size: 14pt;">
+                        <p>Yaoundé, le ${dateStr}</p>
+                    </div>
+                </div>
+
+                <div style="border-bottom: 2px solid #1e3a8a; margin-bottom: 2rem;"></div>
+
+                <div class="mb-4 text-center">
+                    <h2 class="text-xl font-bold text-blue-900 uppercase">PROPOSITION DE PAIEMENT</h2>
+                </div>
+
+                <div class="mb-4 ml-auto" style="width: 50%;">
+                    <p class="font-bold text-sm">À l'attention de ${civiliteLabel} :</p>
+                    <p class="text-base">${client.name}</p>
+                    ${client.niu ? `<p class="text-gray-600" style="font-size: 12pt;">NIU : ${client.niu}</p>` : ''}
+                </div>
+
+                <table class="w-full border-collapse" style="margin: 1.5rem 0;">
+                    <thead>
+                        <tr style="background-color: #1e3a8a; color: white;">
+                            <th class="border border-gray-300 px-3 py-2 text-left">Désignation</th>
+                            <th class="border border-gray-300 px-3 py-2 text-right">Base annuelle</th>
+                            <th class="border border-gray-300 px-3 py-2 text-center">Fraction à payer</th>
+                            <th class="border border-gray-300 px-3 py-2 text-right">Montant à Verser</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${fiscal.length > 0 ? `<tr class="bg-section"><td colspan="4" class="border border-gray-300 px-3 py-2">IMPÔTS</td></tr>${fiscalHTML}` : ''}
+                        ${honoraires.length > 0 ? `<tr class="bg-section"><td colspan="4" class="border border-gray-300 px-3 py-2">HONORAIRES</td></tr>${honorairesHTML}` : ''}
+                        <tr style="background-color: #f3f4f6; font-weight: bold;">
+                            <td colspan="2" class="border border-gray-300 px-3 py-2 text-gray-600 uppercase">TOTAL À PAYER</td>
+                            <td colspan="2" class="border border-gray-300 px-3 py-2 text-right text-xl text-blue-900">${total.toLocaleString('fr-FR')} F CFA</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                ${note ? `<p class="text-xs text-gray-500 italic mt-2">* Note : ${note}</p>` : ''}
+
+                <div class="mt-8 flex justify-end">
+                    <div class="flex items-center gap-4">
+                        <img id="cachetImg" src="" alt="" style="max-height: 70px; display: none;">
+                        <div class="text-center">
+                            <p class="font-bold text-blue-900">Pour PRISMA GESTION</p>
+                            <img id="signatureImg" src="" alt="" style="max-height: 50px; display: none; margin: 0.5rem auto;">
+                            <div style="border-top: 1px solid #9ca3af; padding-top: 0.25rem; margin-top: 0.5rem;">
+                                <p class="font-bold" id="signataireNom">OBIANG TIME Nathan</p>
+                                <p class="text-sm text-gray-600" id="signataireTitre">Directeur Associé</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pied de page -->
+                <div style="margin-top: 2rem; padding-top: 0.5rem; border-top: 1px solid #e5e7eb; text-align: center;">
+                    <p style="font-size: 0.7rem; color: #6b7280; margin: 0;">
+                        <span style="font-weight: 600; color: #1e3a8a;">PRISMA Manager</span> — PRISMA GESTION : L'expertise qui sécurise votre gestion.
+                    </p>
+                </div>
+            `;
+
+            document.querySelector('.no-print').classList.add('hidden');
+            document.getElementById('proposalPreview').classList.remove('hidden');
+            document.getElementById('createForm').classList.add('hidden');
+
+            // Charger la signature et le cachet du cabinet
+            loadCabinetSignatures();
+
+            window.scrollTo(0, 0);
+        }
+
+        function loadCabinetSignatures() {
+            const config = JSON.parse(localStorage.getItem('cabinetConfig') || '{}');
+
+            const signatureImg = document.getElementById('signatureImg');
+            const cachetImg = document.getElementById('cachetImg');
+            const signataireNom = document.getElementById('signataireNom');
+            const signataireTitre = document.getElementById('signataireTitre');
+
+            if (config.signature && signatureImg) {
+                signatureImg.src = config.signature;
+                signatureImg.style.display = 'block';
+            }
+
+            if (config.cachet && cachetImg) {
+                cachetImg.src = config.cachet;
+                cachetImg.style.display = 'block';
+            }
+
+            if (config.signataireNom && signataireNom) {
+                signataireNom.textContent = config.signataireNom;
+            }
+
+            if (config.signataireTitre && signataireTitre) {
+                signataireTitre.textContent = config.signataireTitre;
+            }
+        }
+
+        function backToForm() {
+            document.querySelector('.no-print').classList.remove('hidden');
+            document.getElementById('proposalPreview').classList.add('hidden');
+            document.getElementById('proposalListSection').classList.remove('hidden');
+            document.getElementById('createForm').classList.add('hidden');
+            currentPreviewProposal = null;
+            window.scrollTo(0, 0);
+        }
+
+        function downloadPDF() {
+            if (typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') {
+                PrismaToast.error('Erreur : Bibliothèques non chargées.');
+                return;
+            }
+
+            PrismaLoader.show('Génération du PDF...');
+
+            html2canvas(document.getElementById('printArea'), { scale: 2 }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
+                const imgWidth = 210;
+                const imgHeight = canvas.height * imgWidth / canvas.width;
+                pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+                PrismaLoader.hide();
+                const proposal = currentPreviewProposal || {};
+                const fileNumber = sanitizePdfSegment(proposal.sourceNumber || proposal.id, 'Proposition');
+                const fileClient = sanitizePdfSegment((proposal.clientData && proposal.clientData.name) || proposal.client, 'Client');
+                pdf.save(`Proposition_${fileNumber}_${fileClient}.pdf`);
+                PrismaToast.success('PDF téléchargé avec succès !');
+            }).catch(err => {
+                PrismaLoader.hide();
+                PrismaToast.error('Erreur lors de la génération du PDF');
+            });
+        }
+
+        loadClientSelect();
+        loadProposalsList();
+
+        // Synchroniser les données entre onglets
+        PrismaSync.watch('clients', () => {
+            const currentClient = document.getElementById('clientSelect').value;
+            document.getElementById('clientSelect').innerHTML = '<option value="">-- Sélectionner un client --</option>';
+            loadClientSelect();
+            if (currentClient) {
+                document.getElementById('clientSelect').value = currentClient;
+                onClientChange();
+            }
+        });
+        PrismaSync.watch('devis', () => {
+            onClientChange();
+        });
+        PrismaSync.watch('factures', () => {
+            onClientChange();
+        });
+        PrismaSync.watch('propositions', () => {
+            loadProposalsList();
+            PrismaToast.info('Liste des propositions mise à jour', 2000);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,2092 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion du Courrier - PRISMA GESTION</title>
+    <script src="assets/css/tailwindcss.min.js"></script>
+    <link rel="stylesheet" href="prisma-print.css">
+    <link rel="stylesheet" href="assets/css/inter-font.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        @media print {
+            body { background: white; margin: 0; padding: 0; }
+            .no-print { display: none !important; }
+            .print-area { box-shadow: none !important; padding: 0 !important; }
+            @page { size: A4; margin: 1cm 2cm 0.7cm 2cm; }
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <nav class="bg-blue-900 text-white p-4 shadow-lg no-print">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <a href="index.html" class="inline-flex items-center px-3 py-1.5 border border-white rounded-lg shadow-sm text-white hover:bg-white hover:text-blue-900 transition-colors duration-200">&larr; PRISMA GESTION</a>
+            <span class="text-sm text-blue-200">Gestion du Courrier</span>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto p-6 no-print">
+        <!-- Liste des courriers -->
+        <div id="courrierListSection" class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Courriers</h2>
+                <button onclick="showCreateForm()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                    + Nouveau courrier
+                </button>
+            </div>
+
+            <!-- Filtres -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Rechercher</label>
+                    <input type="text" id="filterSearch" onkeyup="filterCourriers()" placeholder="Objet, destinataire..." class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Type</label>
+                    <select id="filterType" onchange="filterCourriers()" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                        <option value="">Tous les types</option>
+                        <option value="fiscal">Courrier fiscal (DGI)</option>
+                        <option value="client">Courrier client</option>
+                        <option value="relance">Relance</option>
+                        <option value="administratif">Administratif</option>
+                        <option value="autre">Autre</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Statut</label>
+                    <select id="filterStatut" onchange="filterCourriers()" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                        <option value="">Tous les statuts</option>
+                        <option value="brouillon">Brouillon</option>
+                        <option value="envoye">Envoy&eacute;</option>
+                        <option value="accuse">Accus&eacute; de r&eacute;ception</option>
+                        <option value="classe">Class&eacute;</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Client</label>
+                    <select id="filterClient" onchange="filterCourriers()" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                        <option value="">Tous les clients</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Statistiques -->
+            <div class="grid grid-cols-4 gap-4 mb-6">
+                <div class="bg-gray-50 rounded-lg p-3 text-center border">
+                    <p class="text-2xl font-bold text-gray-800" id="statTotal">0</p>
+                    <p class="text-xs text-gray-500">Total</p>
+                </div>
+                <div class="bg-yellow-50 rounded-lg p-3 text-center border border-yellow-200">
+                    <p class="text-2xl font-bold text-yellow-600" id="statBrouillon">0</p>
+                    <p class="text-xs text-yellow-600">Brouillons</p>
+                </div>
+                <div class="bg-blue-50 rounded-lg p-3 text-center border border-blue-200">
+                    <p class="text-2xl font-bold text-blue-600" id="statEnvoye">0</p>
+                    <p class="text-xs text-blue-600">Envoy&eacute;s</p>
+                </div>
+                <div class="bg-green-50 rounded-lg p-3 text-center border border-green-200">
+                    <p class="text-2xl font-bold text-green-600" id="statClasse">0</p>
+                    <p class="text-xs text-green-600">Class&eacute;s</p>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="px-4 py-3 text-left text-sm">Date</th>
+                            <th class="px-4 py-3 text-left text-sm">R&eacute;f&eacute;rence</th>
+                            <th class="px-4 py-3 text-left text-sm">Type</th>
+                            <th class="px-4 py-3 text-left text-sm">Destinataire</th>
+                            <th class="px-4 py-3 text-left text-sm">Objet</th>
+                            <th class="px-4 py-3 text-center text-sm">Statut</th>
+                            <th class="px-4 py-3 text-center text-sm">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="courrierTable">
+                        <tr>
+                            <td colspan="7" class="text-center py-8 text-gray-500">Aucun courrier</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Formulaire de cr&eacute;ation / modification -->
+        <div id="createForm" class="hidden bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 id="formTitle" class="text-2xl font-bold text-gray-800 mb-4">Nouveau courrier</h2>
+
+            <!-- Toggle Mode Auto/Manuel -->
+            <div class="mb-4 flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <span class="text-sm font-semibold text-gray-700">Mode de saisie :</span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="manualModeToggle" onchange="toggleManualMode()" class="sr-only peer">
+                    <div class="w-11 h-6 bg-blue-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:bg-orange-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+                </label>
+                <span id="modeLabel" class="text-sm font-medium text-blue-700">Automatique</span>
+                <span id="modeHint" class="text-xs text-gray-500 ml-2">N&deg; et date g&eacute;n&eacute;r&eacute;s automatiquement</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">R&eacute;f&eacute;rence *</label>
+                    <input type="text" id="courrierRef" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Type de courrier *</label>
+                    <select id="courrierType" onchange="onTypeChange()" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+                        <option value="fiscal">Courrier fiscal (DGI)</option>
+                        <option value="client">Courrier client</option>
+                        <option value="relance">Relance de paiement</option>
+                        <option value="administratif">Administratif</option>
+                        <option value="autre">Autre</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Client concern&eacute;</label>
+                    <select id="clientSelect" onchange="onClientChange()" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+                        <option value="">-- Aucun (courrier g&eacute;n&eacute;ral) --</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Date manuelle -->
+            <div id="manualDateSection" class="hidden mb-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-orange-700 mb-2">Date du courrier *</label>
+                        <input type="date" id="manualDate" class="w-full border border-orange-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 bg-orange-50">
+                        <p class="text-xs text-orange-500 mt-1">Saisir la date figurant sur le courrier original</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Destinataire -->
+            <div class="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <h3 class="text-sm font-bold text-gray-800 mb-3">Destinataire</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Nom / Organisme *</label>
+                        <input type="text" id="destinataire" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500" placeholder="Ex: Chef de Centre des Imp&ocirc;ts de Yaound&eacute; III">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Adresse / Localisation</label>
+                        <input type="text" id="destinataireAdresse" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500" placeholder="Ex: Yaound&eacute;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mod&egrave;le pr&eacute;d&eacute;fini -->
+            <div class="mb-4">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Mod&egrave;le pr&eacute;d&eacute;fini (optionnel)</label>
+            <select id="modeleSelect" onchange="applyModele()" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+                <option value="">-- Saisie libre --</option>
+                    <optgroup label="Courriers fiscaux">
+                        <option value="demande_acf">Demande d'Attestation de Conformit&eacute; Fiscale (ACF)</option>
+                        <option value="demande_attim">Demande d'Attestation de non redevance (ATTIM)</option>
+                        <option value="reclamation_fiscale">R&eacute;clamation fiscale</option>
+                        <option value="demande_degrevement">Demande de d&eacute;gr&egrave;vement</option>
+                        <option value="demande_moratoire">Demande de moratoire de paiement</option>
+                        <option value="demande_sursis">Demande de sursis de paiement</option>
+                    </optgroup>
+                    <optgroup label="Courriers clients">
+                        <option value="lettre_mission">Lettre de mission</option>
+                        <option value="relance_paiement">Relance de paiement</option>
+                        <option value="mise_en_demeure">Mise en demeure</option>
+                        <option value="transmission_documents">Transmission de documents</option>
+                        <option value="information_client">Information / Notification client</option>
+                        <option value="lettre_accompagnement_proposition_avance">Lettre d'accompagnement d'une proposition d'avance client</option>
+                        <option value="votre_demande_devis">Votre demande devis</option>
+                        <option value="lettre_transmission_devis_professionnel">Lettre d'accompagnement du devis (professionnel)</option>
+                        <option value="transmission_devis">Transmission de devis avec d&eacute;tail des imp&ocirc;ts</option>
+                        <option value="rappel_delais">Rappel des diff&eacute;rents d&eacute;lais fiscaux</option>
+                        <option value="annonce_nouvelles_taxes">Annonce de nouvelles taxes et changements fiscaux</option>
+                    </optgroup>
+                    <optgroup label="Administratif">
+                        <option value="demande_niu">Demande d'immatriculation (NIU)</option>
+                        <option value="changement_regime">Changement de r&eacute;gime fiscal</option>
+                        <option value="cessation_activite">D&eacute;claration de cessation d'activit&eacute;</option>
+                </optgroup>
+            </select>
+        </div>
+
+        <div id="demandeDevisFraisSection" class="hidden mb-4 p-4 bg-amber-50 rounded-lg border border-amber-200">
+            <h3 class="text-sm font-bold text-amber-900 mb-3">Param&egrave;tres du courrier "Votre demande devis"</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-amber-800 mb-1">Frais de renouvellement</label>
+                    <select id="demandeDevisFraisMode" onchange="onDemandeDevisFeeChange()" class="w-full border border-amber-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-amber-500 bg-white">
+                        <option value="15000">15 000 F CFA</option>
+                        <option value="10000">10 000 F CFA</option>
+                        <option value="manual">Saisie manuelle</option>
+                    </select>
+                </div>
+                <div id="demandeDevisFraisCustomWrap" class="hidden">
+                    <label class="block text-xs font-semibold text-amber-800 mb-1">Montant manuel (F CFA)</label>
+                    <input type="number" id="demandeDevisFraisCustom" min="1" step="500" onchange="onDemandeDevisFeeChange()" class="w-full border border-amber-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-amber-500 bg-white" placeholder="Ex: 12500">
+                </div>
+            </div>
+            <p class="text-xs text-amber-700 mt-2">Le montant choisi sera inject&eacute; automatiquement dans le corps du courrier.</p>
+        </div>
+
+            <!-- Objet -->
+            <div class="mb-4">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Objet du courrier *</label>
+                <input type="text" id="courrierObjet" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500" placeholder="Ex: Demande d'Attestation de Conformit&eacute; Fiscale">
+            </div>
+
+            <!-- Corps du courrier -->
+            <div class="mb-4">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Corps du courrier *</label>
+                <textarea id="courrierCorps" rows="12" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 text-sm leading-relaxed" placeholder="R&eacute;digez votre courrier ici..."></textarea>
+            </div>
+
+            <!-- Pi&egrave;ces jointes (descriptif) -->
+            <div class="mb-4">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Pi&egrave;ces jointes (description)</label>
+                <textarea id="courrierPJ" rows="3" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500" placeholder="Ex:&#10;1. Copie de la carte de contribuable&#10;2. Copie du dernier avis d'imposition&#10;3. Quittances de paiement"></textarea>
+            </div>
+
+            <!-- Suivi d'envoi -->
+            <div class="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <h3 class="text-sm font-bold text-blue-800 mb-3">Suivi d'envoi</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-blue-700 mb-1">Statut</label>
+                        <select id="courrierStatut" class="w-full border border-blue-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 bg-white">
+                            <option value="brouillon">Brouillon</option>
+                            <option value="envoye">Envoy&eacute;</option>
+                            <option value="accuse">Accus&eacute; de r&eacute;ception</option>
+                            <option value="classe">Class&eacute;</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-blue-700 mb-1">Mode d'envoi</label>
+                        <select id="modeEnvoi" class="w-full border border-blue-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 bg-white">
+                            <option value="">-- Non envoy&eacute; --</option>
+                            <option value="depot">D&eacute;p&ocirc;t physique</option>
+                            <option value="recommande">Courrier recommand&eacute;</option>
+                            <option value="email">Email</option>
+                            <option value="coursier">Coursier</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-blue-700 mb-1">Date d'envoi</label>
+                        <input type="date" id="dateEnvoi" class="w-full border border-blue-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 bg-white">
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <label class="block text-xs font-semibold text-blue-700 mb-1">Notes de suivi</label>
+                    <input type="text" id="notesSuivi" class="w-full border border-blue-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 bg-white" placeholder="Ex: D&eacute;pos&eacute; au Centre des Imp&ocirc;ts, copie re&ccedil;ue par M. Dupont">
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-4 mt-6">
+                <button onclick="hideCreateForm()" class="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition">Annuler</button>
+                <button onclick="saveCourrier()" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition">
+                    Enregistrer le courrier
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Zone d'aper&ccedil;u -->
+    <div id="courrierPreview" class="hidden">
+        <div class="max-w-3xl mx-auto bg-white p-10 print-area shadow-xl" id="printArea"></div>
+        <div class="max-w-3xl mx-auto mt-6 mb-6 flex justify-center gap-4 no-print">
+            <button onclick="printCourrier()" class="bg-gray-700 text-white px-6 py-2 rounded-lg hover:bg-gray-800 transition">Imprimer</button>
+            <button onclick="downloadPDF()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">T&eacute;l&eacute;charger PDF</button>
+            <button onclick="backToList()" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition">Retour</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="prisma-components.js"></script>
+    <script>
+        let editingCourrierId = null;
+        let isManualMode = false;
+        let currentPreviewCourrier = null;
+        const DEMANDE_DEVIS_FRAIS_PAR_DEFAUT = '15000';
+
+        function formatMoney(amount) {
+            return `${Math.round(amount || 0).toLocaleString('fr-FR')} F CFA`;
+        }
+
+        const BAREME_TDL_COURRIER = [
+            { max: 30000, montant: 7500 },
+            { max: 60000, montant: 9000 },
+            { max: 100000, montant: 15000 },
+            { max: 150000, montant: 22500 },
+            { max: 200000, montant: 30000 },
+            { max: 300000, montant: 45000 },
+            { max: 400000, montant: 60000 },
+            { max: 500000, montant: 75000 },
+            { max: Infinity, montant: 90000 }
+        ];
+
+        function normalizeCivilite(value, fallback = 'M.') {
+            const normalized = String(value || '').trim().toLowerCase();
+
+            if (['mme', 'madame', 'f', 'femme', 'feminin', 'féminin'].includes(normalized)) {
+                return 'Mme';
+            }
+
+            if (['m.', 'm', 'mr', 'monsieur', 'h', 'homme', 'masculin'].includes(normalized)) {
+                return 'M.';
+            }
+
+            return fallback;
+        }
+
+        function getCiviliteLongue(client) {
+            return normalizeCivilite(client?.civilite) === 'Mme' ? 'Madame' : 'Monsieur';
+        }
+
+        function getCourrierDestinataireCivilite(courrier) {
+            const destinataire = String(courrier?.destinataire || '').trim().toLowerCase();
+
+            if (courrier?.clientData?.civilite) {
+                return getCiviliteLongue(courrier.clientData);
+            }
+
+            if (courrier?.client) {
+                const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+                const linkedClient = clients.find((client) => client.name === courrier.client);
+                if (linkedClient?.civilite) {
+                    return getCiviliteLongue(linkedClient);
+                }
+            }
+
+            if (destinataire.startsWith('madame') || destinataire.startsWith('mme')) {
+                return 'Madame';
+            }
+
+            if (destinataire.startsWith('monsieur') || destinataire.startsWith('m.')) {
+                return 'Monsieur';
+            }
+
+            return '';
+        }
+
+        function calculateTDLCourrier(montantIGSPrincipal) {
+            const montant = Math.round(montantIGSPrincipal || 0);
+            if (montant <= 0) {
+                return 0;
+            }
+
+            const tranche = BAREME_TDL_COURRIER.find((item) => montant <= item.max);
+            return tranche ? tranche.montant : 0;
+        }
+
+        const SOLDE_IR_TAUX = 0.001;
+        const SOLDE_IR_SEUIL = 15000000;
+
+        function calculateSoldeIRCourrier(client) {
+            const ca = Number(client.chiffreAffaires) || 0;
+            const regimeEligible = client.regimeFiscal === 'IGS' || client.regimeFiscal === 'Reel';
+            return regimeEligible && ca >= SOLDE_IR_SEUIL
+                ? Math.round(ca * SOLDE_IR_TAUX)
+                : 0;
+        }
+
+        function getSoldeTaxLabel(client) {
+            return client && client.type === 'Personne morale' ? 'Solde IS' : 'Solde IR';
+        }
+
+        function sanitizePdfSegment(value, fallback = 'Document') {
+            return String(value || '')
+                .replace(/^N[°ºo]?\s*/i, '')
+                .replace(/[\/\\]/g, '-')
+                .replace(/[^a-zA-Z0-9\u00C0-\u00FF\s\-]/g, '')
+                .trim() || fallback;
+        }
+
+        function getCurrentSelectedClient() {
+            const clientIndex = document.getElementById('clientSelect').value;
+            if (clientIndex === '') {
+                return null;
+            }
+
+            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+            return clients[clientIndex] || null;
+        }
+
+        function normalizeSearchText(value) {
+            const raw = String(value || '').trim().toLowerCase();
+            return typeof raw.normalize === 'function'
+                ? raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                : raw;
+        }
+
+        function getLatestDevisForClient(client) {
+            if (!client) {
+                return null;
+            }
+
+            const allDevis = JSON.parse(localStorage.getItem('devis') || '[]');
+            return allDevis
+                .filter((devis) => devis.client === client.name || (client.id && devis.clientData && devis.clientData.id === client.id))
+                .sort((a, b) => new Date(b.date || b.dateModification || 0) - new Date(a.date || a.dateModification || 0))[0] || null;
+        }
+
+        function getLatestPropositionForClient(client) {
+            if (!client) {
+                return null;
+            }
+
+            const allPropositions = JSON.parse(localStorage.getItem('propositions') || '[]');
+            return allPropositions
+                .filter((proposition) => proposition.client === client.name || (client.id && proposition.clientData && proposition.clientData.id === client.id))
+                .sort((a, b) => new Date(b.date || b.id || 0) - new Date(a.date || a.id || 0))[0] || null;
+        }
+
+        function isIGSExercice2025Line(designation) {
+            const normalized = normalizeSearchText(designation);
+            return normalized.includes('igs') && (
+                /\be\.?f\.?\s*2025\b/.test(normalized) ||
+                /\bex(?:ercice)?(?:\s+fiscal)?\s*2025\b/.test(normalized)
+            );
+        }
+
+        function formatQuantity(value) {
+            const quantity = Number(value) || 0;
+            return Number.isInteger(quantity) ? String(quantity) : quantity.toLocaleString('fr-FR');
+        }
+
+        function updateModeleSpecificFields() {
+            const modeleKey = document.getElementById('modeleSelect').value;
+            const isDemandeDevis = modeleKey === 'votre_demande_devis';
+            const section = document.getElementById('demandeDevisFraisSection');
+            const customWrap = document.getElementById('demandeDevisFraisCustomWrap');
+            const feeMode = document.getElementById('demandeDevisFraisMode').value || DEMANDE_DEVIS_FRAIS_PAR_DEFAUT;
+
+            section.classList.toggle('hidden', !isDemandeDevis);
+            customWrap.classList.toggle('hidden', !isDemandeDevis || feeMode !== 'manual');
+        }
+
+        function getDemandeDevisFeeInfo() {
+            const mode = document.getElementById('demandeDevisFraisMode').value || DEMANDE_DEVIS_FRAIS_PAR_DEFAUT;
+
+            if (mode === 'manual') {
+                const rawAmount = Number(document.getElementById('demandeDevisFraisCustom').value);
+                if (Number.isFinite(rawAmount) && rawAmount > 0) {
+                    return {
+                        mode,
+                        amount: Math.round(rawAmount),
+                        label: formatMoney(rawAmount),
+                        isValid: true
+                    };
+                }
+
+                return {
+                    mode,
+                    amount: null,
+                    label: '[montant à saisir]',
+                    isValid: false
+                };
+            }
+
+            const amount = Number(mode) || Number(DEMANDE_DEVIS_FRAIS_PAR_DEFAUT);
+            return {
+                mode,
+                amount,
+                label: formatMoney(amount),
+                isValid: true
+            };
+        }
+
+        function onDemandeDevisFeeChange() {
+            updateModeleSpecificFields();
+
+            if (document.getElementById('modeleSelect').value === 'votre_demande_devis') {
+                applyModele(false);
+            }
+        }
+
+        function getClientFiscalSnapshot(client) {
+            const igs = client.igs || 0;
+            const patente = client.patente || 0;
+            const igsPrincipal = client.isCGA ? igs * 2 : igs;
+            const tdl = typeof client.tdl === 'number'
+                ? client.tdl
+                : (client.regimeFiscal === 'IGS' && igsPrincipal ? calculateTDLCourrier(igsPrincipal) : 0);
+            const soldeIR = typeof client.soldeIR === 'number'
+                ? client.soldeIR
+                : calculateSoldeIRCourrier(client);
+            const licence = typeof client.licence === 'number'
+                ? client.licence
+                : (client.isVendeurBoissons
+                    ? (client.regimeFiscal === 'IGS'
+                        ? igs * 2
+                        : (client.regimeFiscal === 'Reel' ? patente * 2 : 0))
+                    : 0);
+
+            return { igs, patente, tdl, soldeIR, licence };
+        }
+
+        function getPaymentModeLabel(mode) {
+            return mode === 'trimestriel' ? 'trimestriel' : 'annuel';
+        }
+
+        function buildCommonObligations(client, fiscal) {
+            const items = [];
+            const soldeTaxLabel = getSoldeTaxLabel(client);
+
+            if (fiscal.soldeIR > 0) {
+                items.push(`- ${soldeTaxLabel} : ${formatMoney(fiscal.soldeIR)} au taux de 0,1% du chiffre d'affaires, applicable à partir de ${formatMoney(SOLDE_IR_SEUIL)}.`);
+            }
+            if (fiscal.licence > 0) {
+                items.push(`- Licence vente de boissons : ${formatMoney(fiscal.licence)}.`);
+            }
+            if ((client.statutImmo === 'Locataire' || client.statutImmo === 'Les deux') && client.psl > 0) {
+                items.push(`- PSL : ${formatMoney(client.psl)} avec paiement ${getPaymentModeLabel(client.modePaiementPSL)}.`);
+            }
+            if ((client.statutImmo === 'Locataire' || client.statutImmo === 'Les deux') && client.bail > 0) {
+                items.push(`- Bail commercial : ${formatMoney(client.bail)} à régulariser dans les 30 jours suivant la signature du contrat.`);
+            }
+            if ((client.statutImmo === 'Proprietaire' || client.statutImmo === 'Les deux') && client.tf > 0) {
+                items.push(`- Taxe foncière : ${formatMoney(client.tf)} selon la valeur déclarée du bien.`);
+            }
+
+            items.push('- DARP : échéance au 30 juin.');
+            return items;
+        }
+
+        function legacyGenerateVotreDemandeDevis(client) {
+            const civiliteLongue = client ? getCiviliteLongue(client) : 'Madame, Monsieur';
+            const feeInfo = getDemandeDevisFeeInfo();
+            const montantFrais = feeInfo.label;
+
+            return {
+                type: 'client',
+                destinataire: client ? client.name : '',
+                destinataireAdresse: client ? (client.ville || '') : '',
+                objet: 'ModalitÃ©s de dÃ©livrance des devis pour renouvellement de dossier fiscal',
+                corps: `${civiliteLongue},
+
+Afin de continuer Ã  vous offrir un service sÃ©rieux et de qualitÃ©, nous vous informons qu'Ã  compter de ce jour, tout devis relatif au renouvellement de votre dossier fiscal sera dÃ©sormais Ã©tabli aprÃ¨s paiement prÃ©alable des frais de renouvellement fixÃ©s Ã  ${montantFrais}.
+
+Cette disposition s'explique par le fait que l'Ã©tablissement d'un devis nÃ©cessite un vÃ©ritable travail prÃ©paratoire : analyse du dossier, vÃ©rification des informations disponibles, calcul des impÃ´ts, notamment de l'ImpÃ´t GÃ©nÃ©ral SynthÃ©tique (IGS), ainsi que l'Ã©valuation des autres prestations Ã©ventuelles.
+
+Or, nous avons constatÃ© que de nombreuses demandes de devis n'aboutissent pas, alors mÃªme que ce travail technique a dÃ©jÃ  Ã©tÃ© rÃ©alisÃ©. Dans plusieurs cas, les Ã©lÃ©ments communiquÃ©s ont ensuite Ã©tÃ© exploitÃ©s ailleurs, ce qui reprÃ©sente une perte importante pour notre cabinet.
+
+Les ${montantFrais} demandÃ©s correspondent Ã  la partie Â« renouvellement du dossier fiscal Â», dÃ©jÃ  incluse dans nos prÃ©cÃ©dentes facturations annuelles. La seule diffÃ©rence est qu'elle est dÃ©sormais exigÃ©e Ã  l'avance avant l'Ã©tablissement du devis.
+
+En cas de non-poursuite de la procÃ©dure aprÃ¨s Ã©mission du devis, ce montant restera acquis au titre du travail dÃ©jÃ  effectuÃ© sur votre dossier.
+
+Nous vous remercions pour votre comprÃ©hension et restons Ã  votre disposition pour tout complÃ©ment d'information.
+
+Veuillez agrÃ©er, ${civiliteLongue}, l'expression de nos salutations distinguÃ©es.`,
+                pj: ''
+            };
+        }
+
+        function buildVotreDemandeDevisPayload(client) {
+            const civiliteLongue = client ? getCiviliteLongue(client) : 'Madame, Monsieur';
+            const feeInfo = getDemandeDevisFeeInfo();
+            const montantFrais = feeInfo.isValid ? feeInfo.label : '[montant a saisir]';
+
+            return {
+                type: 'client',
+                destinataire: client ? client.name : '',
+                destinataireAdresse: client ? (client.ville || '') : '',
+                objet: 'Modalit\u00e9s de d\u00e9livrance des devis pour renouvellement de dossier fiscal',
+                corps: `${civiliteLongue},
+
+Afin de continuer \u00e0 vous offrir un service s\u00e9rieux et de qualit\u00e9, nous vous informons qu'\u00e0 compter de ce jour, tout devis relatif au renouvellement de votre dossier fiscal sera d\u00e9sormais \u00e9tabli apr\u00e8s paiement pr\u00e9alable des frais de renouvellement fix\u00e9s \u00e0 ${montantFrais}.
+
+Cette disposition s'explique par le fait que l'\u00e9tablissement d'un devis n\u00e9cessite un v\u00e9ritable travail pr\u00e9paratoire : analyse du dossier, v\u00e9rification des informations disponibles, calcul des imp\u00f4ts, notamment de l'Imp\u00f4t G\u00e9n\u00e9ral Synth\u00e9tique (IGS), ainsi que l'\u00e9valuation des autres prestations \u00e9ventuelles.
+
+Or, nous avons constat\u00e9 que de nombreuses demandes de devis n'aboutissent pas, alors m\u00eame que ce travail technique a d\u00e9j\u00e0 \u00e9t\u00e9 r\u00e9alis\u00e9. Dans plusieurs cas, les \u00e9l\u00e9ments communiqu\u00e9s ont ensuite \u00e9t\u00e9 exploit\u00e9s ailleurs, ce qui repr\u00e9sente une perte importante pour notre cabinet.
+
+Les ${montantFrais} demand\u00e9s correspondent \u00e0 la partie \u00ab renouvellement du dossier fiscal \u00bb, d\u00e9j\u00e0 incluse dans nos pr\u00e9c\u00e9dentes facturations annuelles. La seule diff\u00e9rence est qu'elle est d\u00e9sormais exig\u00e9e \u00e0 l'avance avant l'\u00e9tablissement du devis.
+
+En cas de non-poursuite de la proc\u00e9dure apr\u00e8s \u00e9mission du devis, ce montant restera acquis au titre du travail d\u00e9j\u00e0 effectu\u00e9 sur votre dossier.
+
+Nous vous remercions pour votre compr\u00e9hension et restons \u00e0 votre disposition pour tout compl\u00e9ment d'information.
+
+Veuillez agr\u00e9er, ${civiliteLongue}, l'expression de nos salutations distingu\u00e9es.`,
+                pj: ''
+            };
+        }
+
+        function buildVotreDemandeDevisPayloadV2(client) {
+            const civiliteLongue = client ? getCiviliteLongue(client) : 'Madame, Monsieur';
+            const feeInfo = getDemandeDevisFeeInfo();
+            const montantFrais = feeInfo.isValid ? feeInfo.label : '[montant a saisir]';
+
+            return {
+                type: 'client',
+                destinataire: client ? client.name : '',
+                destinataireAdresse: client ? (client.ville || '') : '',
+                objet: 'Modalit\u00e9s de d\u00e9livrance des devis pour renouvellement de dossier fiscal',
+                corps: `${civiliteLongue},
+
+Afin de continuer \u00e0 vous offrir un service s\u00e9rieux et de qualit\u00e9, nous vous informons que, depuis le 1er mars 2026, tout devis relatif au renouvellement d'un dossier fiscal est \u00e9tabli apr\u00e8s paiement pr\u00e9alable des frais de renouvellement, fix\u00e9s \u00e0 ${montantFrais}. Cette mesure s'applique uniform\u00e9ment \u00e0 l'ensemble des dossiers concern\u00e9s.
+
+Cette disposition s'explique par le fait que l'\u00e9tablissement d'un devis n\u00e9cessite un v\u00e9ritable travail pr\u00e9paratoire : analyse du dossier, v\u00e9rification des informations disponibles, calcul des imp\u00f4ts, notamment de l'Imp\u00f4t G\u00e9n\u00e9ral Synth\u00e9tique (IGS), ainsi que l'\u00e9valuation des autres prestations \u00e9ventuelles.
+
+Or, nous avons constat\u00e9 que de nombreuses demandes de devis n'aboutissent pas, alors m\u00eame que ce travail technique a d\u00e9j\u00e0 \u00e9t\u00e9 r\u00e9alis\u00e9. Dans plusieurs cas, les \u00e9l\u00e9ments communiqu\u00e9s ont ensuite \u00e9t\u00e9 exploit\u00e9s ailleurs, ce qui repr\u00e9sente une perte importante pour notre cabinet.
+
+Les ${montantFrais} demand\u00e9s correspondent \u00e0 la partie \u00ab renouvellement du dossier fiscal \u00bb, d\u00e9j\u00e0 incluse dans nos pr\u00e9c\u00e9dentes facturations annuelles. La seule diff\u00e9rence est qu'elle est d\u00e9sormais exig\u00e9e \u00e0 l'avance avant l'\u00e9tablissement du devis.
+
+En cas de non-poursuite de la proc\u00e9dure apr\u00e8s \u00e9mission du devis, ce montant restera acquis au titre du travail d\u00e9j\u00e0 effectu\u00e9 sur votre dossier.
+
+Nous vous remercions pour votre compr\u00e9hension et restons \u00e0 votre disposition pour tout compl\u00e9ment d'information.
+
+Veuillez agr\u00e9er, ${civiliteLongue}, l'expression de nos salutations distingu\u00e9es.`,
+                pj: ''
+            };
+        }
+
+        function getDynamicModelePayload(modeleKey, client) {
+            if (modeleKey === 'votre_demande_devis') {
+                return buildVotreDemandeDevisPayloadV2(client);
+            }
+
+            if (!client) {
+                PrismaToast.warning('Sélectionnez d\'abord un client pour utiliser ce modèle dynamique.');
+                return null;
+            }
+
+            if (modeleKey === 'lettre_transmission_devis_professionnel') {
+                return generateLettreTransmissionDevisProfessionnel(client);
+            }
+
+            if (modeleKey === 'lettre_accompagnement_proposition_avance') {
+                return generateLettreAccompagnementPropositionAvance(client);
+            }
+
+            if (modeleKey === 'transmission_devis') {
+                return generateTransmissionDevis(client);
+            }
+
+            if (!['IGS', 'Reel'].includes(client.regimeFiscal)) {
+                PrismaToast.warning('Ce mod\u00e8le dynamique est r\u00e9serv\u00e9 aux clients soumis \u00e0 l\u2019IGS ou \u00e0 la Patente.');
+                return null;
+            }
+
+            if (modeleKey === 'rappel_delais') {
+                return generateRappelDelais(client);
+            }
+
+            if (modeleKey === 'annonce_nouvelles_taxes') {
+                return generateAnnonceNouvellesTaxes(client);
+            }
+
+            return null;
+        }
+
+        function generateTransmissionDevis(client) {
+            // Chercher le devis le plus récent du client
+            const allDevis = JSON.parse(localStorage.getItem('devis') || '[]');
+            const clientDevis = allDevis
+                .filter(d => d.client === client.name)
+                .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            if (clientDevis.length === 0) {
+                PrismaToast.warning('Aucun devis trouv\u00e9 pour ce client. Veuillez d\u2019abord cr\u00e9er un devis.');
+                return null;
+            }
+
+            const devis = clientDevis[0];
+            const civiliteLongue = getCiviliteLongue(client);
+            const ca = Number(client.chiffreAffaires) || 0;
+            const loyerMensuel = Number(client.loyerMensuel) || 0;
+            const loyerAnnuel = loyerMensuel * 12;
+            const isCGA = client.isCGA;
+            const regime = client.regimeFiscal;
+            const modePaiementIGS = client.modePaiementIGS || 'annuel';
+
+            // Extraire les désignations des lignes Impôt du devis
+            const impotLines = devis.prestations.filter(p => p.type === 'Imp\u00f4t');
+            const designations = impotLines.map(p => p.designation.toLowerCase());
+
+            if (impotLines.length === 0) {
+                PrismaToast.warning('Ce devis ne contient aucune ligne de type Imp\u00f4t.');
+                return null;
+            }
+
+            // Fonctions de détection par mot-clé dans les désignations du devis
+            const has = (keyword) => designations.some(d => d.includes(keyword.toLowerCase()));
+            const hasIGS = has('igs') || has('g\u00e9n\u00e9ral synth\u00e9tique');
+            const hasPatente = has('patente');
+            const hasTDL = has('tdl') || has('d\u00e9veloppement local');
+            const hasSoldeTax = has('solde ir') || has('solde is');
+            const hasPSL = has('psl') || has('pr\u00e9compte sur loyer');
+            const hasBail = has('bail');
+            const hasTF = has('tf') || has('taxe fonci\u00e8re');
+            const hasLicence = has('licence');
+
+            const sections = [];
+            let num = 1;
+
+            // --- IGS ---
+            if (hasIGS) {
+                const igsLine = impotLines.find(p => p.designation.toLowerCase().includes('igs') || p.designation.toLowerCase().includes('g\u00e9n\u00e9ral synth\u00e9tique'));
+                const igsPrincipal = isCGA ? (igsLine.total * 2) : igsLine.total;
+                let detail = `${num}. Imp\u00f4t G\u00e9n\u00e9ral Synth\u00e9tique (IGS) : ${formatMoney(igsLine.total)}`;
+                detail += `\n   Base de calcul : chiffre d'affaires d\u00e9clar\u00e9 de ${formatMoney(ca)}.`;
+                detail += `\n   Montant d\u00e9termin\u00e9 selon le bar\u00e8me officiel (Article C 40 LPF), classe ${client.igsClasse || '-'}.`;
+                if (isCGA) {
+                    detail += `\n   R\u00e9duction CGA de 50% appliqu\u00e9e (montant avant r\u00e9duction : ${formatMoney(igsPrincipal)}).`;
+                }
+                if (modePaiementIGS === 'trimestriel') {
+                    const trim = Math.round(igsLine.total / 4);
+                    detail += `\n   Paiement trimestriel : ${formatMoney(trim)} par \u00e9ch\u00e9ance (15 janvier, 15 mars, 15 juillet, 15 octobre).`;
+                } else {
+                    detail += `\n   Paiement annuel en un seul versement.`;
+                }
+                sections.push(detail);
+                num++;
+            }
+
+            // --- TDL ---
+            if (hasTDL) {
+                const tdlLine = impotLines.find(p => p.designation.toLowerCase().includes('tdl') || p.designation.toLowerCase().includes('d\u00e9veloppement local'));
+                const igsPrincipal = isCGA ? ((client.igs || 0) * 2) : (client.igs || 0);
+                let detail = `${num}. Taxe de D\u00e9veloppement Local (TDL) : ${formatMoney(tdlLine.total)}`;
+                detail += `\n   Calcul\u00e9e selon le bar\u00e8me officiel par tranches, sur la base de l'IGS en principal (${formatMoney(igsPrincipal)}).`;
+                sections.push(detail);
+                num++;
+            }
+
+            // --- Solde IR / IS ---
+            if (hasSoldeTax) {
+                const soldeTaxLabel = getSoldeTaxLabel(client);
+                const soldeIRLine = impotLines.find(p => {
+                    const designation = p.designation.toLowerCase();
+                    return designation.includes('solde ir') || designation.includes('solde is');
+                });
+                let detail = `${num}. ${soldeTaxLabel} : ${formatMoney(soldeIRLine.total)}`;
+                detail += `\n   Base de calcul : chiffre d'affaires d\u00e9clar\u00e9 de ${formatMoney(ca)}.`;
+                detail += `\n   Taux : 0,1% du CA, applicable Ã  partir de ${formatMoney(SOLDE_IR_SEUIL)} de chiffre d'affaires.`;
+                sections.push(detail);
+                num++;
+            }
+
+            // --- Patente ---
+            if (hasPatente) {
+                const patenteLine = impotLines.find(p => p.designation.toLowerCase().includes('patente'));
+                let detail = `${num}. Patente : ${formatMoney(patenteLine.total)}`;
+                detail += `\n   Base de calcul : chiffre d'affaires d\u00e9clar\u00e9 de ${formatMoney(ca)}.`;
+                detail += `\n   Taux : 0,283% du CA (plancher 141 500 F CFA, plafond 4 500 000 F CFA).`;
+                detail += `\n   \u00c9ch\u00e9ance : 28 f\u00e9vrier (paiement annuel unique).`;
+                sections.push(detail);
+                num++;
+            }
+
+            // --- Licence ---
+            if (hasLicence) {
+                const licenceLine = impotLines.find(p => p.designation.toLowerCase().includes('licence'));
+                const base = hasIGS ? 'l\'IGS' : 'la Patente';
+                let detail = `${num}. Licence vente de boissons : ${formatMoney(licenceLine.total)}`;
+                detail += `\n   Calcul\u00e9e \u00e0 2 \u00d7 ${base}.`;
+                sections.push(detail);
+                num++;
+            }
+
+            // --- PSL ---
+            if (hasPSL) {
+                const pslLine = impotLines.find(p => p.designation.toLowerCase().includes('psl') || p.designation.toLowerCase().includes('pr\u00e9compte sur loyer'));
+                let detail = `${num}. Pr\u00e9compte sur Loyer (PSL) : ${formatMoney(pslLine.total)}`;
+                detail += `\n   Base de calcul : loyer mensuel de ${formatMoney(loyerMensuel)}, soit ${formatMoney(loyerAnnuel)} par an (taux : 10%).`;
+                const modePSL = client.modePaiementPSL === 'trimestriel' ? 'trimestriel' : 'annuel';
+                detail += `\n   Paiement ${modePSL}.`;
+                if (client.modePaiementPSL === 'trimestriel') {
+                    detail += ` Soit ${formatMoney(Math.round(pslLine.total / 4))} par \u00e9ch\u00e9ance (15 jan, 15 mars, 15 juil, 15 oct).`;
+                }
+                sections.push(detail);
+                num++;
+            }
+
+            // --- Bail ---
+            if (hasBail) {
+                const bailLine = impotLines.find(p => p.designation.toLowerCase().includes('bail'));
+                const tauxBail = (regime === 'OBNL' || regime === 'NonPro') ? '5%' : '10%';
+                let detail = `${num}. Bail Commercial : ${formatMoney(bailLine.total)}`;
+                detail += `\n   Base de calcul : loyer annuel de ${formatMoney(loyerAnnuel)} (taux : ${tauxBail}).`;
+                detail += `\n   Paiement annuel unique.`;
+                sections.push(detail);
+                num++;
+            }
+
+            // --- TF ---
+            if (hasTF) {
+                const tfLine = impotLines.find(p => p.designation.toLowerCase().includes('tf') || p.designation.toLowerCase().includes('taxe fonci\u00e8re'));
+                let detail = `${num}. Taxe Fonci\u00e8re (TF) : ${formatMoney(tfLine.total)}`;
+                detail += `\n   Taux : 0,1% de la valeur d\u00e9clar\u00e9e du bien (${formatMoney(Number(client.valeurBien) || 0)}).`;
+                sections.push(detail);
+                num++;
+            }
+
+            // --- Note sur le paiement trimestriel ---
+            const trimestriels = [];
+            if (hasIGS) trimestriels.push('l\'IGS');
+            if (hasPSL) trimestriels.push('le PSL');
+
+            let noteTrimestrielle = '';
+            if (trimestriels.length > 0) {
+                noteTrimestrielle = `\n\nNB : ${trimestriels.join(' et ')} ${trimestriels.length > 1 ? 'peuvent \u00eatre r\u00e9gl\u00e9s' : 'peut \u00eatre r\u00e9gl\u00e9'} par trimestre (4 versements aux \u00e9ch\u00e9ances du 15 janvier, 15 mars, 15 juillet et 15 octobre) afin d'all\u00e9ger votre tr\u00e9sorerie. N'h\u00e9sitez pas \u00e0 nous consulter pour choisir le mode le plus adapt\u00e9.`;
+            }
+
+            // --- Total impôts du devis ---
+            const totalImpotsDevis = impotLines.reduce((sum, p) => sum + p.total, 0);
+
+            return {
+                type: 'client',
+                destinataire: client.name,
+                destinataireAdresse: client.ville || '',
+                objet: `Transmission de votre devis fiscal ${devis.number}`,
+                corps: `${civiliteLongue},
+
+Nous avons le plaisir de vous transmettre ci-joint le devis n\u00b0 ${devis.number} r\u00e9capitulatif de vos obligations fiscales pour l'exercice en cours.
+
+Le montant total des imp\u00f4ts s'\u00e9l\u00e8ve \u00e0 ${formatMoney(totalImpotsDevis)}. Voici le d\u00e9tail du calcul de chaque imp\u00f4t figurant sur ce devis :
+
+${sections.join('\n\n')}${noteTrimestrielle}
+
+Nous restons \u00e0 votre enti\u00e8re disposition pour toute question relative \u00e0 ce devis ou pour organiser le calendrier de paiement.
+
+Veuillez agr\u00e9er, ${civiliteLongue}, l'expression de nos salutations distingu\u00e9es.`,
+                pj: `1. Devis n\u00b0 ${devis.number}`
+            };
+        }
+
+        function generateLettreTransmissionDevisProfessionnel(client) {
+            const devis = getLatestDevisForClient(client);
+
+            if (!devis) {
+                PrismaToast.warning('Aucun devis trouv\u00e9 pour ce client. Veuillez d\u2019abord cr\u00e9er un devis.');
+                return null;
+            }
+
+            const prestations = Array.isArray(devis.prestations) ? devis.prestations : [];
+            if (prestations.length === 0) {
+                PrismaToast.warning('Ce devis ne contient aucune prestation \u00e0 reprendre dans le courrier.');
+                return null;
+            }
+
+            const civiliteLongue = getCiviliteLongue(client);
+            const ca = Number(client.chiffreAffaires) || 0;
+            const loyerMensuel = Number(client.loyerMensuel) || 0;
+            const loyerAnnuel = loyerMensuel * 12;
+            const isCGA = client.isCGA;
+            const regime = client.regimeFiscal;
+            const modePaiementIGS = client.modePaiementIGS || 'annuel';
+            const impotLines = prestations.filter((prestation) => prestation.type === 'Imp\u00f4t');
+            const otherLines = prestations.filter((prestation) => prestation.type !== 'Imp\u00f4t');
+            const designations = impotLines.map((prestation) => normalizeSearchText(prestation.designation));
+            const has = (keyword) => designations.some((designation) => designation.includes(normalizeSearchText(keyword)));
+            const hasIGS = has('igs') || has('general synthetique');
+            const hasPatente = has('patente');
+            const hasTDL = has('tdl') || has('developpement local');
+            const hasSoldeTax = has('solde ir') || has('solde is');
+            const hasPSL = has('psl') || has('precompte sur loyer');
+            const hasBail = has('bail');
+            const hasTF = has('tf') || has('taxe fonciere');
+            const hasLicence = has('licence');
+
+            const sections = [];
+            let num = 1;
+
+            if (hasIGS) {
+                const igsLine = impotLines.find((prestation) => {
+                    const designation = normalizeSearchText(prestation.designation);
+                    return designation.includes('igs') || designation.includes('general synthetique');
+                });
+
+                if (igsLine) {
+                    const igsPrincipal = isCGA ? (igsLine.total * 2) : igsLine.total;
+                    let detail = `${num}. ${igsLine.designation} : ${formatMoney(igsLine.total)}`;
+                    detail += `\n   Base de calcul : chiffre d'affaires d\u00e9clar\u00e9 de ${formatMoney(ca)}.`;
+                    detail += `\n   Montant d\u00e9termin\u00e9 selon le bar\u00e8me officiel (Article C 40 LPF), classe ${client.igsClasse || '-'}.`;
+                    if (isCGA) {
+                        detail += `\n   R\u00e9duction CGA de 50% appliqu\u00e9e (montant avant r\u00e9duction : ${formatMoney(igsPrincipal)}).`;
+                    }
+                    if (modePaiementIGS === 'trimestriel') {
+                        const trim = Math.round(igsLine.total / 4);
+                        detail += `\n   Paiement trimestriel : ${formatMoney(trim)} par \u00e9ch\u00e9ance (15 janvier, 15 mars, 15 juillet, 15 octobre).`;
+                    } else {
+                        detail += `\n   Paiement annuel en un seul versement.`;
+                    }
+                    if (isIGSExercice2025Line(igsLine.designation)) {
+                        detail += `\n   Important : en raison de cet IGS non pay\u00e9 pour l'exercice 2025, vous ne pourrez pas obtenir d'attestation d'immatriculation (ATTIM) ni d'attestation de conformit\u00e9 fiscale (ACF) tant que cette obligation ne sera pas r\u00e9gularis\u00e9e.`;
+                    }
+                    sections.push(detail);
+                    num++;
+                }
+            }
+
+            if (hasTDL) {
+                const tdlLine = impotLines.find((prestation) => {
+                    const designation = normalizeSearchText(prestation.designation);
+                    return designation.includes('tdl') || designation.includes('developpement local');
+                });
+                if (tdlLine) {
+                    const igsPrincipal = isCGA ? ((client.igs || 0) * 2) : (client.igs || 0);
+                    let detail = `${num}. ${tdlLine.designation} : ${formatMoney(tdlLine.total)}`;
+                    detail += `\n   Calcul\u00e9e selon le bar\u00e8me officiel par tranches, sur la base de l'IGS en principal (${formatMoney(igsPrincipal)}).`;
+                    sections.push(detail);
+                    num++;
+                }
+            }
+
+            if (hasSoldeTax) {
+                const soldeIRLine = impotLines.find((prestation) => {
+                    const designation = normalizeSearchText(prestation.designation);
+                    return designation.includes('solde ir') || designation.includes('solde is');
+                });
+                if (soldeIRLine) {
+                    const soldeTaxLabel = getSoldeTaxLabel(client);
+                    let detail = `${num}. ${soldeTaxLabel} : ${formatMoney(soldeIRLine.total)}`;
+                    detail += `\n   Base de calcul : chiffre d'affaires d\u00e9clar\u00e9 de ${formatMoney(ca)}.`;
+                    detail += `\n   Taux : 0,1% du CA, applicable Ã  partir de ${formatMoney(SOLDE_IR_SEUIL)} de chiffre d'affaires.`;
+                    sections.push(detail);
+                    num++;
+                }
+            }
+
+            if (hasPatente) {
+                const patenteLine = impotLines.find((prestation) => normalizeSearchText(prestation.designation).includes('patente'));
+                if (patenteLine) {
+                    let detail = `${num}. ${patenteLine.designation} : ${formatMoney(patenteLine.total)}`;
+                    detail += `\n   Base de calcul : chiffre d'affaires d\u00e9clar\u00e9 de ${formatMoney(ca)}.`;
+                    detail += `\n   Taux : 0,283% du CA (plancher 141 500 F CFA, plafond 4 500 000 F CFA).`;
+                    detail += `\n   \u00c9ch\u00e9ance : 28 f\u00e9vrier (paiement annuel unique).`;
+                    sections.push(detail);
+                    num++;
+                }
+            }
+
+            if (hasLicence) {
+                const licenceLine = impotLines.find((prestation) => normalizeSearchText(prestation.designation).includes('licence'));
+                if (licenceLine) {
+                    const base = hasIGS ? 'l\'IGS' : 'la Patente';
+                    let detail = `${num}. ${licenceLine.designation} : ${formatMoney(licenceLine.total)}`;
+                    detail += `\n   Calcul\u00e9e \u00e0 2 \u00d7 ${base}.`;
+                    sections.push(detail);
+                    num++;
+                }
+            }
+
+            if (hasPSL) {
+                const pslLine = impotLines.find((prestation) => {
+                    const designation = normalizeSearchText(prestation.designation);
+                    return designation.includes('psl') || designation.includes('precompte sur loyer');
+                });
+                if (pslLine) {
+                    let detail = `${num}. ${pslLine.designation} : ${formatMoney(pslLine.total)}`;
+                    detail += `\n   Base de calcul : loyer mensuel de ${formatMoney(loyerMensuel)}, soit ${formatMoney(loyerAnnuel)} par an (taux : 10%).`;
+                    const modePSL = client.modePaiementPSL === 'trimestriel' ? 'trimestriel' : 'annuel';
+                    detail += `\n   Paiement ${modePSL}.`;
+                    if (client.modePaiementPSL === 'trimestriel') {
+                        detail += ` Soit ${formatMoney(Math.round(pslLine.total / 4))} par \u00e9ch\u00e9ance (15 jan, 15 mars, 15 juil, 15 oct).`;
+                    }
+                    sections.push(detail);
+                    num++;
+                }
+            }
+
+            if (hasBail) {
+                const bailLine = impotLines.find((prestation) => normalizeSearchText(prestation.designation).includes('bail'));
+                if (bailLine) {
+                    const tauxBail = (regime === 'OBNL' || regime === 'NonPro') ? '5%' : '10%';
+                    let detail = `${num}. ${bailLine.designation} : ${formatMoney(bailLine.total)}`;
+                    detail += `\n   Base de calcul : loyer annuel de ${formatMoney(loyerAnnuel)} (taux : ${tauxBail}).`;
+                    detail += `\n   Paiement annuel unique.`;
+                    sections.push(detail);
+                    num++;
+                }
+            }
+
+            if (hasTF) {
+                const tfLine = impotLines.find((prestation) => {
+                    const designation = normalizeSearchText(prestation.designation);
+                    return designation.includes('tf') || designation.includes('taxe fonciere');
+                });
+                if (tfLine) {
+                    let detail = `${num}. ${tfLine.designation} : ${formatMoney(tfLine.total)}`;
+                    detail += `\n   Taux : 0,1% de la valeur d\u00e9clar\u00e9e du bien (${formatMoney(Number(client.valeurBien) || 0)}).`;
+                    sections.push(detail);
+                    num++;
+                }
+            }
+
+            otherLines.forEach((prestation) => {
+                let detail = `${num}. ${prestation.designation} : ${formatMoney(prestation.total)}`;
+                detail += `\n   Prestation figurant sur le devis au titre des ${normalizeSearchText(prestation.type).includes('honoraire') ? 'honoraires' : 'frais'} d'accompagnement.`;
+                detail += `\n   Quantit\u00e9 : ${formatQuantity(prestation.qty)} | Prix unitaire : ${formatMoney(prestation.price)}.`;
+                sections.push(detail);
+                num++;
+            });
+
+            if (sections.length === 0) {
+                PrismaToast.warning('Ce devis ne contient aucun \u00e9l\u00e9ment exploitable pour ce courrier.');
+                return null;
+            }
+
+            const trimestriels = [];
+            if (hasIGS) trimestriels.push('l\'IGS');
+            if (hasPSL) trimestriels.push('le PSL');
+
+            let noteTrimestrielle = '';
+            if (trimestriels.length > 0) {
+                noteTrimestrielle = `\n\nNB : ${trimestriels.join(' et ')} ${trimestriels.length > 1 ? 'peuvent \u00eatre r\u00e9gl\u00e9s' : 'peut \u00eatre r\u00e9gl\u00e9'} par trimestre (4 versements aux \u00e9ch\u00e9ances du 15 janvier, 15 mars, 15 juillet et 15 octobre) afin d'all\u00e9ger votre tr\u00e9sorerie. N'h\u00e9sitez pas \u00e0 nous consulter pour choisir le mode le plus adapt\u00e9.`;
+            }
+
+            const totalImpots = Number.isFinite(Number(devis.totalImpots))
+                ? Number(devis.totalImpots)
+                : impotLines.reduce((sum, prestation) => sum + (Number(prestation.total) || 0), 0);
+            const totalHonoraires = Number.isFinite(Number(devis.totalHonoraires))
+                ? Number(devis.totalHonoraires)
+                : otherLines.reduce((sum, prestation) => sum + (Number(prestation.total) || 0), 0);
+            const totalGeneral = Number.isFinite(Number(devis.total))
+                ? Number(devis.total)
+                : prestations.reduce((sum, prestation) => sum + (Number(prestation.total) || 0), 0);
+
+            return {
+                type: 'client',
+                destinataire: client.name,
+                destinataireAdresse: client.ville || '',
+                objet: `Transmission de votre devis ${devis.number}`,
+                corps: `${civiliteLongue},
+
+Nous avons le plaisir de vous transmettre ci-joint le devis n\u00b0 ${devis.number} r\u00e9capitulatif de vos obligations fiscales et des prestations d'accompagnement retenues pour votre dossier professionnel.
+
+Le montant total du devis s'\u00e9l\u00e8ve \u00e0 ${formatMoney(totalGeneral)}, dont ${formatMoney(totalImpots)} au titre des imp\u00f4ts et taxes et ${formatMoney(totalHonoraires)} au titre des honoraires et prestations diverses. Voici le d\u00e9tail des \u00e9l\u00e9ments figurant sur ce devis :
+
+${sections.join('\n\n')}${noteTrimestrielle}
+
+Nous restons \u00e0 votre enti\u00e8re disposition pour toute question relative \u00e0 ce devis ou pour organiser le calendrier de paiement et de r\u00e9alisation.
+
+Veuillez agr\u00e9er, ${civiliteLongue}, l'expression de nos salutations distingu\u00e9es.`,
+                pj: `1. Devis n\u00b0 ${devis.number}`
+            };
+        }
+
+        function generateRappelDelais(client) {
+            const fiscal = getClientFiscalSnapshot(client);
+            const civiliteLongue = getCiviliteLongue(client);
+            const lignes = [];
+
+            if (client.regimeFiscal === 'IGS') {
+                lignes.push(`- IGS : ${formatMoney(fiscal.igs)} (classe ${client.igsClasse || '-'}, paiement ${getPaymentModeLabel(client.modePaiementIGS)}).`);
+                lignes.push(`- TDL : ${formatMoney(fiscal.tdl)} calculée selon le barème officiel par tranches sur l'IGS en principal.`);
+                if (client.modePaiementIGS === 'trimestriel') {
+                    lignes.push('- Échéances trimestrielles IGS : 15 janvier, 15 mars, 15 juillet et 15 octobre.');
+                    lignes.push('- Pénalités IGS : 10% par mois de retard, à partir de 30 jours après chaque échéance.');
+                } else {
+                    lignes.push(`- IGS annuel : règlement en une seule fois pour ${formatMoney(fiscal.igs)}.`);
+                    lignes.push('- Pénalités IGS : 10% par mois de retard à compter du 1er avril.');
+                }
+                lignes.push('- DSF : dépôt attendu au plus tard le 15 avril.');
+            } else {
+                lignes.push(`- Patente : ${formatMoney(fiscal.patente)} au taux de 0,283% du chiffre d'affaires.`);
+                lignes.push('- DSF : dépôt attendu au plus tard le 15 mars auprès du CIME compétent.');
+            }
+
+            lignes.push(...buildCommonObligations(client, fiscal));
+
+            return {
+                type: 'client',
+                destinataire: client.name,
+                destinataireAdresse: client.ville || '',
+                objet: 'Rappel des différents délais fiscaux',
+                corps: `${civiliteLongue},
+
+Le présent courrier récapitule les principales échéances fiscales actuellement applicables à votre dossier ${client.name}.
+
+${lignes.join('\n')}
+
+Nous vous invitons à anticiper chaque échéance afin d'éviter les majorations et intérêts de retard.
+
+Nous restons à votre disposition pour organiser les déclarations et paiements correspondants.
+
+Veuillez agréer, ${civiliteLongue}, l'expression de nos salutations distinguées.`,
+                pj: ''
+            };
+        }
+
+        function generateAnnonceNouvellesTaxes(client) {
+            const fiscal = getClientFiscalSnapshot(client);
+            const civiliteLongue = getCiviliteLongue(client);
+            const lignes = [];
+
+            if (client.regimeFiscal === 'IGS') {
+                const exempleBase = client.modePaiementIGS === 'trimestriel'
+                    ? Math.round(fiscal.igs / 4)
+                    : fiscal.igs;
+                const exemplePenalite = Math.round(exempleBase * 0.10);
+                const totalAvant = fiscal.igs;
+                const totalApres = fiscal.igs + fiscal.tdl + fiscal.soldeIR + fiscal.licence;
+
+                lignes.push(`- Nouvelle TDL : ${formatMoney(fiscal.tdl)} calculée selon le barème officiel appliqué à votre IGS en principal.`);
+                lignes.push(`- Intérêts de retard IGS : 10% par mois. Exemple sur une base de ${formatMoney(exempleBase)} : ${formatMoney(exemplePenalite)} après un mois de retard.`);
+                lignes.push(`- Impact financier estimé : avant ${formatMoney(totalAvant)} ; après ${formatMoney(totalApres)}.`);
+                if (fiscal.licence > 0) {
+                    lignes.push(`- Licence vente de boissons : ${formatMoney(fiscal.licence)} calculée à 2 × IGS.`);
+                }
+                lignes.push(`- Votre mode de paiement actuel demeure ${getPaymentModeLabel(client.modePaiementIGS)}.`);
+            } else {
+                lignes.push('- La TDL ne s\'applique pas à votre régime réel.');
+                lignes.push(`- Patente maintenue : ${formatMoney(fiscal.patente)}.`);
+                lignes.push('- DSF à déposer au plus tard le 15 mars auprès du CIME.');
+                if (fiscal.licence > 0) {
+                    lignes.push(`- Nouvelle Licence vente de boissons : ${formatMoney(fiscal.licence)} calculée à 2 × Patente.`);
+                }
+            }
+
+            lignes.push(...buildCommonObligations(client, fiscal));
+
+            return {
+                type: 'client',
+                destinataire: client.name,
+                destinataireAdresse: client.ville || '',
+                objet: 'Annonce de nouvelles taxes et changements fiscaux',
+                corps: `${civiliteLongue},
+
+Nous vous informons des évolutions fiscales récentes qui concernent votre dossier ${client.name}.
+
+${lignes.join('\n')}
+
+Notre cabinet suit l'impact de ces changements et reste disponible pour ajuster votre calendrier fiscal et vos provisions.
+
+Veuillez agréer, ${civiliteLongue}, l'expression de nos salutations distinguées.`,
+                pj: ''
+            };
+        }
+
+        function generateLettreAccompagnementPropositionAvance(client) {
+            const proposition = getLatestPropositionForClient(client);
+
+            if (!proposition) {
+                PrismaToast.warning('Aucune proposition d\'avance trouv\u00e9e pour ce client. Veuillez d\'abord cr\u00e9er une proposition.');
+                return null;
+            }
+
+            const civiliteLongue = getCiviliteLongue(client);
+            const propositionDate = new Date(proposition.date || proposition.id || Date.now()).toLocaleDateString('fr-FR', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+            });
+            const lignes = Array.isArray(proposition.lignes) ? proposition.lignes : [];
+            const fiscalCount = lignes.filter((ligne) => normalizeSearchText(ligne.type) === normalizeSearchText('Imp\u00f4t')).length;
+            const honorairesCount = lignes.filter((ligne) => normalizeSearchText(ligne.type) === normalizeSearchText('Honoraire')).length;
+            const totalImpots = Number(proposition.totalImpots) || 0;
+            const totalHonoraires = Number(proposition.totalHonoraires) || 0;
+            const total = Number(proposition.total) || 0;
+
+            const sourceLabel = proposition.sourceType === 'devis'
+                ? 'du devis'
+                : (proposition.sourceType === 'facture' ? 'de la facture' : '');
+            const sourceDetail = sourceLabel && proposition.sourceNumber
+                ? ` \u00e9tablie sur la base ${sourceLabel} n\u00b0 ${proposition.sourceNumber}`
+                : '';
+
+            const resumeLignes = [];
+            if (fiscalCount > 0) {
+                resumeLignes.push(`- Imp\u00f4ts et taxes (${fiscalCount} poste${fiscalCount > 1 ? 's' : ''}) : ${formatMoney(totalImpots)}.`);
+            }
+            if (honorairesCount > 0) {
+                resumeLignes.push(`- Honoraires du cabinet (${honorairesCount} poste${honorairesCount > 1 ? 's' : ''}) : ${formatMoney(totalHonoraires)}.`);
+            }
+            resumeLignes.push(`- Montant total de l'avance sollicit\u00e9e : ${formatMoney(total)}.`);
+
+            return {
+                type: 'client',
+                destinataire: client.name,
+                destinataireAdresse: client.ville || '',
+                objet: 'Transmission de votre proposition d\'avance client',
+                corps: `${civiliteLongue},
+
+Nous avons le plaisir de vous transmettre ci-joint notre proposition d'avance client du ${propositionDate}${sourceDetail}.
+
+Cette proposition reprend les \u00e9l\u00e9ments suivants :
+${resumeLignes.join('\n')}
+
+Nous vous invitons \u00e0 en prendre connaissance et \u00e0 nous faire part de votre accord ou de vos observations dans les meilleurs d\u00e9lais.
+
+D\u00e8s r\u00e9ception de votre validation et du r\u00e8glement correspondant, nous pourrons engager les diligences n\u00e9cessaires et assurer le traitement de votre dossier dans de bonnes conditions.
+
+Nous restons \u00e0 votre disposition pour tout compl\u00e9ment d'information.
+
+Veuillez agr\u00e9er, ${civiliteLongue}, l'expression de nos salutations distingu\u00e9es.`,
+                pj: '1. Proposition d\'avance client'
+            };
+        }
+
+        // ============================
+        // MOD&Egrave;LES PR&Eacute;D&Eacute;FINIS
+        // ============================
+        const MODELES = {
+            demande_acf: {
+                type: 'fiscal',
+                destinataire: 'Monsieur le Chef de Centre R\u00e9gional des Imp\u00f4ts',
+                objet: 'Demande d\'Attestation de Conformit\u00e9 Fiscale (ACF)',
+                corps: `Monsieur le Chef de Centre,
+
+J'ai l'honneur de venir tr\u00e8s respectueusement aupr\u00e8s de votre haute bienveillance solliciter la d\u00e9livrance d'une Attestation de Conformit\u00e9 Fiscale (ACF) au profit de la soci\u00e9t\u00e9 {CLIENT_NOM}.
+
+En effet, {CLIENT_NOM}, immatricul\u00e9e sous le NIU {CLIENT_NIU}, domicili\u00e9e \u00e0 {CLIENT_VILLE}, est \u00e0 jour de ses obligations fiscales et souhaite obtenir cette attestation pour les besoins de ses activit\u00e9s commerciales.
+
+Vous trouverez ci-joint les pi\u00e8ces justificatives n\u00e9cessaires \u00e0 l'appui de cette demande.
+
+Dans l'attente d'une suite favorable, je vous prie d'agr\u00e9er, Monsieur le Chef de Centre, l'expression de ma consid\u00e9ration distingu\u00e9e.`,
+                pj: '1. Copie de la carte de contribuable\n2. Quittances de paiement des imp\u00f4ts\n3. Derni\u00e8re DSF d\u00e9pos\u00e9e'
+            },
+            demande_attim: {
+                type: 'fiscal',
+                destinataire: 'Monsieur le Chef de Centre R\u00e9gional des Imp\u00f4ts',
+                objet: 'Demande d\'Attestation de Non Redevance (ATTIM)',
+                corps: `Monsieur le Chef de Centre,
+
+J'ai l'honneur de venir tr\u00e8s respectueusement aupr\u00e8s de votre haute bienveillance solliciter la d\u00e9livrance d'une Attestation de Non Redevance d'Imp\u00f4ts, Taxes et Redevances sur les Immeubles (ATTIM) au profit de {CLIENT_NOM}.
+
+{CLIENT_NOM}, immatricul\u00e9(e) sous le NIU {CLIENT_NIU}, d\u00e9clare ne pas \u00eatre propri\u00e9taire de biens immobiliers soumis \u00e0 la taxe fonci\u00e8re.
+
+Vous trouverez ci-joint les pi\u00e8ces justificatives n\u00e9cessaires.
+
+Dans l'attente d'une suite favorable, je vous prie d'agr\u00e9er, Monsieur le Chef de Centre, l'expression de ma consid\u00e9ration distingu\u00e9e.`,
+                pj: '1. Copie de la carte de contribuable\n2. Copie de la CNI du g\u00e9rant\n3. D\u00e9claration sur l\'honneur'
+            },
+            reclamation_fiscale: {
+                type: 'fiscal',
+                destinataire: 'Monsieur le Chef de Centre R\u00e9gional des Imp\u00f4ts',
+                objet: 'R\u00e9clamation fiscale',
+                corps: `Monsieur le Chef de Centre,
+
+J'ai l'honneur de venir tr\u00e8s respectueusement aupr\u00e8s de votre haute bienveillance formuler une r\u00e9clamation fiscale au nom de {CLIENT_NOM}, immatricul\u00e9(e) sous le NIU {CLIENT_NIU}.
+
+En effet, [d\u00e9crire le motif de la r\u00e9clamation].
+
+En cons\u00e9quence, nous sollicitons [d\u00e9crire la demande].
+
+Vous trouverez ci-joint les pi\u00e8ces justificatives \u00e0 l'appui de cette r\u00e9clamation.
+
+Dans l'attente d'une suite favorable, je vous prie d'agr\u00e9er, Monsieur le Chef de Centre, l'expression de ma consid\u00e9ration distingu\u00e9e.`,
+                pj: '1. Copie de l\'avis d\'imposition contest\u00e9\n2. Pi\u00e8ces justificatives'
+            },
+            demande_degrevement: {
+                type: 'fiscal',
+                destinataire: 'Monsieur le Chef de Centre R\u00e9gional des Imp\u00f4ts',
+                objet: 'Demande de d\u00e9gr\u00e8vement fiscal',
+                corps: `Monsieur le Chef de Centre,
+
+J'ai l'honneur de venir tr\u00e8s respectueusement aupr\u00e8s de votre haute bienveillance solliciter un d\u00e9gr\u00e8vement fiscal au profit de {CLIENT_NOM}, immatricul\u00e9(e) sous le NIU {CLIENT_NIU}.
+
+En effet, [exposer les motifs justifiant le d\u00e9gr\u00e8vement].
+
+Nous sollicitons votre bienveillance pour un d\u00e9gr\u00e8vement total/partiel du montant de [montant] F CFA.
+
+Vous trouverez ci-joint les pi\u00e8ces justificatives.
+
+Dans l'attente d'une suite favorable, je vous prie d'agr\u00e9er, Monsieur le Chef de Centre, l'expression de ma consid\u00e9ration distingu\u00e9e.`,
+                pj: '1. Avis d\'imposition\n2. Pi\u00e8ces justificatives du d\u00e9gr\u00e8vement'
+            },
+            demande_moratoire: {
+                type: 'fiscal',
+                destinataire: 'Monsieur le Chef de Centre R\u00e9gional des Imp\u00f4ts',
+                objet: 'Demande de moratoire de paiement',
+                corps: `Monsieur le Chef de Centre,
+
+J'ai l'honneur de venir tr\u00e8s respectueusement aupr\u00e8s de votre haute bienveillance solliciter un moratoire de paiement au profit de {CLIENT_NOM}, immatricul\u00e9(e) sous le NIU {CLIENT_NIU}.
+
+En raison de [exposer les difficult\u00e9s financi\u00e8res], {CLIENT_NOM} se trouve dans l'impossibilit\u00e9 de s'acquitter en une seule fois du montant de [montant] F CFA au titre de [nature de l'imp\u00f4t].
+
+Nous proposons un \u00e9ch\u00e9ancier de paiement de [nombre] mensualit\u00e9s de [montant mensuel] F CFA.
+
+Dans l'attente d'une suite favorable, je vous prie d'agr\u00e9er, Monsieur le Chef de Centre, l'expression de ma consid\u00e9ration distingu\u00e9e.`,
+                pj: '1. Avis d\'imposition\n2. Plan de tr\u00e9sorerie\n3. Proposition d\'\u00e9ch\u00e9ancier'
+            },
+            demande_sursis: {
+                type: 'fiscal',
+                destinataire: 'Monsieur le Chef de Centre R\u00e9gional des Imp\u00f4ts',
+                objet: 'Demande de sursis de paiement',
+                corps: `Monsieur le Chef de Centre,
+
+Suite \u00e0 la r\u00e9clamation formul\u00e9e en date du [date] par {CLIENT_NOM} (NIU : {CLIENT_NIU}), j'ai l'honneur de solliciter un sursis de paiement conform\u00e9ment aux dispositions de l'article L 116 du Livre des Proc\u00e9dures Fiscales.
+
+La r\u00e9clamation porte sur [d\u00e9crire l'objet de la contestation] pour un montant de [montant] F CFA.
+
+En attendant la d\u00e9cision de l'Administration sur notre r\u00e9clamation, nous sollicitons la suspension du recouvrement des impositions contest\u00e9es.
+
+Dans l'attente d'une suite favorable, je vous prie d'agr\u00e9er, Monsieur le Chef de Centre, l'expression de ma consid\u00e9ration distingu\u00e9e.`,
+                pj: '1. Copie de la r\u00e9clamation fiscale\n2. Garanties propos\u00e9es'
+            },
+            lettre_mission: {
+                type: 'client',
+                destinataire: '',
+                objet: 'Lettre de mission - Prestations comptables et fiscales',
+                corps: `{CIVILITE},
+
+Faisant suite \u00e0 nos \u00e9changes, nous avons le plaisir de vous confirmer notre engagement \u00e0 vous accompagner dans la gestion de vos obligations comptables et fiscales.
+
+Notre mission comprendra notamment :
+- La tenue de votre comptabilit\u00e9 g\u00e9n\u00e9rale
+- L'\u00e9tablissement des d\u00e9clarations fiscales obligatoires (DSF, DARP, IGS/Patente)
+- Le suivi de vos \u00e9ch\u00e9ances fiscales
+- Le conseil fiscal permanent
+
+Les honoraires convenus pour cette mission s'\u00e9l\u00e8vent \u00e0 [montant] F CFA [p\u00e9riodicit\u00e9].
+
+Nous restons \u00e0 votre disposition pour toute information compl\u00e9mentaire.
+
+Veuillez agr\u00e9er, {CIVILITE}, l'expression de nos salutations distingu\u00e9es.`,
+                pj: ''
+            },
+            relance_paiement: {
+                type: 'relance',
+                destinataire: '',
+                objet: 'Relance - Factures impay\u00e9es',
+                corps: `{CIVILITE},
+
+Sauf erreur ou omission de notre part, nous constatons que les factures suivantes demeurent impay\u00e9es \u00e0 ce jour :
+
+[D\u00e9tail des factures impay\u00e9es]
+
+Le montant total de votre dette s'\u00e9l\u00e8ve \u00e0 [montant total] F CFA.
+
+Nous vous saurions gr\u00e9 de bien vouloir proc\u00e9der au r\u00e8glement de cette somme dans les meilleurs d\u00e9lais.
+
+En cas de r\u00e8glement d\u00e9j\u00e0 effectu\u00e9, nous vous prions de ne pas tenir compte de ce courrier et de nous en informer afin de mettre \u00e0 jour nos \u00e9critures.
+
+Veuillez agr\u00e9er, {CIVILITE}, l'expression de nos salutations distingu\u00e9es.`,
+                pj: '1. Copies des factures impay\u00e9es'
+            },
+            mise_en_demeure: {
+                type: 'relance',
+                destinataire: '',
+                objet: 'Mise en demeure de paiement',
+                corps: `{CIVILITE},
+
+Malgr\u00e9 nos pr\u00e9c\u00e9dentes relances rest\u00e9es sans suite, nous constatons que vous restez redevable de la somme de [montant] F CFA au titre de nos prestations.
+
+Par la pr\u00e9sente, nous vous mettons formellement en demeure de proc\u00e9der au r\u00e8glement int\u00e9gral de cette somme dans un d\u00e9lai de quinze (15) jours \u00e0 compter de la r\u00e9ception du pr\u00e9sent courrier.
+
+\u00c0 d\u00e9faut de r\u00e8glement dans le d\u00e9lai imparti, nous nous verrons dans l'obligation de confier le recouvrement de cette cr\u00e9ance \u00e0 notre conseil juridique, sans autre avis de notre part.
+
+Veuillez agr\u00e9er, {CIVILITE}, l'expression de nos salutations distingu\u00e9es.`,
+                pj: '1. R\u00e9capitulatif des factures\n2. Copies des relances pr\u00e9c\u00e9dentes'
+            },
+            transmission_documents: {
+                type: 'client',
+                destinataire: '',
+                objet: 'Transmission de documents',
+                corps: `{CIVILITE},
+
+Nous avons l'honneur de vous transmettre ci-joint les documents suivants :
+
+[Liste des documents transmis]
+
+Nous restons \u00e0 votre disposition pour tout compl\u00e9ment d'information.
+
+Veuillez agr\u00e9er, {CIVILITE}, l'expression de nos salutations distingu\u00e9es.`,
+                pj: ''
+            },
+            information_client: {
+                type: 'client',
+                destinataire: '',
+                objet: 'Information importante',
+                corps: `{CIVILITE},
+
+Nous avons l'honneur de porter \u00e0 votre connaissance les informations suivantes :
+
+[Contenu de l'information]
+
+Nous restons \u00e0 votre disposition pour tout compl\u00e9ment d'information ou \u00e9claircissement.
+
+Veuillez agr\u00e9er, {CIVILITE}, l'expression de nos salutations distingu\u00e9es.`,
+                pj: ''
+            },
+            lettre_accompagnement_proposition_avance: {
+                type: 'client',
+                destinataire: '',
+                objet: 'Transmission de votre proposition d\'avance client',
+                corps: '',
+                pj: '1. Proposition d\'avance client',
+                dynamic: 'lettre_accompagnement_proposition_avance'
+            },
+            votre_demande_devis: {
+                type: 'client',
+                destinataire: '',
+                objet: 'Modalit\u00e9s de d\u00e9livrance des devis pour renouvellement de dossier fiscal',
+                corps: '',
+                pj: '',
+                dynamic: 'votre_demande_devis'
+            },
+            lettre_transmission_devis_professionnel: {
+                type: 'client',
+                destinataire: '',
+                objet: 'Transmission de votre devis',
+                corps: '',
+                pj: '1. Devis',
+                dynamic: 'lettre_transmission_devis_professionnel'
+            },
+            transmission_devis: {
+                type: 'client',
+                destinataire: '',
+                objet: 'Transmission de votre devis fiscal annuel',
+                corps: '',
+                pj: '1. Devis fiscal annuel',
+                dynamic: 'transmission_devis'
+            },
+            rappel_delais: {
+                type: 'client',
+                destinataire: '',
+                objet: 'Rappel des diff\u00e9rents d\u00e9lais fiscaux',
+                corps: '',
+                pj: '',
+                dynamic: 'rappel_delais'
+            },
+            annonce_nouvelles_taxes: {
+                type: 'client',
+                destinataire: '',
+                objet: 'Annonce de nouvelles taxes et changements fiscaux',
+                corps: '',
+                pj: '',
+                dynamic: 'annonce_nouvelles_taxes'
+            },
+            demande_niu: {
+                type: 'administratif',
+                destinataire: 'Monsieur le Chef de Centre R\u00e9gional des Imp\u00f4ts',
+                objet: 'Demande d\'immatriculation fiscale (NIU)',
+                corps: `Monsieur le Chef de Centre,
+
+J'ai l'honneur de venir tr\u00e8s respectueusement aupr\u00e8s de votre haute bienveillance solliciter l'immatriculation fiscale de {CLIENT_NOM}.
+
+[Informations sur l'entreprise : forme juridique, activit\u00e9 principale, si\u00e8ge social, capital social, date de cr\u00e9ation]
+
+Vous trouverez ci-joint les pi\u00e8ces constitutives du dossier d'immatriculation.
+
+Dans l'attente d'une suite favorable, je vous prie d'agr\u00e9er, Monsieur le Chef de Centre, l'expression de ma consid\u00e9ration distingu\u00e9e.`,
+                pj: '1. Statuts notari\u00e9s\n2. Copie CNI du g\u00e9rant\n3. Plan de localisation\n4. Attestation de domiciliation'
+            },
+            changement_regime: {
+                type: 'administratif',
+                destinataire: 'Monsieur le Chef de Centre R\u00e9gional des Imp\u00f4ts',
+                objet: 'Demande de changement de r\u00e9gime fiscal',
+                corps: `Monsieur le Chef de Centre,
+
+J'ai l'honneur de venir tr\u00e8s respectueusement aupr\u00e8s de votre haute bienveillance solliciter le changement de r\u00e9gime fiscal de {CLIENT_NOM} (NIU : {CLIENT_NIU}).
+
+Actuellement soumis(e) au r\u00e9gime [r\u00e9gime actuel], {CLIENT_NOM} souhaite basculer au r\u00e9gime [nouveau r\u00e9gime] en raison de [motif].
+
+Vous trouverez ci-joint les pi\u00e8ces justificatives.
+
+Dans l'attente d'une suite favorable, je vous prie d'agr\u00e9er, Monsieur le Chef de Centre, l'expression de ma consid\u00e9ration distingu\u00e9e.`,
+                pj: '1. Derni\u00e8re DSF\n2. Justificatifs du chiffre d\'affaires'
+            },
+            cessation_activite: {
+                type: 'administratif',
+                destinataire: 'Monsieur le Chef de Centre R\u00e9gional des Imp\u00f4ts',
+                objet: 'D\u00e9claration de cessation d\'activit\u00e9',
+                corps: `Monsieur le Chef de Centre,
+
+J'ai l'honneur de porter \u00e0 votre connaissance la cessation d'activit\u00e9 de {CLIENT_NOM} (NIU : {CLIENT_NIU}), effective \u00e0 compter du [date de cessation].
+
+[Motif de la cessation]
+
+Nous vous prions de bien vouloir proc\u00e9der aux formalit\u00e9s de radiation du fichier des contribuables.
+
+Vous trouverez ci-joint les pi\u00e8ces justificatives requises.
+
+Dans l'attente de votre confirmation, je vous prie d'agr\u00e9er, Monsieur le Chef de Centre, l'expression de ma consid\u00e9ration distingu\u00e9e.`,
+                pj: '1. PV de dissolution\n2. Derni\u00e8re DSF\n3. \u00c9tat de liquidation'
+            }
+        };
+
+        // ============================
+        // TOGGLE MODE AUTO/MANUEL
+        // ============================
+        function toggleManualMode() {
+            isManualMode = document.getElementById('manualModeToggle').checked;
+            const label = document.getElementById('modeLabel');
+            const hint = document.getElementById('modeHint');
+            const manualDateSection = document.getElementById('manualDateSection');
+
+            if (isManualMode) {
+                label.textContent = 'Manuel';
+                label.className = 'text-sm font-medium text-orange-700';
+                hint.textContent = 'Saisir le N\u00b0 et la date du courrier original';
+                manualDateSection.classList.remove('hidden');
+                document.getElementById('courrierRef').value = '';
+                document.getElementById('courrierRef').placeholder = 'Ex: CRR-0001/2025/06';
+            } else {
+                label.textContent = 'Automatique';
+                label.className = 'text-sm font-medium text-blue-700';
+                hint.textContent = 'N\u00b0 et date g\u00e9n\u00e9r\u00e9s automatiquement';
+                manualDateSection.classList.add('hidden');
+                document.getElementById('courrierRef').placeholder = '';
+                generateCourrierRef();
+            }
+        }
+
+        // ============================
+        // FONCTIONS UTILITAIRES
+        // ============================
+        function generateCourrierRef() {
+            const courriers = JSON.parse(localStorage.getItem('courriers') || '[]');
+            const num = String(courriers.length + 1).padStart(4, '0');
+            const date = new Date();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            document.getElementById('courrierRef').value = `CRR-${num}/${date.getFullYear()}/${month}`;
+        }
+
+        function loadClientSelect() {
+            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+            const select = document.getElementById('clientSelect');
+            select.innerHTML = '<option value="">-- Aucun (courrier g\u00e9n\u00e9ral) --</option>';
+            clients.forEach((client, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = client.name;
+                select.appendChild(option);
+            });
+        }
+
+        function loadFilterClients() {
+            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+            const select = document.getElementById('filterClient');
+            select.innerHTML = '<option value="">Tous les clients</option>';
+            clients.forEach(c => {
+                const option = document.createElement('option');
+                option.value = c.name;
+                option.textContent = c.name;
+                select.appendChild(option);
+            });
+        }
+
+        function onClientChange() {
+            const index = document.getElementById('clientSelect').value;
+            if (index === '') return;
+            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+            const client = clients[index];
+
+            // Remplir le destinataire si c'est un courrier client
+            const type = document.getElementById('courrierType').value;
+            if (type === 'client' || type === 'relance') {
+                document.getElementById('destinataire').value = client.name;
+                document.getElementById('destinataireAdresse').value = client.ville || '';
+            }
+
+            // Remplacer les placeholders dans le corps si un mod\u00e8le est appliqu\u00e9
+            replacePlaceholders(client);
+
+            const modeleKey = document.getElementById('modeleSelect').value;
+            if (modeleKey && MODELES[modeleKey] && MODELES[modeleKey].dynamic) {
+                applyModele();
+            }
+        }
+
+        function onTypeChange() {
+            const type = document.getElementById('courrierType').value;
+            if (type === 'fiscal' || type === 'administratif') {
+                document.getElementById('destinataire').value = 'Monsieur le Chef de Centre R\u00e9gional des Imp\u00f4ts';
+                document.getElementById('destinataireAdresse').value = 'Yaound\u00e9';
+            }
+        }
+
+        function applyClientPlaceholders(text, client) {
+            return String(text || '')
+                .replace(/\{CLIENT_NOM\}/g, client.name || '')
+                .replace(/\{CLIENT_NIU\}/g, client.niu || '[NIU non renseign\u00e9]')
+                .replace(/\{CLIENT_VILLE\}/g, client.ville || '[Ville non renseign\u00e9e]')
+                .replace(/\{CLIENT_QUARTIER\}/g, client.quartier || '')
+                .replace(/\{CLIENT_CONTACT\}/g, client.contact || '')
+                .replace(/\{CIVILITE\}/g, getCiviliteLongue(client));
+        }
+
+        function replacePlaceholders(client) {
+            ['courrierObjet', 'courrierCorps', 'courrierPJ', 'destinataire', 'destinataireAdresse'].forEach((fieldId) => {
+                const field = document.getElementById(fieldId);
+                if (!field || !field.value) return;
+                field.value = applyClientPlaceholders(field.value, client);
+            });
+        }
+
+        function applyModele(showToast = true) {
+            const modeleKey = document.getElementById('modeleSelect').value;
+            updateModeleSpecificFields();
+            if (!modeleKey) return;
+
+            const modele = MODELES[modeleKey];
+            if (!modele) return;
+            const selectedClient = getCurrentSelectedClient();
+
+            let payload = modele;
+            if (modele.dynamic) {
+                payload = getDynamicModelePayload(modele.dynamic, selectedClient);
+                if (!payload) return;
+            }
+
+            document.getElementById('courrierType').value = payload.type || modele.type;
+            document.getElementById('courrierObjet').value = payload.objet || modele.objet;
+            document.getElementById('courrierCorps').value = payload.corps || '';
+            document.getElementById('courrierPJ').value = payload.pj || '';
+
+            if (payload.destinataire !== undefined) {
+                document.getElementById('destinataire').value = payload.destinataire;
+            } else if (modele.destinataire) {
+                document.getElementById('destinataire').value = modele.destinataire;
+            }
+
+            if (payload.destinataireAdresse !== undefined) {
+                document.getElementById('destinataireAdresse').value = payload.destinataireAdresse;
+            }
+
+            if (selectedClient && ['client', 'relance'].includes(document.getElementById('courrierType').value)) {
+                if (!document.getElementById('destinataire').value.trim()) {
+                    document.getElementById('destinataire').value = selectedClient.name || '';
+                }
+                if (!document.getElementById('destinataireAdresse').value.trim()) {
+                    document.getElementById('destinataireAdresse').value = selectedClient.ville || '';
+                }
+            }
+
+            if (!modele.dynamic) {
+                if (selectedClient) {
+                    replacePlaceholders(selectedClient);
+                }
+            }
+
+            if (showToast) {
+                PrismaToast.info('Mod\u00e8le appliqu\u00e9. Personnalisez le contenu selon vos besoins.');
+            }
+        }
+
+        // ============================
+        // CRUD COURRIERS
+        // ============================
+        function showCreateForm() {
+            editingCourrierId = null;
+            isManualMode = false;
+            currentPreviewCourrier = null;
+            document.getElementById('manualModeToggle').checked = false;
+            document.getElementById('modeLabel').textContent = 'Automatique';
+            document.getElementById('modeLabel').className = 'text-sm font-medium text-blue-700';
+            document.getElementById('modeHint').textContent = 'N\u00b0 et date g\u00e9n\u00e9r\u00e9s automatiquement';
+            document.getElementById('manualDateSection').classList.add('hidden');
+            document.getElementById('manualDate').value = '';
+            document.getElementById('courrierRef').placeholder = '';
+
+            document.getElementById('formTitle').textContent = 'Nouveau courrier';
+            loadClientSelect();
+            generateCourrierRef();
+            document.getElementById('courrierType').value = 'fiscal';
+            document.getElementById('clientSelect').value = '';
+            document.getElementById('destinataire').value = '';
+            document.getElementById('destinataireAdresse').value = '';
+            document.getElementById('modeleSelect').value = '';
+            document.getElementById('demandeDevisFraisMode').value = DEMANDE_DEVIS_FRAIS_PAR_DEFAUT;
+            document.getElementById('demandeDevisFraisCustom').value = '';
+            updateModeleSpecificFields();
+            document.getElementById('courrierObjet').value = '';
+            document.getElementById('courrierCorps').value = '';
+            document.getElementById('courrierPJ').value = '';
+            document.getElementById('courrierStatut').value = 'brouillon';
+            document.getElementById('modeEnvoi').value = '';
+            document.getElementById('dateEnvoi').value = '';
+            document.getElementById('notesSuivi').value = '';
+
+            document.getElementById('createForm').classList.remove('hidden');
+            document.getElementById('courrierListSection').classList.add('hidden');
+            window.scrollTo(0, 0);
+        }
+
+        function hideCreateForm() {
+            document.getElementById('createForm').classList.add('hidden');
+            document.getElementById('courrierListSection').classList.remove('hidden');
+            editingCourrierId = null;
+        }
+
+        function saveCourrier() {
+            const ref = document.getElementById('courrierRef').value;
+            const type = document.getElementById('courrierType').value;
+            const clientIndex = document.getElementById('clientSelect').value;
+            const destinataire = document.getElementById('destinataire').value;
+            const destinataireAdresse = document.getElementById('destinataireAdresse').value;
+            const modeleKey = document.getElementById('modeleSelect').value;
+            const demandeDevisFraisMode = document.getElementById('demandeDevisFraisMode').value;
+            const demandeDevisFraisCustom = document.getElementById('demandeDevisFraisCustom').value;
+            const objet = document.getElementById('courrierObjet').value;
+            const corps = document.getElementById('courrierCorps').value;
+            const pj = document.getElementById('courrierPJ').value;
+            const statut = document.getElementById('courrierStatut').value;
+            const modeEnvoi = document.getElementById('modeEnvoi').value;
+            const dateEnvoi = document.getElementById('dateEnvoi').value;
+            const notesSuivi = document.getElementById('notesSuivi').value;
+
+            if (!ref || !destinataire || !objet || !corps) {
+                PrismaToast.warning('Veuillez remplir les champs obligatoires (R\u00e9f\u00e9rence, Destinataire, Objet, Corps)');
+                return;
+            }
+
+            if (isManualMode && !document.getElementById('manualDate').value) {
+                PrismaToast.warning('En mode manuel, veuillez saisir la date du courrier');
+                return;
+            }
+
+            if (modeleKey === 'votre_demande_devis' && !getDemandeDevisFeeInfo().isValid) {
+                PrismaToast.warning('Veuillez saisir un montant manuel valide pour les frais de renouvellement.');
+                return;
+            }
+
+            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+            const client = clientIndex === '' ? null : clients[clientIndex];
+
+            const allCourriers = JSON.parse(localStorage.getItem('courriers') || '[]');
+
+            const manualDateVal = document.getElementById('manualDate').value;
+            const courrierDate = (isManualMode && manualDateVal) ? new Date(manualDateVal + 'T12:00:00').toISOString() : new Date().toISOString();
+
+            if (editingCourrierId) {
+                const index = allCourriers.findIndex(c => c.id === editingCourrierId);
+                if (index !== -1) {
+                    allCourriers[index] = {
+                        ...allCourriers[index],
+                        ref, type, client: client ? client.name : '', clientData: client,
+                        destinataire, destinataireAdresse, objet, corps, pj,
+                        modeleKey,
+                        demandeDevisFraisMode: modeleKey === 'votre_demande_devis' ? demandeDevisFraisMode : '',
+                        demandeDevisFraisCustom: modeleKey === 'votre_demande_devis' ? demandeDevisFraisCustom : '',
+                        statut, modeEnvoi, dateEnvoi, notesSuivi,
+                        dateModification: new Date().toISOString()
+                    };
+                    localStorage.setItem('courriers', JSON.stringify(allCourriers));
+                    PrismaToast.success('Courrier modifi\u00e9 avec succ\u00e8s !');
+                    hideCreateForm();
+                    loadCourriersList();
+                    displayCourrier(allCourriers[index]);
+                }
+            } else {
+                const courrier = {
+                    id: Date.now(),
+                    ref, type, client: client ? client.name : '', clientData: client,
+                    destinataire, destinataireAdresse, objet, corps, pj,
+                    modeleKey,
+                    demandeDevisFraisMode: modeleKey === 'votre_demande_devis' ? demandeDevisFraisMode : '',
+                    demandeDevisFraisCustom: modeleKey === 'votre_demande_devis' ? demandeDevisFraisCustom : '',
+                    statut, modeEnvoi, dateEnvoi, notesSuivi,
+                    date: courrierDate,
+                    isManual: isManualMode || false
+                };
+                allCourriers.push(courrier);
+                localStorage.setItem('courriers', JSON.stringify(allCourriers));
+                PrismaToast.success('Courrier enregistr\u00e9 avec succ\u00e8s !');
+                hideCreateForm();
+                loadCourriersList();
+                displayCourrier(courrier);
+            }
+            editingCourrierId = null;
+        }
+
+        function loadCourriersList() {
+            const courriers = JSON.parse(localStorage.getItem('courriers') || '[]');
+            const table = document.getElementById('courrierTable');
+
+            // Filtres
+            const search = (document.getElementById('filterSearch').value || '').toLowerCase();
+            const filterType = document.getElementById('filterType').value;
+            const filterStatut = document.getElementById('filterStatut').value;
+            const filterClient = document.getElementById('filterClient').value;
+
+            let filtered = courriers;
+            if (search) filtered = filtered.filter(c => (c.objet + ' ' + c.destinataire + ' ' + c.ref + ' ' + c.client).toLowerCase().includes(search));
+            if (filterType) filtered = filtered.filter(c => c.type === filterType);
+            if (filterStatut) filtered = filtered.filter(c => c.statut === filterStatut);
+            if (filterClient) filtered = filtered.filter(c => c.client === filterClient);
+
+            // Stats
+            document.getElementById('statTotal').textContent = courriers.length;
+            document.getElementById('statBrouillon').textContent = courriers.filter(c => c.statut === 'brouillon').length;
+            document.getElementById('statEnvoye').textContent = courriers.filter(c => c.statut === 'envoye' || c.statut === 'accuse').length;
+            document.getElementById('statClasse').textContent = courriers.filter(c => c.statut === 'classe').length;
+
+            if (filtered.length === 0) {
+                table.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-gray-500">Aucun courrier</td></tr>';
+                return;
+            }
+
+            const typeLabels = { fiscal: 'Fiscal', client: 'Client', relance: 'Relance', administratif: 'Admin.', autre: 'Autre' };
+            const typeColors = { fiscal: 'bg-blue-100 text-blue-800', client: 'bg-green-100 text-green-800', relance: 'bg-red-100 text-red-800', administratif: 'bg-purple-100 text-purple-800', autre: 'bg-gray-100 text-gray-800' };
+            const statutLabels = { brouillon: 'Brouillon', envoye: 'Envoy\u00e9', accuse: 'Accus\u00e9 R.', classe: 'Class\u00e9' };
+            const statutColors = { brouillon: 'bg-yellow-100 text-yellow-800', envoye: 'bg-blue-100 text-blue-800', accuse: 'bg-green-100 text-green-800', classe: 'bg-gray-200 text-gray-700' };
+
+            table.innerHTML = filtered.slice().reverse().map(c => {
+                const dateStr = new Date(c.date).toLocaleDateString('fr-FR');
+                return `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="px-4 py-3 text-sm">${dateStr}</td>
+                        <td class="px-4 py-3 font-semibold text-sm">${c.ref}</td>
+                        <td class="px-4 py-3"><span class="px-2 py-1 text-xs font-semibold rounded ${typeColors[c.type] || ''}">${typeLabels[c.type] || c.type}</span></td>
+                        <td class="px-4 py-3 text-sm">${c.destinataire}${c.client ? ` <span class="text-xs text-gray-400">(${c.client})</span>` : ''}</td>
+                        <td class="px-4 py-3 text-sm">${c.objet.length > 40 ? c.objet.substring(0, 40) + '...' : c.objet}</td>
+                        <td class="px-4 py-3 text-center"><span class="px-2 py-1 text-xs font-semibold rounded ${statutColors[c.statut] || ''}">${statutLabels[c.statut] || c.statut}</span></td>
+                        <td class="px-4 py-3 text-center">
+                            <div class="flex justify-center gap-1">
+                                <button onclick="viewCourrier(${c.id})" class="bg-gray-600 text-white px-2 py-1 rounded text-xs hover:bg-gray-700">Voir</button>
+                                <button onclick="editCourrier(${c.id})" class="bg-yellow-600 text-white px-2 py-1 rounded text-xs hover:bg-yellow-700">Modifier</button>
+                                <button onclick="deleteCourrier(${c.id})" class="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700">Suppr.</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function filterCourriers() {
+            loadCourriersList();
+        }
+
+        function viewCourrier(id) {
+            const courriers = JSON.parse(localStorage.getItem('courriers') || '[]');
+            const c = courriers.find(x => x.id === id);
+            if (c) displayCourrier(c);
+        }
+
+        function editCourrier(id) {
+            const courriers = JSON.parse(localStorage.getItem('courriers') || '[]');
+            const c = courriers.find(x => x.id === id);
+            if (!c) return;
+
+            editingCourrierId = id;
+            document.getElementById('formTitle').textContent = 'Modifier le courrier';
+            loadClientSelect();
+
+            document.getElementById('courrierRef').value = c.ref;
+            document.getElementById('courrierType').value = c.type;
+            document.getElementById('destinataire').value = c.destinataire;
+            document.getElementById('destinataireAdresse').value = c.destinataireAdresse || '';
+            document.getElementById('modeleSelect').value = c.modeleKey || '';
+            document.getElementById('demandeDevisFraisMode').value = c.demandeDevisFraisMode || DEMANDE_DEVIS_FRAIS_PAR_DEFAUT;
+            document.getElementById('demandeDevisFraisCustom').value = c.demandeDevisFraisCustom || '';
+            updateModeleSpecificFields();
+            document.getElementById('courrierObjet').value = c.objet;
+            document.getElementById('courrierCorps').value = c.corps;
+            document.getElementById('courrierPJ').value = c.pj || '';
+            document.getElementById('courrierStatut').value = c.statut;
+            document.getElementById('modeEnvoi').value = c.modeEnvoi || '';
+            document.getElementById('dateEnvoi').value = c.dateEnvoi || '';
+            document.getElementById('notesSuivi').value = c.notesSuivi || '';
+
+            if (c.client) {
+                const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+                const clientIndex = clients.findIndex(cl => cl.name === c.client);
+                if (clientIndex !== -1) document.getElementById('clientSelect').value = clientIndex;
+            }
+
+            document.getElementById('createForm').classList.remove('hidden');
+            document.getElementById('courrierListSection').classList.add('hidden');
+            window.scrollTo(0, 0);
+            PrismaToast.info('Courrier charg\u00e9 pour modification');
+        }
+
+        function deleteCourrier(id) {
+            PrismaModal.confirmDelete('Supprimer ce courrier ?', () => {
+                const courriers = JSON.parse(localStorage.getItem('courriers') || '[]');
+                localStorage.setItem('courriers', JSON.stringify(courriers.filter(c => c.id !== id)));
+                loadCourriersList();
+                PrismaToast.success('Courrier supprim\u00e9');
+            });
+        }
+
+        // ============================
+        // AFFICHAGE / APERCU
+        // ============================
+        function displayCourrier(courrier) {
+            currentPreviewCourrier = courrier;
+            const date = new Date(courrier.date);
+            const dateStr = date.toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
+            const destinataireCivilite = getCourrierDestinataireCivilite(courrier);
+            const attentionLabel = destinataireCivilite ? `À l'attention de ${destinataireCivilite}` : `À l'attention de`;
+
+            const corpsFormate = String(courrier.corps || '')
+                .split(/\n\s*\n/)
+                .filter((paragraph) => paragraph.trim())
+                .map((paragraph, index, paragraphs) => {
+                    const marginBottom = index === paragraphs.length - 1 ? '0' : '0.65rem';
+                    return `<p style="margin: 0 0 ${marginBottom};">${paragraph.replace(/\n/g, '<br>')}</p>`;
+                })
+                .join('');
+
+            let pjHTML = '';
+            if (courrier.pj && courrier.pj.trim()) {
+                const pjLines = courrier.pj.split('\n').filter(l => l.trim());
+                pjHTML = `
+                    <div style="margin-top: 1rem; padding-top: 0.65rem; border-top: 1px solid #d1d5db;">
+                        <p style="font-weight: 600; font-size: 0.875rem; margin-bottom: 0.5rem;">Pi\u00e8ces jointes :</p>
+                        <ul style="font-size: 0.8rem; color: #4b5563; margin: 0; padding-left: 1.5rem;">
+                            ${pjLines.map(l => `<li>${l.replace(/^\d+\.\s*/, '')}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            const statutBadge = {
+                brouillon: '<span style="background:#fef3c7;color:#92400e;padding:4px 10px;border-radius:999px;font-size:0.78rem;font-weight:700;">BROUILLON</span>',
+                envoye: '<span style="background:#dbeafe;color:#1e40af;padding:4px 10px;border-radius:999px;font-size:0.78rem;font-weight:700;">ENVOY\u00c9</span>',
+                accuse: '<span style="background:#d1fae5;color:#065f46;padding:4px 10px;border-radius:999px;font-size:0.78rem;font-weight:700;">ACCUS\u00c9 R.</span>',
+                classe: '<span style="background:#e5e7eb;color:#374151;padding:4px 10px;border-radius:999px;font-size:0.78rem;font-weight:700;">CLASS\u00c9</span>'
+            };
+
+            document.getElementById('printArea').innerHTML = `
+                <div style="font-family: 'Inter', Arial, sans-serif; line-height: 1.65; color: #1f2937;">
+                    <!-- En-t\u00eate Cabinet -->
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.15rem;">
+                        <div>
+                            <h1 style="font-size: 1.5rem; font-weight: 700; color: #1e3a8a; margin: 0;">PRISMA GESTION</h1>
+                            <p style="font-size: 0.78rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.17em; margin: 0.15rem 0 0;">Comptabilit\u00e9 - Finance - Fiscalit\u00e9</p>
+                            <div style="font-size: 0.88rem; line-height: 1.55; margin-top: 0.65rem; color: #4b5563;">
+                                <p style="margin: 0;">Si\u00e8ge Social : Yaound\u00e9 - Bata Longkak</p>
+                                <p style="margin: 0;">T\u00e9l : (237) 656 752 475 / 671 050 546</p>
+                                <p style="margin: 0;">N.I.U : M052116042979Z</p>
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <p style="font-size: 0.95rem; color: #6b7280; margin: 0 0 0.45rem;">R\u00e9f : <strong>${courrier.ref}</strong></p>
+                            <p style="font-size: 0.95rem; color: #6b7280; margin: 0 0 0.75rem;">Yaound\u00e9, le ${dateStr}</p>
+                            ${statutBadge[courrier.statut] || ''}
+                        </div>
+                    </div>
+
+                    <div style="border-bottom: 2px solid #1e3a8a; margin-bottom: 0.85rem;"></div>
+
+                    <!-- Destinataire -->
+                    <div style="text-align: right; margin-bottom: 1.05rem;">
+                        <p style="font-weight: 600; font-size: 0.95rem; letter-spacing: 0.02em; margin: 0 0 0.2rem;">${attentionLabel}</p>
+                        <p style="font-weight: 700; font-size: 1.08rem; margin: 0;">${courrier.destinataire}</p>
+                        ${courrier.destinataireAdresse ? `<p style="font-size: 0.95rem; color: #4b5563; margin: 0.1rem 0 0;">${courrier.destinataireAdresse}</p>` : ''}
+                    </div>
+
+                    <!-- Objet -->
+                    <div style="margin-bottom: 0.95rem; padding: 0.9rem 1.1rem; background-color: #f0f9ff; border-left: 4px solid #1e3a8a; border-radius: 0 6px 6px 0;">
+                        <p style="margin: 0; font-size: 14pt; line-height: 1.45;"><strong>Objet :</strong> ${courrier.objet}</p>
+                    </div>
+
+                    <!-- Corps -->
+                    <div style="font-size: 13.5pt; line-height: 1.8; text-align: justify; margin-bottom: 1rem;">
+                        ${corpsFormate}
+                    </div>
+
+                    ${pjHTML}
+
+                    <!-- Signature -->
+                    <div style="margin-top: 1.65rem; text-align: right;">
+                        <div style="display: inline-block; text-align: center;">
+                            <div style="display: flex; align-items: center; gap: 1rem; justify-content: flex-end;">
+                                <img id="cachetImg" src="" alt="" style="max-height: 70px; display: none;">
+                                <div>
+                                    <p style="font-weight: 700; color: #1e3a8a; margin: 0;">Pour PRISMA GESTION</p>
+                                    <img id="signatureImg" src="" alt="" style="max-height: 50px; display: none; margin: 0.5rem auto;">
+                                    <div style="border-top: 2px solid #9ca3af; padding-top: 0.5rem; margin-top: 0.5rem;">
+                                        <p style="font-weight: 700; margin: 0;" id="signataireNom">OBIANG TIME Nathan</p>
+                                        <p style="font-size: 0.8rem; color: #6b7280; margin: 0;" id="signataireTitre">Directeur Associ\u00e9</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pied de page -->
+                    <div style="margin-top: 0.95rem; padding-top: 0.4rem; border-top: 1px solid #e5e7eb; text-align: center;">
+                        <p style="font-size: 0.7rem; color: #6b7280; margin: 0;">
+                            <span style="font-weight: 600; color: #1e3a8a;">PRISMA Manager</span> \u2014 PRISMA GESTION : L'expertise qui s\u00e9curise votre gestion.
+                        </p>
+                    </div>
+                </div>
+            `;
+
+            document.querySelector('nav.no-print').classList.add('hidden');
+            document.querySelector('.max-w-7xl.no-print').classList.add('hidden');
+            document.getElementById('courrierPreview').classList.remove('hidden');
+
+            loadCabinetSignatures();
+            window.scrollTo(0, 0);
+        }
+
+        function loadCabinetSignatures() {
+            const config = JSON.parse(localStorage.getItem('cabinetConfig') || '{}');
+
+            const signatureImg = document.getElementById('signatureImg');
+            const cachetImg = document.getElementById('cachetImg');
+            const signataireNom = document.getElementById('signataireNom');
+            const signataireTitre = document.getElementById('signataireTitre');
+
+            if (config.signature && signatureImg) {
+                signatureImg.src = config.signature;
+                signatureImg.style.display = 'block';
+            }
+            if (config.cachet && cachetImg) {
+                cachetImg.src = config.cachet;
+                cachetImg.style.display = 'block';
+            }
+            if (config.signataireNom && signataireNom) signataireNom.textContent = config.signataireNom;
+            if (config.signataireTitre && signataireTitre) signataireTitre.textContent = config.signataireTitre;
+        }
+
+        function backToList() {
+            document.querySelector('nav.no-print').classList.remove('hidden');
+            document.querySelector('.max-w-7xl.no-print').classList.remove('hidden');
+            document.getElementById('courrierPreview').classList.add('hidden');
+            currentPreviewCourrier = null;
+        }
+
+        // ============================
+        // IMPRESSION DIRECTE
+        // ============================
+        function printCourrier() {
+            const printStyle = document.createElement('style');
+            printStyle.id = 'crr-print-style';
+            printStyle.textContent = `
+                @page { size: A4; margin: 1cm 2cm 0.7cm 2cm; }
+                * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+                body { font-family: 'Inter', Arial, sans-serif !important; margin: 0 !important; padding: 0 !important; }
+                @media print { body { display: block !important; } }
+            `;
+            document.head.appendChild(printStyle);
+
+            const bodyContent = document.getElementById('printArea').innerHTML;
+            const originalContent = document.body.innerHTML;
+            document.body.innerHTML = bodyContent;
+            window.print();
+            document.body.innerHTML = originalContent;
+            document.getElementById('crr-print-style').remove();
+            init();
+        }
+
+        // ============================
+        // PDF
+        // ============================
+        async function downloadPDF() {
+            const element = document.getElementById('printArea');
+            const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+            const imgData = canvas.toDataURL('image/png');
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+
+            const ref = sanitizePdfSegment(currentPreviewCourrier ? currentPreviewCourrier.ref : document.getElementById('courrierRef').value, 'Courrier');
+            const clientName = sanitizePdfSegment(
+                currentPreviewCourrier ? (currentPreviewCourrier.client || currentPreviewCourrier.destinataire) : document.getElementById('destinataire').value,
+                'General'
+            );
+            pdf.save(`Courrier_${ref}_${clientName}.pdf`);
+        }
+
+        // ============================
+        // INITIALISATION
+        // ============================
+        function init() {
+            loadCourriersList();
+            loadFilterClients();
+        }
+
+        init();
+    </script>
+</body>
+</html>

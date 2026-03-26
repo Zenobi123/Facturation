@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paramètres Cabinet - PRISMA GESTION</title>
+    <script src="assets/css/tailwindcss.min.js"></script>
+    <link rel="stylesheet" href="prisma-print.css">
+    <link rel="stylesheet" href="assets/css/inter-font.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+
+        .upload-zone {
+            border: 2px dashed #9ca3af;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background-color: #f9fafb;
+        }
+
+        .upload-zone:hover {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+        }
+
+        .upload-zone.has-image {
+            border-style: solid;
+            border-color: #10b981;
+            background-color: #ecfdf5;
+        }
+
+        .preview-img {
+            max-height: 100px;
+            max-width: 200px;
+            object-fit: contain;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <nav class="bg-blue-900 text-white p-4 shadow-lg">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <a href="index.html" class="inline-flex items-center px-3 py-1.5 border border-white rounded-lg shadow-sm text-white hover:bg-white hover:text-blue-900 transition-colors duration-200">← PRISMA GESTION</a>
+            <span class="text-sm text-blue-200">Paramètres Cabinet</span>
+        </div>
+    </nav>
+
+    <div class="max-w-4xl mx-auto p-6">
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Configuration du Cabinet</h2>
+
+            <!-- Section Identité Cabinet -->
+            <div class="mb-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <h3 class="text-lg font-bold text-blue-900 mb-4 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                    Identité du Cabinet
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Nom du cabinet</label>
+                        <input type="text" id="cabinetNom" value="PRISMA GESTION" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">NIU</label>
+                        <input type="text" id="cabinetNiu" value="M052116042979Z" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Adresse</label>
+                        <input type="text" id="cabinetAdresse" value="Yaoundé - Bata Longkak" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Téléphone</label>
+                        <input type="text" id="cabinetTel" value="(237) 656 752 475 / 671 050 546" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Email</label>
+                        <input type="email" id="cabinetEmail" placeholder="email@example.com" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section Signataire -->
+            <div class="mb-8 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                    </svg>
+                    Signataire
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Nom complet</label>
+                        <input type="text" id="signataireNom" value="OBIANG TIME Nathan" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Titre / Fonction</label>
+                        <input type="text" id="signataireTitre" value="Directeur Associé" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section Signature -->
+            <div class="mb-8 p-4 bg-green-50 rounded-lg border border-green-200">
+                <h3 class="text-lg font-bold text-green-900 mb-4 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 20h9"></path>
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                    </svg>
+                    Signature
+                </h3>
+                <p class="text-sm text-green-700 mb-4">Uploadez une image de votre signature (PNG transparent recommandé pour un meilleur rendu)</p>
+
+                <div id="signatureZone" class="upload-zone" onclick="document.getElementById('signatureInput').click()">
+                    <input type="file" id="signatureInput" accept="image/*" class="hidden" onchange="handleSignatureUpload(event)">
+                    <div id="signaturePlaceholder">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" class="mx-auto mb-2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                        <p class="text-gray-500">Cliquez pour uploader une signature</p>
+                        <p class="text-xs text-gray-400 mt-1">Formats acceptés : PNG, JPG, GIF</p>
+                    </div>
+                    <div id="signaturePreview" class="hidden">
+                        <img id="signatureImg" class="preview-img mb-2" alt="Signature">
+                        <p class="text-sm text-green-600 font-semibold">Signature chargée</p>
+                    </div>
+                </div>
+
+                <button id="removeSignatureBtn" onclick="removeSignature()" class="hidden mt-3 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 text-sm">
+                    Supprimer la signature
+                </button>
+            </div>
+
+            <!-- Section Cachet -->
+            <div class="mb-8 p-4 bg-purple-50 rounded-lg border border-purple-200">
+                <h3 class="text-lg font-bold text-purple-900 mb-4 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M12 6v6l4 2"></path>
+                    </svg>
+                    Cachet
+                </h3>
+                <p class="text-sm text-purple-700 mb-4">Uploadez une image de votre cachet (PNG transparent recommandé)</p>
+
+                <div id="cachetZone" class="upload-zone" onclick="document.getElementById('cachetInput').click()">
+                    <input type="file" id="cachetInput" accept="image/*" class="hidden" onchange="handleCachetUpload(event)">
+                    <div id="cachetPlaceholder">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" class="mx-auto mb-2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                        <p class="text-gray-500">Cliquez pour uploader un cachet</p>
+                        <p class="text-xs text-gray-400 mt-1">Formats acceptés : PNG, JPG, GIF</p>
+                    </div>
+                    <div id="cachetPreview" class="hidden">
+                        <img id="cachetImg" class="preview-img mb-2" alt="Cachet">
+                        <p class="text-sm text-purple-600 font-semibold">Cachet chargé</p>
+                    </div>
+                </div>
+
+                <button id="removeCachetBtn" onclick="removeCachet()" class="hidden mt-3 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 text-sm">
+                    Supprimer le cachet
+                </button>
+            </div>
+
+            <!-- Aperçu -->
+            <div class="mb-8 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <h3 class="text-lg font-bold text-gray-800 mb-4">Aperçu sur document</h3>
+                <div class="bg-white p-6 rounded-lg border border-gray-300">
+                    <div class="flex items-center justify-end gap-4">
+                        <!-- Cachet -->
+                        <div id="previewCachet" class="hidden">
+                            <img id="previewCachetImg" style="max-height: 70px;" alt="">
+                        </div>
+
+                        <!-- Signature + Nom -->
+                        <div class="text-center">
+                            <div id="previewSignature" class="hidden mb-2">
+                                <img id="previewSignatureImg" style="max-height: 50px;" alt="">
+                            </div>
+                            <div style="border-top: 1px solid #9ca3af; padding-top: 0.25rem; margin-top: 0.5rem;">
+                                <p class="font-bold" id="previewNom">OBIANG TIME Nathan</p>
+                                <p class="text-sm text-gray-600" id="previewTitre">Directeur Associé</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section Import/Export des données -->
+            <div class="mb-8 p-4 bg-orange-50 rounded-lg border border-orange-200">
+                <h3 class="text-lg font-bold text-orange-900 mb-4 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Gestion des données
+                </h3>
+                <p class="text-sm text-orange-700 mb-4">
+                    Exportez vos données pour les sauvegarder ou les transférer sur un autre appareil/navigateur. 
+                    Importez un fichier précédemment exporté pour restaurer vos données.
+                </p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Export -->
+                    <div class="p-4 bg-white rounded-lg border border-orange-200">
+                        <h4 class="font-semibold text-gray-800 mb-3">Exporter les données</h4>
+                        <p class="text-xs text-gray-600 mb-3">
+                            Télécharge un fichier JSON contenant toutes vos données (clients, contrats, factures, reçus, etc.)
+                        </p>
+                        <button onclick="exportData()" class="w-full bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition flex items-center justify-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            Exporter en JSON
+                        </button>
+                    </div>
+
+                    <!-- Import -->
+                    <div class="p-4 bg-white rounded-lg border border-orange-200">
+                        <h4 class="font-semibold text-gray-800 mb-3">Importer des données</h4>
+                        <p class="text-xs text-gray-600 mb-3">
+                            Charge un fichier JSON précédemment exporté pour restaurer vos données
+                        </p>
+                        <input type="file" id="importFile" accept=".json" class="hidden" onchange="importData(event)">
+                        <button onclick="document.getElementById('importFile').click()" class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center justify-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            Importer un fichier JSON
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Réinitialisation -->
+                <div class="mt-4 p-4 bg-red-50 rounded-lg border border-red-200">
+                    <h4 class="font-semibold text-red-800 mb-2 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 6h18"></path>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                        Zone dangereuse
+                    </h4>
+                    <p class="text-xs text-red-600 mb-3">
+                        Attention : cette action supprime définitivement toutes vos données. Exportez d'abord vos données si vous souhaitez les conserver.
+                    </p>
+                    <button onclick="resetAllData()" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition text-sm flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                        Réinitialiser toutes les données
+                    </button>
+                </div>
+            </div>
+
+            <!-- Sauvegarde automatique -->
+            <div class="bg-teal-50 p-6 rounded-xl border border-teal-200 shadow-sm">
+                <h3 class="text-lg font-bold text-teal-900 mb-4 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <polyline points="1 20 1 14 7 14"></polyline>
+                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                    </svg>
+                    Sauvegarde automatique
+                </h3>
+                <p class="text-sm text-teal-700 mb-4">
+                    Recevez un rappel ou un téléchargement automatique de vos données à intervalles réguliers.
+                </p>
+
+                <div class="space-y-4">
+                    <!-- Toggle activation -->
+                    <div class="flex items-center justify-between p-4 bg-white rounded-lg border border-teal-200">
+                        <div>
+                            <label class="font-semibold text-gray-800">Activer la sauvegarde automatique</label>
+                            <p class="text-xs text-gray-500 mt-1">Un rappel apparaîtra quand une sauvegarde est en retard</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="autobackup-enabled" class="sr-only peer" onchange="updateAutoBackupConfig()">
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
+                        </label>
+                    </div>
+
+                    <!-- Options (affichées quand activé) -->
+                    <div id="autobackup-options" class="hidden space-y-3">
+                        <!-- Fréquence -->
+                        <div class="p-4 bg-white rounded-lg border border-teal-200">
+                            <label class="block font-semibold text-gray-800 mb-2">Fréquence</label>
+                            <select id="autobackup-frequency" onchange="updateAutoBackupConfig()" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                                <option value="daily">Quotidienne (tous les jours)</option>
+                                <option value="weekly" selected>Hebdomadaire (tous les 7 jours)</option>
+                                <option value="monthly">Mensuelle (tous les 30 jours)</option>
+                            </select>
+                        </div>
+
+                        <!-- Auto-download -->
+                        <div class="flex items-center justify-between p-4 bg-white rounded-lg border border-teal-200">
+                            <div>
+                                <label class="font-semibold text-gray-800">Téléchargement automatique</label>
+                                <p class="text-xs text-gray-500 mt-1">Télécharge le fichier sans demander (sinon, affiche un rappel)</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="autobackup-autodownload" class="sr-only peer" onchange="updateAutoBackupConfig()">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
+                            </label>
+                        </div>
+
+                        <!-- Dernière sauvegarde + bouton -->
+                        <div class="flex items-center justify-between p-4 bg-white rounded-lg border border-teal-200">
+                            <div>
+                                <span class="font-semibold text-gray-800">Dernière sauvegarde :</span>
+                                <span id="autobackup-last" class="text-sm text-gray-600 ml-1">—</span>
+                            </div>
+                            <button onclick="manualAutoBackup()" class="bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition text-sm flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                                Sauvegarder maintenant
+                            </button>
+                        </div>
+
+                        <!-- Historique -->
+                        <div class="p-4 bg-white rounded-lg border border-teal-200">
+                            <h4 class="font-semibold text-gray-800 mb-2">Historique des sauvegardes</h4>
+                            <div id="autobackup-history" class="max-h-48 overflow-y-auto text-sm">
+                                <p class="text-gray-400 italic">Aucune sauvegarde enregistrée</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Boutons d'action -->
+            <div class="flex justify-end gap-4">
+                <a href="index.html" class="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition">
+                    Annuler
+                </a>
+                <button onclick="saveConfig()" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                        <polyline points="7 3 7 8 15 8"></polyline>
+                    </svg>
+                    Enregistrer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="prisma-components.js"></script>
+    <script>
+        let signatureData = null;
+        let cachetData = null;
+
+        // Clés localStorage à sauvegarder/restaurer (source unique : PrismaBackup)
+        const DATA_KEYS = PrismaBackup.ALL_DATA_KEYS;
+
+        // Export des données en JSON
+        function exportData() {
+            try {
+                const exportData = {
+                    version: '2.0',
+                    exportDate: new Date().toISOString(),
+                    application: 'PRISMA GESTION'
+                };
+
+                // Récupérer toutes les données du localStorage
+                DATA_KEYS.forEach(key => {
+                    const data = localStorage.getItem(key);
+                    if (data) {
+                        exportData[key] = JSON.parse(data);
+                    }
+                });
+
+                // Créer le fichier JSON
+                const dataStr = JSON.stringify(exportData, null, 2);
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                
+                // Générer le nom de fichier avec la date
+                const date = new Date();
+                const dateStr = date.getFullYear() + '-' + 
+                               String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+                               String(date.getDate()).padStart(2, '0');
+                const fileName = `prisma-gestion-backup-${dateStr}.json`;
+
+                // Télécharger le fichier
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(dataBlob);
+                link.download = fileName;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(link.href);
+
+                // Enregistrer dans l'historique auto-backup
+                const sizeKB = Math.round(dataBlob.size / 1024);
+                PrismaAutoBackup.recordBackup('manual', sizeKB);
+
+                PrismaToast.success('Données exportées avec succès !');
+
+                // Rafraîchir l'affichage si la section est visible
+                if (typeof renderAutoBackupHistory === 'function') {
+                    renderAutoBackupHistory();
+                }
+            } catch (error) {
+                console.error('Erreur lors de l\'export:', error);
+                PrismaToast.error('Erreur lors de l\'export des données');
+            }
+        }
+
+        // Import des données depuis JSON
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (!file.name.endsWith('.json')) {
+                PrismaToast.error('Veuillez sélectionner un fichier JSON');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importData = JSON.parse(e.target.result);
+
+                    // Vérifier que c'est bien un fichier PRISMA GESTION
+                    if (!importData.application || importData.application !== 'PRISMA GESTION') {
+                        if (!confirm('Ce fichier ne semble pas provenir de PRISMA GESTION. Voulez-vous quand même continuer ?')) {
+                            return;
+                        }
+                    }
+
+                    // Demander confirmation avant d'écraser les données existantes
+                    const existingData = DATA_KEYS.some(key => localStorage.getItem(key) !== null);
+                    if (existingData) {
+                        if (!confirm('Des données existantes ont été détectées. L\'import va les remplacer. Voulez-vous continuer ?\n\nConseil : Exportez d\'abord vos données actuelles pour les sauvegarder.')) {
+                            event.target.value = '';
+                            return;
+                        }
+                    }
+
+                    // Sauvegarder les données existantes avant écrasement
+                    PrismaBackup.createSnapshot();
+
+                    // Importer les données
+                    let importedCount = 0;
+                    DATA_KEYS.forEach(key => {
+                        if (importData[key] !== undefined) {
+                            localStorage.setItem(key, JSON.stringify(importData[key]));
+                            importedCount++;
+                        }
+                    });
+
+                    // Recharger la configuration
+                    loadConfig();
+
+                    PrismaToast.success(`${importedCount} type(s) de données importé(s) avec succès !`);
+                    
+                    // Afficher la date d'export si disponible
+                    if (importData.exportDate) {
+                        const exportDate = new Date(importData.exportDate);
+                        PrismaToast.info(`Données exportées le ${exportDate.toLocaleDateString('fr-FR')}`);
+                    }
+
+                } catch (error) {
+                    console.error('Erreur lors de l\'import:', error);
+                    PrismaToast.error('Fichier JSON invalide ou corrompu');
+                }
+
+                event.target.value = '';
+            };
+            reader.readAsText(file);
+        }
+
+        // Réinitialiser toutes les données
+        function resetAllData() {
+            if (!confirm('ATTENTION : Vous êtes sur le point de supprimer DÉFINITIVEMENT toutes vos données.\n\nCette action est irréversible.\n\nÊtes-vous absolument sûr de vouloir continuer ?')) {
+                return;
+            }
+
+            if (!confirm('Confirmation finale : Toutes vos données (clients, contrats, factures, reçus, etc.) seront PERDUES.\n\nCliquez OK pour confirmer la suppression.')) {
+                return;
+            }
+
+            try {
+                // Sauvegarder les données avant suppression définitive
+                PrismaBackup.createSnapshot();
+
+                DATA_KEYS.forEach(key => {
+                    localStorage.removeItem(key);
+                });
+
+                // Réinitialiser les variables
+                signatureData = null;
+                cachetData = null;
+
+                // Recharger la page
+                location.reload();
+
+                PrismaToast.success('Toutes les données ont été réinitialisées');
+            } catch (error) {
+                console.error('Erreur lors de la réinitialisation:', error);
+                PrismaToast.error('Erreur lors de la réinitialisation des données');
+            }
+        }
+
+        // Charger la configuration existante
+        function loadConfig() {
+            const config = JSON.parse(localStorage.getItem('cabinetConfig') || '{}');
+
+            // Charger les informations du cabinet
+            if (config.nom) document.getElementById('cabinetNom').value = config.nom;
+            if (config.niu) document.getElementById('cabinetNiu').value = config.niu;
+            if (config.adresse) document.getElementById('cabinetAdresse').value = config.adresse;
+            if (config.tel) document.getElementById('cabinetTel').value = config.tel;
+            if (config.email) document.getElementById('cabinetEmail').value = config.email;
+
+            // Charger les informations du signataire
+            if (config.signataireNom) document.getElementById('signataireNom').value = config.signataireNom;
+            if (config.signataireTitre) document.getElementById('signataireTitre').value = config.signataireTitre;
+
+            // Charger la signature
+            if (config.signature) {
+                signatureData = config.signature;
+                displaySignature(config.signature);
+            }
+
+            // Charger le cachet
+            if (config.cachet) {
+                cachetData = config.cachet;
+                displayCachet(config.cachet);
+            }
+
+            updatePreview();
+        }
+
+        // Gérer l'upload de signature
+        function handleSignatureUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (!file.type.startsWith('image/')) {
+                PrismaToast.error('Veuillez sélectionner une image');
+                return;
+            }
+
+            // Vérifier la taille (max 500KB pour localStorage)
+            if (file.size > 500 * 1024) {
+                PrismaToast.warning('Image trop volumineuse. Taille maximum : 500 Ko');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                signatureData = e.target.result;
+                displaySignature(signatureData);
+                updatePreview();
+                PrismaToast.success('Signature chargée');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Afficher la signature
+        function displaySignature(dataUrl) {
+            document.getElementById('signaturePlaceholder').classList.add('hidden');
+            document.getElementById('signaturePreview').classList.remove('hidden');
+            document.getElementById('signatureImg').src = dataUrl;
+            document.getElementById('signatureZone').classList.add('has-image');
+            document.getElementById('removeSignatureBtn').classList.remove('hidden');
+        }
+
+        // Supprimer la signature
+        function removeSignature() {
+            signatureData = null;
+            document.getElementById('signaturePlaceholder').classList.remove('hidden');
+            document.getElementById('signaturePreview').classList.add('hidden');
+            document.getElementById('signatureImg').src = '';
+            document.getElementById('signatureZone').classList.remove('has-image');
+            document.getElementById('removeSignatureBtn').classList.add('hidden');
+            document.getElementById('signatureInput').value = '';
+            updatePreview();
+            PrismaToast.info('Signature supprimée');
+        }
+
+        // Gérer l'upload de cachet
+        function handleCachetUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (!file.type.startsWith('image/')) {
+                PrismaToast.error('Veuillez sélectionner une image');
+                return;
+            }
+
+            // Vérifier la taille (max 500KB pour localStorage)
+            if (file.size > 500 * 1024) {
+                PrismaToast.warning('Image trop volumineuse. Taille maximum : 500 Ko');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                cachetData = e.target.result;
+                displayCachet(cachetData);
+                updatePreview();
+                PrismaToast.success('Cachet chargé');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Afficher le cachet
+        function displayCachet(dataUrl) {
+            document.getElementById('cachetPlaceholder').classList.add('hidden');
+            document.getElementById('cachetPreview').classList.remove('hidden');
+            document.getElementById('cachetImg').src = dataUrl;
+            document.getElementById('cachetZone').classList.add('has-image');
+            document.getElementById('removeCachetBtn').classList.remove('hidden');
+        }
+
+        // Supprimer le cachet
+        function removeCachet() {
+            cachetData = null;
+            document.getElementById('cachetPlaceholder').classList.remove('hidden');
+            document.getElementById('cachetPreview').classList.add('hidden');
+            document.getElementById('cachetImg').src = '';
+            document.getElementById('cachetZone').classList.remove('has-image');
+            document.getElementById('removeCachetBtn').classList.add('hidden');
+            document.getElementById('cachetInput').value = '';
+            updatePreview();
+            PrismaToast.info('Cachet supprimé');
+        }
+
+        // Mettre à jour l'aperçu
+        function updatePreview() {
+            const nom = document.getElementById('signataireNom').value;
+            const titre = document.getElementById('signataireTitre').value;
+
+            document.getElementById('previewNom').textContent = nom || 'OBIANG TIME Nathan';
+            document.getElementById('previewTitre').textContent = titre || 'Directeur Associé';
+
+            // Aperçu signature
+            if (signatureData) {
+                document.getElementById('previewSignature').classList.remove('hidden');
+                document.getElementById('previewSignatureImg').src = signatureData;
+            } else {
+                document.getElementById('previewSignature').classList.add('hidden');
+            }
+
+            // Aperçu cachet
+            if (cachetData) {
+                document.getElementById('previewCachet').classList.remove('hidden');
+                document.getElementById('previewCachetImg').src = cachetData;
+            } else {
+                document.getElementById('previewCachet').classList.add('hidden');
+            }
+        }
+
+        // Sauvegarder la configuration
+        function saveConfig() {
+            const config = {
+                // Informations cabinet
+                nom: document.getElementById('cabinetNom').value,
+                niu: document.getElementById('cabinetNiu').value,
+                adresse: document.getElementById('cabinetAdresse').value,
+                tel: document.getElementById('cabinetTel').value,
+                email: document.getElementById('cabinetEmail').value,
+
+                // Informations signataire
+                signataireNom: document.getElementById('signataireNom').value,
+                signataireTitre: document.getElementById('signataireTitre').value,
+
+                // Images
+                signature: signatureData,
+                cachet: cachetData,
+
+                // Métadonnées
+                updatedAt: new Date().toISOString()
+            };
+
+            try {
+                localStorage.setItem('cabinetConfig', JSON.stringify(config));
+                PrismaToast.success('Configuration enregistrée avec succès !');
+            } catch (e) {
+                if (e.name === 'QuotaExceededError') {
+                    PrismaToast.error('Espace de stockage insuffisant. Réduisez la taille des images.');
+                } else {
+                    PrismaToast.error('Erreur lors de l\'enregistrement');
+                }
+            }
+        }
+
+        // Écouter les changements pour mettre à jour l'aperçu
+        document.getElementById('signataireNom').addEventListener('input', updatePreview);
+        document.getElementById('signataireTitre').addEventListener('input', updatePreview);
+
+        // ===== Sauvegarde automatique =====
+
+        function loadAutoBackupConfig() {
+            const config = PrismaAutoBackup.getConfig();
+            document.getElementById('autobackup-enabled').checked = config.enabled;
+            document.getElementById('autobackup-frequency').value = config.frequency;
+            document.getElementById('autobackup-autodownload').checked = config.autoDownload;
+
+            // Afficher/masquer les options
+            document.getElementById('autobackup-options').classList.toggle('hidden', !config.enabled);
+
+            // Dernière sauvegarde
+            const history = PrismaAutoBackup.getHistory();
+            const lastEl = document.getElementById('autobackup-last');
+            if (history.length > 0) {
+                const d = new Date(history[0].date);
+                lastEl.textContent = d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            } else {
+                lastEl.textContent = 'Jamais';
+            }
+
+            renderAutoBackupHistory();
+        }
+
+        function updateAutoBackupConfig() {
+            const config = {
+                enabled: document.getElementById('autobackup-enabled').checked,
+                frequency: document.getElementById('autobackup-frequency').value,
+                autoDownload: document.getElementById('autobackup-autodownload').checked
+            };
+            PrismaAutoBackup.saveConfig(config);
+
+            // Afficher/masquer les options
+            document.getElementById('autobackup-options').classList.toggle('hidden', !config.enabled);
+        }
+
+        function renderAutoBackupHistory() {
+            const history = PrismaAutoBackup.getHistory();
+            const container = document.getElementById('autobackup-history');
+
+            if (history.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 italic">Aucune sauvegarde enregistrée</p>';
+                return;
+            }
+
+            const methodLabels = {
+                manual: 'Manuel',
+                auto: 'Automatique',
+                reminder: 'Via rappel'
+            };
+
+            const methodColors = {
+                manual: 'bg-blue-100 text-blue-700',
+                auto: 'bg-green-100 text-green-700',
+                reminder: 'bg-yellow-100 text-yellow-700'
+            };
+
+            let html = '<div class="divide-y divide-gray-100">';
+            history.forEach(entry => {
+                const d = new Date(entry.date);
+                const dateStr = d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                const label = methodLabels[entry.method] || entry.method;
+                const color = methodColors[entry.method] || 'bg-gray-100 text-gray-700';
+                html += `
+                    <div class="flex items-center justify-between py-2">
+                        <div class="flex items-center gap-2">
+                            <span class="text-gray-600">${dateStr}</span>
+                            <span class="px-2 py-0.5 rounded-full text-xs font-medium ${color}">${label}</span>
+                        </div>
+                        <span class="text-gray-400 text-xs">${entry.sizeKB} Ko</span>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+
+            // Mettre à jour la date de dernière sauvegarde
+            const lastEl = document.getElementById('autobackup-last');
+            const d = new Date(history[0].date);
+            lastEl.textContent = d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
+
+        function manualAutoBackup() {
+            const success = PrismaAutoBackup.performBackup('manual');
+            if (success) {
+                PrismaToast.success('Sauvegarde effectuée avec succès !');
+                renderAutoBackupHistory();
+            }
+        }
+
+        // Initialisation
+        loadConfig();
+        loadAutoBackupConfig();
+    </script>
+</body>
+</html>

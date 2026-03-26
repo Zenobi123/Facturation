@@ -1,0 +1,567 @@
+/**
+ * PRISMA GESTION - Styles d'impression professionnels
+ * Configuration pour impression A4 de qualité
+ */
+
+/* ============================================
+   CONFIGURATION DE PAGE
+   ============================================ */
+@page {
+    size: A4;
+    margin: 15mm 10mm;
+}
+
+@media print {
+    :root {
+        --print-blue-strong: #c9dcfb;
+        --print-blue-soft: #eaf2ff;
+        --print-blue-text: #1e3a8a;
+        --print-green-strong: #d8f3df;
+        --print-green-soft: #eefbf1;
+        --print-green-text: #166534;
+        --print-teal-strong: #d6f2ef;
+        --print-teal-soft: #edf9f7;
+        --print-teal-text: #115e59;
+        --print-amber-strong: #fbe7c3;
+        --print-amber-soft: #fff7e8;
+        --print-amber-text: #92400e;
+        --print-orange-strong: #fde1c8;
+        --print-orange-soft: #fff2e8;
+        --print-orange-text: #9a3412;
+        --print-purple-strong: #eadcfb;
+        --print-purple-soft: #f7f1ff;
+        --print-purple-text: #6b21a8;
+        --print-indigo-strong: #dde5ff;
+        --print-indigo-soft: #eff3ff;
+        --print-indigo-text: #3730a3;
+        --print-red-strong: #f9d8d8;
+        --print-red-soft: #fff0f0;
+        --print-red-text: #b91c1c;
+        --print-gray-strong: #e5e7eb;
+        --print-gray-soft: #f7f7f8;
+        --print-gray-text: #374151;
+    }
+
+    /* ============================================
+       RÉINITIALISATION ET BASE
+       ============================================ */
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+    }
+
+    html, body {
+        width: 210mm;
+        height: auto;
+        margin: 0 !important;
+        padding: 0 !important;
+        font-size: 11pt;
+        line-height: 1.4;
+        background: white !important;
+    }
+
+    /* ============================================
+       ÉLÉMENTS À MASQUER
+       ============================================ */
+    .no-print,
+    button:not(.print-visible),
+    nav,
+    header:not(.print-header),
+    .prisma-toast-container,
+    .prisma-modal-overlay,
+    .prisma-loader-overlay,
+    input,
+    select,
+    textarea,
+    form,
+    [type="submit"],
+    [type="button"],
+    .btn,
+    .sidebar,
+    .menu,
+    .navigation,
+    footer:not(.print-footer) {
+        display: none !important;
+    }
+
+    /* ============================================
+       ZONE D'IMPRESSION
+       ============================================ */
+    .print-area {
+        display: block !important;
+        position: static !important;
+        width: 100% !important;
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: white !important;
+        box-shadow: none !important;
+        border: none !important;
+    }
+
+    /* ============================================
+       TABLEAUX
+       ============================================ */
+    table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        page-break-inside: auto;
+    }
+
+    thead {
+        display: table-header-group !important;
+    }
+
+    tbody {
+        display: table-row-group !important;
+    }
+
+    tfoot {
+        display: table-footer-group !important;
+    }
+
+    tr {
+        page-break-inside: avoid !important;
+        page-break-after: auto;
+    }
+
+    th, td {
+        padding: 8px 10px !important;
+        border: 1px solid #333 !important;
+        text-align: left;
+        vertical-align: top;
+    }
+
+    th {
+        background-color: var(--print-blue-strong) !important;
+        color: var(--print-blue-text) !important;
+        font-weight: 600 !important;
+        border-color: #9dbcf4 !important;
+    }
+
+    /* Alternance des lignes */
+    tbody tr:nth-child(even) {
+        background-color: #f8fafc !important;
+    }
+
+    /* Ligne de total (protéger le fond bleu et le texte blanc) */
+    tbody tr.total-row,
+    tbody tr.total-row:nth-child(even) {
+        background-color: var(--print-blue-strong) !important;
+        color: var(--print-blue-text) !important;
+    }
+
+    tbody tr.total-row td {
+        background-color: var(--print-blue-strong) !important;
+        color: var(--print-blue-text) !important;
+        font-weight: 700 !important;
+        border-color: #9dbcf4 !important;
+    }
+
+    /* ============================================
+       TYPOGRAPHIE
+       ============================================ */
+    h1 {
+        font-size: 18pt !important;
+        font-weight: 700 !important;
+        margin-bottom: 15px !important;
+        color: #1e3a8a !important;
+    }
+
+    h2 {
+        font-size: 14pt !important;
+        font-weight: 600 !important;
+        margin-bottom: 10px !important;
+        color: #1e3a8a !important;
+    }
+
+    h3 {
+        font-size: 12pt !important;
+        font-weight: 600 !important;
+        margin-bottom: 8px !important;
+    }
+
+    p {
+        margin-bottom: 8px !important;
+        orphans: 3;
+        widows: 3;
+    }
+
+    /* ============================================
+       COULEURS ET ARRIÈRE-PLANS
+       ============================================ */
+    .bg-blue-900,
+    .bg-primary {
+        background-color: var(--print-blue-strong) !important;
+        color: var(--print-blue-text) !important;
+    }
+
+    .bg-blue-800 {
+        background-color: #d7e7ff !important;
+        color: var(--print-blue-text) !important;
+    }
+
+    .bg-blue-700,
+    .bg-blue-600,
+    .bg-blue-500 {
+        background-color: var(--print-blue-soft) !important;
+        color: var(--print-blue-text) !important;
+    }
+
+    .bg-blue-100 {
+        background-color: #edf4ff !important;
+    }
+
+    .bg-gray-100 {
+        background-color: var(--print-gray-soft) !important;
+    }
+
+    .bg-gray-200 {
+        background-color: var(--print-gray-strong) !important;
+    }
+
+    .bg-gray-900,
+    .bg-gray-800,
+    .bg-gray-700 {
+        background-color: var(--print-gray-strong) !important;
+        color: var(--print-gray-text) !important;
+    }
+
+    .bg-green-100 {
+        background-color: var(--print-green-soft) !important;
+    }
+
+    .bg-green-900,
+    .bg-green-800,
+    .bg-green-700,
+    .bg-green-600,
+    .bg-green-500 {
+        background-color: var(--print-green-strong) !important;
+        color: var(--print-green-text) !important;
+    }
+
+    .bg-teal-900,
+    .bg-teal-800,
+    .bg-teal-700,
+    .bg-teal-600,
+    .bg-teal-500 {
+        background-color: var(--print-teal-strong) !important;
+        color: var(--print-teal-text) !important;
+    }
+
+    .bg-teal-100 {
+        background-color: var(--print-teal-soft) !important;
+    }
+
+    .bg-red-100 {
+        background-color: var(--print-red-soft) !important;
+    }
+
+    .bg-red-900,
+    .bg-red-800,
+    .bg-red-700,
+    .bg-red-600,
+    .bg-red-500 {
+        background-color: var(--print-red-strong) !important;
+        color: var(--print-red-text) !important;
+    }
+
+    .bg-yellow-100 {
+        background-color: #fff7dd !important;
+    }
+
+    .bg-amber-900,
+    .bg-amber-800,
+    .bg-amber-700,
+    .bg-amber-600,
+    .bg-amber-500 {
+        background-color: var(--print-amber-strong) !important;
+        color: var(--print-amber-text) !important;
+    }
+
+    .bg-amber-100 {
+        background-color: var(--print-amber-soft) !important;
+    }
+
+    .bg-orange-900,
+    .bg-orange-800,
+    .bg-orange-700,
+    .bg-orange-600,
+    .bg-orange-500 {
+        background-color: var(--print-orange-strong) !important;
+        color: var(--print-orange-text) !important;
+    }
+
+    .bg-orange-100,
+    .bg-orange-50 {
+        background-color: var(--print-orange-soft) !important;
+    }
+
+    .bg-purple-900,
+    .bg-purple-800,
+    .bg-purple-700,
+    .bg-purple-600,
+    .bg-purple-500 {
+        background-color: var(--print-purple-strong) !important;
+        color: var(--print-purple-text) !important;
+    }
+
+    .bg-purple-100,
+    .bg-purple-50 {
+        background-color: var(--print-purple-soft) !important;
+    }
+
+    .bg-indigo-900,
+    .bg-indigo-800,
+    .bg-indigo-700,
+    .bg-indigo-600,
+    .bg-indigo-500 {
+        background-color: var(--print-indigo-strong) !important;
+        color: var(--print-indigo-text) !important;
+    }
+
+    .bg-indigo-100,
+    .bg-indigo-50 {
+        background-color: var(--print-indigo-soft) !important;
+    }
+
+    .text-blue-900 {
+        color: #1e3a8a !important;
+    }
+
+    .text-green-600 {
+        color: #16a34a !important;
+    }
+
+    .text-red-600 {
+        color: #dc2626 !important;
+    }
+
+    /* ============================================
+       BORDURES
+       ============================================ */
+    .border {
+        border: 1px solid #333 !important;
+    }
+
+    .border-b {
+        border-bottom: 1px solid #333 !important;
+    }
+
+    .border-t {
+        border-top: 1px solid #333 !important;
+    }
+
+    /* ============================================
+       GESTION DES SAUTS DE PAGE
+       ============================================ */
+    .page-break-before {
+        page-break-before: always !important;
+        break-before: page !important;
+    }
+
+    .page-break-after {
+        page-break-after: always !important;
+        break-after: page !important;
+    }
+
+    .avoid-break {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+
+    .keep-together {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+
+    /* Éviter les coupures dans les sections importantes */
+    .print-section,
+    .invoice-header,
+    .invoice-footer,
+    .client-info,
+    .totals-section {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+
+    /* ============================================
+       EN-TÊTE DE DOCUMENT
+       ============================================ */
+    .print-header {
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 15px;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #1e3a8a !important;
+    }
+
+    .print-header img {
+        max-height: 60px;
+        width: auto;
+    }
+
+    /* ============================================
+       PIED DE PAGE DE DOCUMENT
+       ============================================ */
+    .print-footer {
+        display: block !important;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding-top: 10px;
+        border-top: 1px solid #ccc !important;
+        font-size: 9pt;
+        color: #666;
+        text-align: center;
+    }
+
+    /* ============================================
+       ÉLÉMENTS SPÉCIFIQUES PRISMA
+       ============================================ */
+    /* Montants et totaux */
+    .montant,
+    .total-amount {
+        font-weight: 700 !important;
+        text-align: right !important;
+    }
+
+    .grand-total {
+        font-size: 14pt !important;
+        font-weight: 700 !important;
+        background-color: var(--print-blue-strong) !important;
+        color: var(--print-blue-text) !important;
+        padding: 10px !important;
+    }
+
+    /* Informations client */
+    .client-block {
+        background-color: #f8fafc !important;
+        border: 1px solid #e2e8f0 !important;
+        padding: 15px !important;
+        margin-bottom: 20px !important;
+        page-break-inside: avoid !important;
+    }
+
+    /* Numéro de document */
+    .doc-number {
+        font-size: 12pt !important;
+        font-weight: 600 !important;
+        color: #1e3a8a !important;
+    }
+
+    /* Signature */
+    .signature-area {
+        margin-top: 40px !important;
+        padding-top: 20px !important;
+        border-top: 1px dashed #ccc !important;
+        page-break-inside: avoid !important;
+    }
+
+    /* ============================================
+       LIENS
+       ============================================ */
+    a {
+        color: #1e3a8a !important;
+        text-decoration: none !important;
+    }
+
+    /* Ne pas afficher les URLs */
+    a[href]:after {
+        content: none !important;
+    }
+
+    /* ============================================
+       IMAGES
+       ============================================ */
+    img {
+        max-width: 100% !important;
+        page-break-inside: avoid !important;
+    }
+
+    /* Logo */
+    .logo-print {
+        max-width: 150px !important;
+        height: auto !important;
+    }
+
+    /* Réduire l'encrage des fonds inline foncés tout en gardant le code couleur */
+    [style*="background-color: #1e3a8a"],
+    [style*="background-color:#1e3a8a"] {
+        background-color: var(--print-blue-strong) !important;
+        color: var(--print-blue-text) !important;
+        border-color: #9dbcf4 !important;
+    }
+
+    [style*="background-color: #1e40af"],
+    [style*="background-color:#1e40af"] {
+        background-color: #d7e7ff !important;
+        color: var(--print-blue-text) !important;
+        border-color: #a8c4f8 !important;
+    }
+
+    [style*="background-color: #10b981"],
+    [style*="background-color:#10b981"] {
+        background-color: var(--print-green-strong) !important;
+        color: var(--print-green-text) !important;
+    }
+
+    [style*="background-color: #f59e0b"],
+    [style*="background-color:#f59e0b"] {
+        background-color: var(--print-amber-strong) !important;
+        color: var(--print-amber-text) !important;
+    }
+
+    [style*="background-color: #7c3aed"],
+    [style*="background-color:#7c3aed"] {
+        background-color: var(--print-purple-strong) !important;
+        color: var(--print-purple-text) !important;
+    }
+
+    [style*="background: linear-gradient(135deg, #1e3a8a"],
+    [style*="background:linear-gradient(135deg,#1e3a8a"] {
+        background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%) !important;
+        color: var(--print-blue-text) !important;
+        border: 1px solid #93c5fd !important;
+    }
+
+    [style*="border-left: 4px solid #1e3a8a"],
+    [style*="border-left:4px solid #1e3a8a"] {
+        border-left-color: #93c5fd !important;
+    }
+
+    [style*="border-left: 4px solid #3b82f6"],
+    [style*="border-left:4px solid #3b82f6"] {
+        border-left-color: #93c5fd !important;
+    }
+
+    [style*="border-left: 4px solid #10b981"],
+    [style*="border-left:4px solid #10b981"] {
+        border-left-color: #86efac !important;
+    }
+
+    [style*="border: 3px double #1e3a8a"],
+    [style*="border:3px double #1e3a8a"] {
+        border-color: #93c5fd !important;
+    }
+}
+
+/* ============================================
+   CLASSES UTILITAIRES (disponibles hors print)
+   ============================================ */
+.print-only {
+    display: none !important;
+}
+
+@media print {
+    .print-only {
+        display: block !important;
+    }
+
+    .screen-only {
+        display: none !important;
+    }
+}

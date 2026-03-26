@@ -1,0 +1,2197 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Situation Client - PRISMA GESTION</title>
+    <script src="assets/css/tailwindcss.min.js"></script>
+    <link rel="stylesheet" href="prisma-print.css">
+    <link rel="stylesheet" href="assets/css/inter-font.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        /* Sections collapsibles */
+        .section-collapsible .section-body { max-height: 5000px; overflow: hidden; transition: max-height 0.3s ease, opacity 0.3s ease; opacity: 1; }
+        .section-collapsible.collapsed .section-body { max-height: 0; opacity: 0; padding-top: 0 !important; padding-bottom: 0 !important; }
+        .section-header { cursor: pointer; user-select: none; }
+        .section-header .chevron { transition: transform 0.3s ease; display: inline-block; }
+        .section-collapsible.collapsed .section-header .chevron { transform: rotate(-90deg); }
+        /* Badges de compteur dans les titres de section */
+        .section-count { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; padding: 0 6px; }
+        @media print {
+            body { background: white; margin: 0; padding: 0; }
+            .no-print { display: none !important; }
+            .print-area { box-shadow: none !important; padding: 0 !important; }
+            .section-collapsible .section-body { max-height: none !important; opacity: 1 !important; }
+            @page { size: A4; margin: 10mm 10mm; }
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <nav class="bg-blue-900 text-white p-4 shadow-lg no-print">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <a href="index.html" class="inline-flex items-center px-3 py-1.5 border border-white rounded-lg shadow-sm text-white hover:bg-white hover:text-blue-900 transition-colors duration-200">← PRISMA GESTION</a>
+            <span class="text-sm text-blue-200">Situation Client</span>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto p-6">
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6 no-print">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Consulter la situation d'un client</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Sélectionner un client</label>
+                    <select id="clientSelect" onchange="loadClientSituation()" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+                        <option value="">-- Sélectionner un client --</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Type de vue</label>
+                    <select id="typeVue" onchange="changeVue()" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+                        <option value="globale">Vue Globale</option>
+                        <option value="cabinet">Situation Cabinet uniquement</option>
+                        <option value="fiscale">Situation Fiscale uniquement</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div id="situationContent" class="hidden">
+            <div class="print-area" id="printArea">
+                <!-- Informations client -->
+                <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h1 class="text-2xl font-bold text-blue-900">PRISMA GESTION</h1>
+                            <p class="text-xs text-gray-600 uppercase tracking-widest">Comptabilité - Finance - Fiscalité</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm text-gray-600" id="situationDate"></p>
+                        </div>
+                    </div>
+                    <div style="border-bottom: 2px solid #1e3a8a; margin-bottom: 1rem;"></div>
+                    <h2 class="text-xl font-bold text-blue-900 text-center mb-4">SITUATION CLIENT</h2>
+                    <div class="bg-blue-50 p-4 rounded-lg">
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div>
+                                <p class="text-xs text-gray-500 uppercase">Client</p>
+                                <p class="font-bold text-lg text-gray-900" id="clientName"></p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 uppercase">NIU</p>
+                                <p class="font-semibold text-gray-800" id="clientNiu"></p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 uppercase">Régime fiscal</p>
+                                <p class="font-semibold text-gray-800" id="clientRegime">-</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 uppercase">Type</p>
+                                <p class="font-semibold text-gray-800" id="clientType">-</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3 pt-3 border-t border-blue-200">
+                            <div>
+                                <p class="text-xs text-gray-500 uppercase">Chiffre d'affaires</p>
+                                <p class="font-semibold text-gray-800" id="clientCA">-</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 uppercase">Statut immobilier</p>
+                                <p class="font-semibold text-gray-800" id="clientImmo">-</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 uppercase">CDI / RC</p>
+                                <p class="font-semibold text-gray-800" id="clientCDI">-</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 uppercase">CGA</p>
+                                <p class="font-semibold text-gray-800" id="clientCGA">-</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Résumé synthétique (tableau de bord rapide) -->
+                <div id="summaryDashboard" class="bg-white rounded-lg shadow-md p-6 mb-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">Synthèse rapide</h3>
+                    <div id="summaryContent" class="grid grid-cols-2 md:grid-cols-5 gap-3">
+                        <p class="col-span-5 text-center py-4 text-gray-500">Sélectionnez un client.</p>
+                    </div>
+                </div>
+
+                <!-- ====================================== -->
+                <!-- RAPPORT D'ÉCHÉANCES                    -->
+                <!-- ====================================== -->
+                <div id="sectionRapportEcheances" class="bg-white rounded-lg shadow-md mb-6 section-collapsible">
+                    <div class="section-header flex justify-between items-center p-6 pb-0" onclick="toggleSection('sectionRapportEcheances')">
+                        <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                            <span class="chevron">&#9660;</span>
+                            Rapport d'Échéances
+                            <span id="badgeRapport" class="section-count bg-red-100 text-red-700 hidden">0</span>
+                        </h3>
+                        <div class="flex gap-2 no-print" onclick="event.stopPropagation()">
+                            <button onclick="toggleRapportPreview()" class="bg-gray-600 text-white px-3 py-1.5 rounded-lg hover:bg-gray-700 text-sm">
+                                Aperçu
+                            </button>
+                            <button onclick="printRapport()" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 text-sm">
+                                Imprimer
+                            </button>
+                            <button onclick="generateRapportPDF()" class="bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-700 text-sm">
+                                PDF
+                            </button>
+                        </div>
+                    </div>
+                    <div class="section-body p-6 pt-4">
+                        <!-- Zone d'aperçu normale -->
+                        <div id="rapportEcheancesContent">
+                            <p class="text-center py-4 text-gray-500">Sélectionnez un client pour voir le rapport d'échéances.</p>
+                        </div>
+
+                        <!-- Zone d'aperçu impression (cachée par défaut) -->
+                        <div id="rapportPrintPreview" class="hidden">
+                            <div id="rapportPrintArea" class="bg-white p-8 max-w-4xl mx-auto shadow-lg border">
+                            </div>
+                            <div class="flex justify-center gap-4 mt-6 no-print">
+                                <button onclick="toggleRapportPreview()" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600">Retour</button>
+                                <button onclick="printRapport()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">Imprimer</button>
+                                <button onclick="generateRapportPDF()" class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700">PDF</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ====================================== -->
+                <!-- DOSSIER FISCAL ANNUEL                  -->
+                <!-- ====================================== -->
+                <div id="sectionDossierFiscal" class="bg-white rounded-lg shadow-md mb-6 section-collapsible">
+                    <div class="section-header flex justify-between items-center p-6 pb-0" onclick="toggleSection('sectionDossierFiscal')">
+                        <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                            <span class="chevron">&#9660;</span>
+                            Dossier Fiscal Annuel
+                            <span id="badgeDossier" class="section-count bg-gray-100 text-gray-700 hidden">0</span>
+                        </h3>
+                        <div class="flex items-center gap-3 no-print" onclick="event.stopPropagation()">
+                            <select id="yearSelect" onchange="loadDossierFiscal()" class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500">
+                            </select>
+                            <button onclick="createClientFolderStructure()" class="text-blue-600 hover:text-blue-800 text-sm underline" title="Générer la commande pour créer les dossiers">
+                                Arborescence
+                            </button>
+                        </div>
+                    </div>
+                    <div class="section-body p-6 pt-4">
+                        <div id="dossierFiscalContent" class="overflow-x-auto">
+                            <p class="text-center py-4 text-gray-500">Sélectionnez une année pour voir le dossier fiscal.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ====================================== -->
+                <!-- SUIVI DES HONORAIRES                   -->
+                <!-- ====================================== -->
+                <div id="sectionSuiviPrestations" class="bg-white rounded-lg shadow-md mb-6 section-collapsible">
+                    <div class="section-header p-6 pb-0" onclick="toggleSection('sectionSuiviPrestations')">
+                        <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                            <span class="chevron">&#9660;</span>
+                            Honoraires Cabinet
+                            <span id="badgeHonoraires" class="section-count bg-blue-100 text-blue-800 hidden">0</span>
+                        </h3>
+                    </div>
+                    <div class="section-body p-6 pt-4">
+                        <div id="suiviPrestationsContent" class="overflow-x-auto">
+                             <p class="text-center py-4 text-gray-500">Aucune prestation à suivre pour ce client.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ====================================== -->
+                <!-- HISTORIQUE FACTURES & PAIEMENTS         -->
+                <!-- ====================================== -->
+                <div id="sectionCabinet">
+                    <!-- Historique des factures -->
+                    <div class="bg-white rounded-lg shadow-md mb-6 section-collapsible">
+                        <div class="section-header p-6 pb-0" onclick="toggleSection(this.closest('.section-collapsible'))">
+                            <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                                <span class="chevron">&#9660;</span>
+                                Historique des factures
+                                <span id="badgeFactures" class="section-count bg-yellow-100 text-yellow-700 hidden">0</span>
+                            </h3>
+                        </div>
+                        <div class="section-body p-6 pt-4">
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm">
+                                    <thead>
+                                        <tr class="bg-blue-900 text-white">
+                                            <th class="px-4 py-3 text-left">Date</th>
+                                            <th class="px-4 py-3 text-left">Numéro</th>
+                                            <th class="px-4 py-3 text-right">Montant</th>
+                                            <th class="px-4 py-3 text-center">Statut</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="facturesTable">
+                                        <tr>
+                                            <td colspan="4" class="text-center py-8 text-gray-500">Aucune facture</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Historique des paiements -->
+                    <div class="bg-white rounded-lg shadow-md mb-6 section-collapsible">
+                        <div class="section-header p-6 pb-0" onclick="toggleSection(this.closest('.section-collapsible'))">
+                            <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                                <span class="chevron">&#9660;</span>
+                                Historique des paiements
+                                <span id="badgePaiements" class="section-count bg-green-100 text-green-700 hidden">0</span>
+                            </h3>
+                        </div>
+                        <div class="section-body p-6 pt-4">
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm">
+                                    <thead>
+                                        <tr class="bg-blue-900 text-white">
+                                            <th class="px-4 py-3 text-left">Date</th>
+                                            <th class="px-4 py-3 text-left">N° de reçu</th>
+                                            <th class="px-4 py-3 text-left">Motif</th>
+                                            <th class="px-4 py-3 text-right">Montant</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="paiementsTable">
+                                        <tr>
+                                            <td colspan="4" class="text-center py-8 text-gray-500">Aucun paiement</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ====================================== -->
+                <!-- SUIVI DES ATTESTATIONS                 -->
+                <!-- ====================================== -->
+                <div id="sectionSuiviAttestations" class="bg-white rounded-lg shadow-md mb-6 section-collapsible">
+                    <div class="section-header p-6 pb-0" onclick="toggleSection('sectionSuiviAttestations')">
+                        <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                            <span class="chevron">&#9660;</span>
+                            Suivi des Attestations
+                            <span id="badgeAttestations" class="section-count bg-purple-100 text-purple-700 hidden">!</span>
+                        </h3>
+                    </div>
+                    <div class="section-body p-6 pt-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Attestation de Conformité Fiscale (ACF) -->
+                        <div class="bg-blue-50 rounded-lg p-4 border-l-4 border-blue-600">
+                            <h4 class="font-bold text-blue-900 mb-3">Attestation de Conformité Fiscale (ACF)</h4>
+                            <div class="mb-2">
+                                <label for="acfDate" class="block text-sm font-medium text-gray-700">Date d'émission</label>
+                                <input type="date" id="acfDate" onchange="saveAttestationDate('acf', this.value)" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+                            </div>
+                            <p class="text-sm text-gray-600">Validité : 90 jours</p>
+                            <p class="text-base font-semibold mt-2" id="acfStatus">Statut : Non renseigné</p>
+                        </div>
+
+                        <!-- Attestation d'Immatriculation (ATTIM) -->
+                        <div class="bg-green-50 rounded-lg p-4 border-l-4 border-green-600">
+                            <h4 class="font-bold text-green-900 mb-3">Attestation d'Immatriculation (ATTIM)</h4>
+                            <div class="mb-2">
+                                <label for="attimDate" class="block text-sm font-medium text-gray-700">Date d'émission</label>
+                                <input type="date" id="attimDate" onchange="saveAttestationDate('attim', this.value)" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-300 focus:ring focus:ring-green-200 focus:ring-opacity-50">
+                            </div>
+                            <p class="text-sm text-gray-600">Validité : 30 jours</p>
+                            <p class="text-base font-semibold mt-2" id="attimStatus">Statut : Non renseigné</p>
+                        </div>
+                    </div>
+                    </div><!-- fin section-body -->
+                </div>
+
+                <!-- Pied de page -->
+                <div style="margin-top: 2rem; padding-top: 0.5rem; border-top: 1px solid #e5e7eb; text-align: center;">
+                    <p style="font-size: 0.7rem; color: #6b7280; margin: 0;">
+                        <span style="font-weight: 600; color: #1e3a8a;">PRISMA Manager</span> — PRISMA GESTION : L'expertise qui sécurise votre gestion.
+                    </p>
+                </div>
+            </div>
+
+            <div class="mt-6 flex justify-center gap-4 no-print">
+                <button onclick="window.print()" class="bg-gray-700 text-white px-6 py-2 rounded-lg hover:bg-gray-800 transition">
+                    Imprimer
+                </button>
+                <button onclick="generatePDF()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
+                    Télécharger PDF
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="prisma-components.js"></script>
+    <script>
+        // Variable globale pour le client sélectionné
+        let currentClient = null;
+
+        function sanitizePdfSegment(value, fallback = 'Document') {
+            return String(value || '')
+                .replace(/^N[°ºo]?\s*/i, '')
+                .replace(/[\/\\]/g, '-')
+                .replace(/[^a-zA-Z0-9\u00C0-\u00FF\s\-]/g, '')
+                .trim() || fallback;
+        }
+
+        // ============================================
+        // SECTIONS COLLAPSIBLES
+        // ============================================
+        function toggleSection(sectionOrId) {
+            const section = typeof sectionOrId === 'string' ? document.getElementById(sectionOrId) : sectionOrId;
+            if (section) section.classList.toggle('collapsed');
+        }
+
+        // ============================================
+        // UTILITAIRES - Parsing sécurisé JSON
+        // ============================================
+        function safeParseJSON(key, defaultValue = []) {
+            return PrismaBackup.safeParseJSON(key, defaultValue);
+        }
+
+        // ============================================
+        // CHARGEMENT DES CLIENTS
+        // ============================================
+        function loadClientSelect() {
+            const clients = safeParseJSON('clients', []);
+            const select = document.getElementById('clientSelect');
+            select.innerHTML = '<option value="">-- Sélectionner un client --</option>';
+            clients.forEach((client, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = client.name;
+                select.appendChild(option);
+            });
+        }
+
+        function populateYearSelect() {
+            const yearSelect = document.getElementById('yearSelect');
+            yearSelect.innerHTML = '';
+            const currentYear = new Date().getFullYear();
+            for (let year = 2026; year <= currentYear + 1; year++) {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                yearSelect.appendChild(option);
+            }
+            yearSelect.value = currentYear;
+        }
+
+        // ============================================
+        // GESTION DES ATTESTATIONS
+        // ============================================
+        function saveAttestationDate(type, dateValue) {
+            if (!currentClient) {
+                PrismaToast.warning('Veuillez d\'abord sélectionner un client.');
+                return;
+            }
+
+            const attestations = safeParseJSON('attestations', {});
+            const clientKey = currentClient.name;
+
+            if (!attestations[clientKey]) {
+                attestations[clientKey] = {};
+            }
+
+            attestations[clientKey][type] = dateValue;
+            localStorage.setItem('attestations', JSON.stringify(attestations));
+
+            updateAttestationStatus(type, dateValue);
+            PrismaToast.success(`Date de l'attestation ${type.toUpperCase()} enregistrée.`);
+        }
+
+        function loadAttestations() {
+            if (!currentClient) return;
+
+            const attestations = safeParseJSON('attestations', {});
+            const clientAttestations = attestations[currentClient.name] || {};
+
+            // ACF
+            const acfDate = clientAttestations.acf || '';
+            document.getElementById('acfDate').value = acfDate;
+            updateAttestationStatus('acf', acfDate);
+
+            // ATTIM
+            const attimDate = clientAttestations.attim || '';
+            document.getElementById('attimDate').value = attimDate;
+            updateAttestationStatus('attim', attimDate);
+        }
+
+        function updateAttestationStatus(type, dateValue) {
+            const statusElement = document.getElementById(`${type}Status`);
+            if (!statusElement) return;
+
+            if (!dateValue) {
+                statusElement.textContent = 'Statut : Non renseigné';
+                statusElement.className = 'text-base font-semibold mt-2 text-gray-500';
+                return;
+            }
+
+            const emissionDate = new Date(dateValue);
+            const today = new Date();
+            const validityDays = type === 'acf' ? 90 : 30;
+            const expirationDate = new Date(emissionDate);
+            expirationDate.setDate(expirationDate.getDate() + validityDays);
+
+            const daysRemaining = Math.ceil((expirationDate - today) / (1000 * 60 * 60 * 24));
+
+            if (daysRemaining < 0) {
+                statusElement.textContent = `Statut : Expirée depuis ${Math.abs(daysRemaining)} jour(s)`;
+                statusElement.className = 'text-base font-semibold mt-2 text-red-600';
+            } else if (daysRemaining <= 15) {
+                statusElement.textContent = `Statut : Expire dans ${daysRemaining} jour(s)`;
+                statusElement.className = 'text-base font-semibold mt-2 text-orange-600';
+            } else {
+                statusElement.textContent = `Statut : Valide (${daysRemaining} jours restants)`;
+                statusElement.className = 'text-base font-semibold mt-2 text-green-600';
+            }
+        }
+
+        // ============================================
+        // DOSSIER FISCAL
+        // ============================================
+        function createClientFolderStructure() {
+            if (!currentClient) {
+                PrismaToast.warning('Veuillez d\'abord sélectionner un client.');
+                return;
+            }
+            const year = document.getElementById('yearSelect').value;
+            const clientFolderName = currentClient.name.replace(/[^a-zA-Z0-9_ -]/g, '');
+
+            // Récupérer les types d'impôts facturés pour cette année
+            const factures = safeParseJSON('factures', []).filter(f => f.client === currentClient.name);
+            const impotTypes = new Set();
+
+            factures.forEach(facture => {
+                const factureYear = new Date(facture.date).getFullYear().toString();
+                if (factureYear !== year) return;
+
+                if (facture.prestations) {
+                    facture.prestations.forEach(p => {
+                        if (p.type === 'Impôt') {
+                            impotTypes.add(p.designation.replace(/[^a-zA-Z0-9_ -]/g, ''));
+                        }
+                    });
+                }
+            });
+
+            if (impotTypes.size === 0) {
+                PrismaToast.warning('Aucun impôt facturé pour cette année.');
+                return;
+            }
+
+            let folders = Array.from(impotTypes).map(t => `"${clientFolderName}/${year}/${t}"`).join(' ');
+            const command = `mkdir -p ${folders}`;
+
+            PrismaModal.alert({
+                title: 'Commande pour créer l\'arborescence',
+                message: `
+                    <p>Pour des raisons de sécurité, l'application ne peut pas créer de dossiers directement.</p>
+                    <p>Veuillez copier et exécuter la commande suivante dans votre terminal :</p>
+                    <pre class="bg-gray-800 text-white rounded-lg p-3 mt-2 text-sm overflow-x-auto"><code>${command}</code></pre>
+                `
+            });
+        }
+
+        function loadDossierFiscal(paymentAnalysis) {
+            if (!currentClient) {
+                document.getElementById('dossierFiscalContent').innerHTML = '<p class="text-center py-4 text-gray-500">Veuillez sélectionner un client.</p>';
+                return;
+            }
+
+            const year = document.getElementById('yearSelect').value;
+            const client = currentClient;
+
+            // Charger les impôts facturés (prestations de type "Impôt")
+            const factures = safeParseJSON('factures', []).filter(f => f.client === client.name);
+            let impotsFactures = [];
+
+            factures.forEach(facture => {
+                const factureYear = new Date(facture.date).getFullYear().toString();
+                if (factureYear !== year) return; // Filtrer par année
+
+                if (facture.prestations) {
+                    facture.prestations.forEach((p, index) => {
+                        if (p.type !== 'Impôt') return; // Uniquement les impôts
+
+                        const uniqueId = `prestation-${facture.id}-${index}`;
+                        const prestationDetails = paymentAnalysis?.[facture.id]?.prestations?.find(item => item.uniqueId === uniqueId);
+
+                        const totalDue = prestationDetails?.totalDue || p.total || 0;
+                        const paid = prestationDetails?.paid || 0;
+
+                        impotsFactures.push({
+                            ...p,
+                            factureId: facture.id,
+                            factureNumber: facture.number,
+                            factureDate: facture.date,
+                            uniqueId: uniqueId,
+                            paidAmount: paid,
+                            totalDue: totalDue
+                        });
+                    });
+                }
+            });
+
+            // Vérifier s'il y a des données à afficher
+            if (impotsFactures.length === 0) {
+                document.getElementById('dossierFiscalContent').innerHTML = '<p class="text-center py-4 text-gray-500">Aucun impôt facturé pour cette année.</p>';
+                return;
+            }
+
+            // Charger les statuts depuis localStorage
+            const dossierStatus = safeParseJSON('dossierFiscalStatus', {});
+            const clientDossier = dossierStatus[client.name] || {};
+            const paiementsImpots = safeParseJSON('paiementsImpotsDirects', {});
+            const clientPaiements = paiementsImpots[client.name] || {};
+            const prestationRealizationStatus = safeParseJSON('prestationRealizationStatus', {});
+
+            // Calculer les totaux
+            const totalImpots = impotsFactures.reduce((sum, i) => sum + i.totalDue, 0);
+
+            // Calculer les totaux par mode de paiement
+            let totalPayeCabinet = 0;
+            let totalPayeClient = 0;
+            let totalNonPaye = 0;
+
+            impotsFactures.forEach(impot => {
+                const paiementKey = `${year}_${impot.uniqueId}`;
+                const paiementInfo = clientPaiements[paiementKey] || { mode: 'non_paye' };
+
+                if (paiementInfo.mode === 'cabinet') {
+                    totalPayeCabinet += impot.totalDue;
+                } else if (paiementInfo.mode === 'client_direct') {
+                    totalPayeClient += impot.totalDue;
+                } else {
+                    totalNonPaye += impot.totalDue;
+                }
+            });
+
+            let html = `
+                <div class="mb-4 grid grid-cols-4 gap-3">
+                    <div class="bg-gray-100 p-3 rounded-lg text-center">
+                        <p class="text-xs text-gray-600">Total Impôts</p>
+                        <p class="text-lg font-bold text-gray-800">${totalImpots.toLocaleString('fr-FR')} F</p>
+                    </div>
+                    <div class="bg-blue-50 p-3 rounded-lg text-center">
+                        <p class="text-xs text-gray-600">Payé via Cabinet</p>
+                        <p class="text-lg font-bold text-blue-700">${totalPayeCabinet.toLocaleString('fr-FR')} F</p>
+                    </div>
+                    <div class="bg-green-50 p-3 rounded-lg text-center">
+                        <p class="text-xs text-gray-600">Payé par Client</p>
+                        <p class="text-lg font-bold text-green-700">${totalPayeClient.toLocaleString('fr-FR')} F</p>
+                    </div>
+                    <div class="bg-red-50 p-3 rounded-lg text-center">
+                        <p class="text-xs text-gray-600">Non payé</p>
+                        <p class="text-lg font-bold text-red-700">${totalNonPaye.toLocaleString('fr-FR')} F</p>
+                    </div>
+                </div>
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="bg-blue-900 text-white">
+                            <th class="px-4 py-3 text-left">Désignation</th>
+                            <th class="px-4 py-3 text-right">Montant</th>
+                            <th class="px-4 py-3 text-center">Facture</th>
+                            <th class="px-4 py-3 text-center">Mode de paiement</th>
+                            <th class="px-4 py-3 text-center">Réalisation</th>
+                            <th class="px-4 py-3 text-left">Documents</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            impotsFactures.forEach(impot => {
+                const paiementKey = `${year}_${impot.uniqueId}`;
+                const paiementInfo = clientPaiements[paiementKey] || { mode: 'non_paye' };
+                const currentRealizationStatus = prestationRealizationStatus[impot.uniqueId] || 'À faire';
+
+                // Badge de statut de paiement
+                let paiementBadge = '';
+                let paiementDetails = '';
+
+                switch (paiementInfo.mode) {
+                    case 'cabinet':
+                        paiementBadge = '<span class="px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">Via Cabinet</span>';
+                        if (paiementInfo.recu) {
+                            paiementDetails = `<div class="text-xs text-gray-500 mt-1">Reçu: ${paiementInfo.recu}</div>`;
+                        }
+                        break;
+                    case 'client_direct':
+                        paiementBadge = '<span class="px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">Payé par client</span>';
+                        if (paiementInfo.date) {
+                            paiementDetails = `<div class="text-xs text-gray-500 mt-1">Le ${new Date(paiementInfo.date).toLocaleDateString('fr-FR')}`;
+                            if (paiementInfo.reference) {
+                                paiementDetails += ` - Réf: ${paiementInfo.reference}`;
+                            }
+                            paiementDetails += '</div>';
+                        }
+                        break;
+                    default:
+                        paiementBadge = '<span class="px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">Non payé</span>';
+                }
+
+                // Documents associés - utiliser la désignation comme clé
+                const docKey = impot.designation.replace(/[^a-zA-Z0-9]/g, '_');
+                const docTypes = [
+                    { name: 'Avis', id: 'avis' },
+                    { name: 'Reçu', id: 'recu' },
+                    { name: 'Quittance', id: 'quittance' }
+                ];
+
+                let docsHtml = '<div class="flex flex-wrap gap-1">';
+                docTypes.forEach(doc => {
+                    const fullDocKey = `${year}_${docKey}_${doc.id}`;
+                    const docStatus = clientDossier[fullDocKey] || 'manquant';
+                    const docColor = docStatus === 'manquant' ? 'gray' : (docStatus === 'disponible' ? 'blue' : 'green');
+                    docsHtml += `
+                        <select onchange="updateDossierStatus('${client.name}', '${fullDocKey}', this.value)"
+                                class="border rounded px-1 py-0.5 text-xs bg-${docColor}-50 border-${docColor}-200">
+                            <option value="manquant" ${docStatus === 'manquant' ? 'selected' : ''}>${doc.name}</option>
+                            <option value="disponible" ${docStatus === 'disponible' ? 'selected' : ''}>✓ ${doc.name}</option>
+                            <option value="transmis" ${docStatus === 'transmis' ? 'selected' : ''}>✓✓ ${doc.name}</option>
+                        </select>
+                    `;
+                });
+                docsHtml += '</div>';
+
+                html += `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="px-4 py-3 font-medium">${impot.designation}</td>
+                        <td class="px-4 py-3 text-right font-mono">${impot.totalDue.toLocaleString('fr-FR')} F</td>
+                        <td class="px-4 py-3 text-center text-xs text-gray-500">#${impot.factureNumber || 'N/A'}</td>
+                        <td class="px-4 py-3">
+                            <div class="flex flex-col items-center gap-1">
+                                ${paiementBadge}
+                                ${paiementDetails}
+                                <button onclick="openPaiementModalForImpot('${year}', '${impot.uniqueId}', '${impot.designation.replace(/'/g, "\\'")}', ${impot.totalDue})"
+                                        class="text-xs text-blue-600 hover:underline">
+                                    Modifier
+                                </button>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3 text-center">
+                            <select onchange="updatePrestationRealizationStatus('${impot.uniqueId}', this.value)" class="border border-gray-300 rounded px-2 py-1 text-xs">
+                                <option value="À faire" ${currentRealizationStatus === 'À faire' ? 'selected' : ''}>À faire</option>
+                                <option value="En cours" ${currentRealizationStatus === 'En cours' ? 'selected' : ''}>En cours</option>
+                                <option value="Effectué" ${currentRealizationStatus === 'Effectué' ? 'selected' : ''}>Effectué</option>
+                            </select>
+                        </td>
+                        <td class="px-4 py-3">${docsHtml}</td>
+                    </tr>
+                `;
+            });
+
+            html += `</tbody></table>`;
+
+            // Légende
+            html += `
+                <div class="mt-4 p-3 bg-gray-50 rounded-lg text-xs text-gray-600">
+                    <strong>Mode de paiement :</strong>
+                    <span class="ml-2 px-2 py-0.5 rounded bg-red-100 text-red-800">Non payé</span>
+                    <span class="ml-2 px-2 py-0.5 rounded bg-blue-100 text-blue-800">Via Cabinet</span> = Le client a payé le cabinet
+                    <span class="ml-2 px-2 py-0.5 rounded bg-green-100 text-green-800">Payé par client</span> = Le client a payé directement ses impôts
+                    <br><strong class="mt-2 inline-block">Documents :</strong>
+                    <span class="ml-2">✓ = Disponible</span>
+                    <span class="ml-2">✓✓ = Transmis au client</span>
+                </div>
+            `;
+
+            document.getElementById('dossierFiscalContent').innerHTML = html;
+
+            // Badge dossier fiscal
+            if (typeof updateBadge === 'function') {
+                updateBadge('badgeDossier', impotsFactures.length, totalNonPaye > 0 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700');
+            }
+        }
+
+        function updateDossierStatus(clientName, docKey, status) {
+            const dossierStatus = safeParseJSON('dossierFiscalStatus', {});
+            if (!dossierStatus[clientName]) {
+                dossierStatus[clientName] = {};
+            }
+            dossierStatus[clientName][docKey] = status;
+            localStorage.setItem('dossierFiscalStatus', JSON.stringify(dossierStatus));
+            PrismaToast.success('Statut du document mis à jour.');
+        }
+
+        // ============================================
+        // MODAL PAIEMENT IMPÔTS
+        // ============================================
+        function openPaiementModalForImpot(year, uniqueId, designation, montant) {
+            if (!currentClient) return;
+
+            const paiementsImpots = safeParseJSON('paiementsImpotsDirects', {});
+            const clientPaiements = paiementsImpots[currentClient.name] || {};
+            const paiementKey = `${year}_${uniqueId}`;
+            const currentInfo = clientPaiements[paiementKey] || { mode: 'non_paye' };
+
+            const modalHtml = `
+                <div id="paiementModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+                        <div class="p-6 border-b">
+                            <h3 class="text-lg font-bold text-gray-800">${designation}</h3>
+                            <p class="text-sm text-gray-600 mt-1">Montant: ${montant.toLocaleString('fr-FR')} F CFA</p>
+                        </div>
+                        <div class="p-6">
+                            <div class="mb-4">
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Mode de paiement</label>
+                                <select id="modalPaiementMode" onchange="togglePaiementFields()" class="w-full border border-gray-300 rounded-lg px-4 py-2">
+                                    <option value="non_paye" ${currentInfo.mode === 'non_paye' ? 'selected' : ''}>Non payé</option>
+                                    <option value="cabinet" ${currentInfo.mode === 'cabinet' ? 'selected' : ''}>Payé via Cabinet (client a payé le cabinet)</option>
+                                    <option value="client_direct" ${currentInfo.mode === 'client_direct' ? 'selected' : ''}>Payé directement par le client</option>
+                                </select>
+                            </div>
+
+                            <div id="fieldsCabinet" class="hidden mb-4">
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">N° de reçu Cabinet</label>
+                                <input type="text" id="modalRecuCabinet" value="${currentInfo.recu || ''}"
+                                       placeholder="Ex: RECU-0001/2026"
+                                       class="w-full border border-gray-300 rounded-lg px-4 py-2">
+                            </div>
+
+                            <div id="fieldsClientDirect" class="hidden">
+                                <div class="mb-4">
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Date de paiement</label>
+                                    <input type="date" id="modalDatePaiement" value="${currentInfo.date || ''}"
+                                           class="w-full border border-gray-300 rounded-lg px-4 py-2">
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Référence quittance (optionnel)</label>
+                                    <input type="text" id="modalReference" value="${currentInfo.reference || ''}"
+                                           placeholder="Ex: QT-2026-001234"
+                                           class="w-full border border-gray-300 rounded-lg px-4 py-2">
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Commentaire (optionnel)</label>
+                                    <textarea id="modalCommentaire" rows="2"
+                                              placeholder="Notes sur le paiement..."
+                                              class="w-full border border-gray-300 rounded-lg px-4 py-2">${currentInfo.commentaire || ''}</textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-6 border-t bg-gray-50 flex justify-end gap-3">
+                            <button onclick="closePaiementModal()" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100">
+                                Annuler
+                            </button>
+                            <button onclick="savePaiementImpot('${year}', '${uniqueId}')" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                Enregistrer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            togglePaiementFields();
+        }
+
+        function togglePaiementFields() {
+            const mode = document.getElementById('modalPaiementMode').value;
+            const fieldsCabinet = document.getElementById('fieldsCabinet');
+            const fieldsClientDirect = document.getElementById('fieldsClientDirect');
+
+            fieldsCabinet.classList.add('hidden');
+            fieldsClientDirect.classList.add('hidden');
+
+            if (mode === 'cabinet') {
+                fieldsCabinet.classList.remove('hidden');
+            } else if (mode === 'client_direct') {
+                fieldsClientDirect.classList.remove('hidden');
+            }
+        }
+
+        function closePaiementModal() {
+            const modal = document.getElementById('paiementModal');
+            if (modal) modal.remove();
+        }
+
+        function savePaiementImpot(year, uniqueId) {
+            if (!currentClient) return;
+
+            const mode = document.getElementById('modalPaiementMode').value;
+            const paiementKey = `${year}_${uniqueId}`;
+
+            const paiementsImpots = safeParseJSON('paiementsImpotsDirects', {});
+            if (!paiementsImpots[currentClient.name]) {
+                paiementsImpots[currentClient.name] = {};
+            }
+
+            const paiementInfo = { mode };
+
+            if (mode === 'cabinet') {
+                paiementInfo.recu = document.getElementById('modalRecuCabinet').value;
+            } else if (mode === 'client_direct') {
+                paiementInfo.date = document.getElementById('modalDatePaiement').value;
+                paiementInfo.reference = document.getElementById('modalReference').value;
+                paiementInfo.commentaire = document.getElementById('modalCommentaire').value;
+            }
+
+            paiementsImpots[currentClient.name][paiementKey] = paiementInfo;
+            localStorage.setItem('paiementsImpotsDirects', JSON.stringify(paiementsImpots));
+
+            closePaiementModal();
+            loadDossierFiscal(); // Rafraîchir l'affichage
+            loadRapportEcheances(); // Rafraîchir le rapport
+            PrismaToast.success('Mode de paiement mis à jour.');
+        }
+
+        // ============================================
+        // RAPPORT D'ÉCHÉANCES
+        // ============================================
+        const ECHEANCES_FISCALES = {
+            // Impôts avec échéance fixe
+            'Patente': { type: 'annuel', date: '02-28', label: '28 Février' },
+            'Bail': { type: 'annuel', date: '02-28', label: '28 Février' },
+            'Bail Commercial': { type: 'annuel', date: '02-28', label: '28 Février' },
+            'TF': { type: 'annuel', date: '02-28', label: '28 Février' },
+            'Taxe Foncière': { type: 'annuel', date: '02-28', label: '28 Février' },
+            'DSF': { type: 'annuel', date: '03-15', label: '15 Mars' },
+            'DARP': { type: 'annuel', date: '06-30', label: '30 Juin' },
+            'DBEF': { type: 'annuel', date: '06-30', label: '30 Juin' },
+            // IGS et PSL trimestriels
+            'IGS': { type: 'trimestriel', echeances: [
+                { trimestre: 1, date: '01-15', label: '15 Janvier' },
+                { trimestre: 2, date: '03-15', label: '15 Mars' },
+                { trimestre: 3, date: '07-15', label: '15 Juillet' },
+                { trimestre: 4, date: '10-15', label: '15 Octobre' }
+            ]},
+            'PSL': { type: 'trimestriel', echeances: [
+                { trimestre: 1, date: '01-15', label: '15 Janvier' },
+                { trimestre: 2, date: '03-15', label: '15 Mars' },
+                { trimestre: 3, date: '07-15', label: '15 Juillet' },
+                { trimestre: 4, date: '10-15', label: '15 Octobre' }
+            ]}
+        };
+
+        const ECHEANCE_HONORAIRES = { date: '03-31', label: '31 Mars' };
+
+        function getEcheanceForImpot(designation, year) {
+            const today = new Date();
+            const designationUpper = designation.toUpperCase();
+
+            // Chercher le type d'impôt dans la désignation
+            for (const [impotType, config] of Object.entries(ECHEANCES_FISCALES)) {
+                if (designationUpper.includes(impotType.toUpperCase())) {
+                    if (config.type === 'annuel') {
+                        const echeanceDate = new Date(`${year}-${config.date}`);
+                        const joursRestants = Math.ceil((echeanceDate - today) / (1000 * 60 * 60 * 24));
+                        return {
+                            date: echeanceDate,
+                            label: config.label,
+                            joursRestants: joursRestants,
+                            enRetard: joursRestants < 0
+                        };
+                    } else if (config.type === 'trimestriel') {
+                        // Déterminer le trimestre depuis la désignation ou la date
+                        let trimestre = null;
+                        const trimestreMatch = designation.match(/T(\d)|trimestre\s*(\d)|(\d)(?:er|ème|e)?\s*trimestre/i);
+                        if (trimestreMatch) {
+                            trimestre = parseInt(trimestreMatch[1] || trimestreMatch[2] || trimestreMatch[3]);
+                        }
+
+                        if (trimestre && trimestre >= 1 && trimestre <= 4) {
+                            const echeanceConfig = config.echeances[trimestre - 1];
+                            const echeanceDate = new Date(`${year}-${echeanceConfig.date}`);
+                            const joursRestants = Math.ceil((echeanceDate - today) / (1000 * 60 * 60 * 24));
+                            return {
+                                date: echeanceDate,
+                                label: `${echeanceConfig.label} (T${trimestre})`,
+                                joursRestants: joursRestants,
+                                enRetard: joursRestants < 0
+                            };
+                        } else {
+                            // Si pas de trimestre identifié, prendre la prochaine échéance
+                            for (const ech of config.echeances) {
+                                const echeanceDate = new Date(`${year}-${ech.date}`);
+                                if (echeanceDate >= today) {
+                                    const joursRestants = Math.ceil((echeanceDate - today) / (1000 * 60 * 60 * 24));
+                                    return {
+                                        date: echeanceDate,
+                                        label: `${ech.label} (T${ech.trimestre})`,
+                                        joursRestants: joursRestants,
+                                        enRetard: false
+                                    };
+                                }
+                            }
+                            // Toutes les échéances sont passées
+                            const lastEch = config.echeances[3];
+                            const echeanceDate = new Date(`${year}-${lastEch.date}`);
+                            const joursRestants = Math.ceil((echeanceDate - today) / (1000 * 60 * 60 * 24));
+                            return {
+                                date: echeanceDate,
+                                label: `${lastEch.label} (T4)`,
+                                joursRestants: joursRestants,
+                                enRetard: true
+                            };
+                        }
+                    }
+                }
+            }
+
+            // Par défaut, pas d'échéance connue
+            return null;
+        }
+
+        function loadRapportEcheances() {
+            if (!currentClient) {
+                document.getElementById('rapportEcheancesContent').innerHTML = '<p class="text-center py-4 text-gray-500">Sélectionnez un client pour voir le rapport d\'échéances.</p>';
+                return;
+            }
+
+            const year = document.getElementById('yearSelect')?.value || new Date().getFullYear();
+            const today = new Date();
+
+            // Charger les impôts facturés
+            const factures = safeParseJSON('factures', []).filter(f => f.client === currentClient.name);
+            const paiementsImpots = safeParseJSON('paiementsImpotsDirects', {});
+            const clientPaiements = paiementsImpots[currentClient.name] || {};
+
+            let impotsNonPayes = [];
+            let honorairesNonPayes = [];
+
+            factures.forEach(facture => {
+                const factureYear = new Date(facture.date).getFullYear().toString();
+
+                if (facture.prestations) {
+                    facture.prestations.forEach((p, index) => {
+                        const uniqueId = `prestation-${facture.id}-${index}`;
+                        const paiementKey = `${factureYear}_${uniqueId}`;
+                        const paiementInfo = clientPaiements[paiementKey] || { mode: 'non_paye' };
+
+                        if (p.type === 'Impôt' && paiementInfo.mode === 'non_paye') {
+                            const echeance = getEcheanceForImpot(p.designation, factureYear);
+                            impotsNonPayes.push({
+                                designation: p.designation,
+                                montant: p.total || 0,
+                                factureNumber: facture.number,
+                                factureDate: facture.date,
+                                year: factureYear,
+                                echeance: echeance
+                            });
+                        } else if (p.type === 'Honoraire') {
+                            // Vérifier si l'honoraire est payé via les reçus
+                            const recus = safeParseJSON('recus', []).filter(r => r.client === currentClient.name);
+                            const totalPaye = recus.reduce((sum, r) => sum + (r.montantHonoraires || 0), 0);
+                            const totalHonoraires = factures.reduce((sum, f) => sum + (f.totalHonoraires || 0), 0);
+
+                            if (totalPaye < totalHonoraires) {
+                                const echeanceDate = new Date(`${factureYear}-03-31`);
+                                const joursRestants = Math.ceil((echeanceDate - today) / (1000 * 60 * 60 * 24));
+
+                                honorairesNonPayes.push({
+                                    designation: p.designation,
+                                    montant: p.total || 0,
+                                    factureNumber: facture.number,
+                                    factureDate: facture.date,
+                                    year: factureYear,
+                                    echeance: {
+                                        date: echeanceDate,
+                                        label: ECHEANCE_HONORAIRES.label,
+                                        joursRestants: joursRestants,
+                                        enRetard: joursRestants < 0
+                                    }
+                                });
+                            }
+                        }
+                    });
+                }
+            });
+
+            // Dédoublonner les honoraires (car on les ajoute plusieurs fois)
+            const honorairesUniques = [];
+            const honorairesVus = new Set();
+            honorairesNonPayes.forEach(h => {
+                const key = `${h.factureNumber}-${h.designation}`;
+                if (!honorairesVus.has(key)) {
+                    honorairesVus.add(key);
+                    honorairesUniques.push(h);
+                }
+            });
+            honorairesNonPayes = honorairesUniques;
+
+            // Trier par date d'échéance (les plus urgents en premier)
+            impotsNonPayes.sort((a, b) => {
+                if (!a.echeance) return 1;
+                if (!b.echeance) return -1;
+                return a.echeance.joursRestants - b.echeance.joursRestants;
+            });
+
+            honorairesNonPayes.sort((a, b) => {
+                if (!a.echeance) return 1;
+                if (!b.echeance) return -1;
+                return a.echeance.joursRestants - b.echeance.joursRestants;
+            });
+
+            // Générer le HTML du rapport
+            let html = '';
+
+            // Statistiques globales
+            const totalImpotsNonPayes = impotsNonPayes.reduce((sum, i) => sum + i.montant, 0);
+            const totalHonorairesNonPayes = honorairesNonPayes.reduce((sum, h) => sum + h.montant, 0);
+            const impotsEnRetard = impotsNonPayes.filter(i => i.echeance?.enRetard);
+            const honorairesEnRetard = honorairesNonPayes.filter(h => h.echeance?.enRetard);
+
+            html += `
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg">
+                        <p class="text-xs text-red-600 font-semibold uppercase">Impôts en retard</p>
+                        <p class="text-2xl font-bold text-red-700">${impotsEnRetard.length}</p>
+                        <p class="text-sm text-red-600">${impotsEnRetard.reduce((s, i) => s + i.montant, 0).toLocaleString('fr-FR')} F</p>
+                    </div>
+                    <div class="bg-orange-50 border-l-4 border-orange-500 p-4 rounded-r-lg">
+                        <p class="text-xs text-orange-600 font-semibold uppercase">Total impôts dus</p>
+                        <p class="text-2xl font-bold text-orange-700">${totalImpotsNonPayes.toLocaleString('fr-FR')} F</p>
+                        <p class="text-sm text-orange-600">${impotsNonPayes.length} obligation(s)</p>
+                    </div>
+                    <div class="bg-purple-50 border-l-4 border-purple-500 p-4 rounded-r-lg">
+                        <p class="text-xs text-purple-600 font-semibold uppercase">Honoraires en retard</p>
+                        <p class="text-2xl font-bold text-purple-700">${honorairesEnRetard.length}</p>
+                        <p class="text-sm text-purple-600">${honorairesEnRetard.reduce((s, h) => s + h.montant, 0).toLocaleString('fr-FR')} F</p>
+                    </div>
+                    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
+                        <p class="text-xs text-blue-600 font-semibold uppercase">Total honoraires dus</p>
+                        <p class="text-2xl font-bold text-blue-700">${totalHonorairesNonPayes.toLocaleString('fr-FR')} F</p>
+                        <p class="text-sm text-blue-600">${honorairesNonPayes.length} prestation(s)</p>
+                    </div>
+                </div>
+            `;
+
+            // Section Impôts non payés
+            if (impotsNonPayes.length > 0) {
+                html += `
+                    <h4 class="font-bold text-gray-700 mb-3 flex items-center gap-2">
+                        <span class="w-3 h-3 bg-orange-500 rounded-full"></span>
+                        Impôts non payés (${impotsNonPayes.length})
+                    </h4>
+                    <div class="overflow-x-auto mb-6">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="bg-orange-100 text-orange-800">
+                                    <th class="px-4 py-2 text-left">Désignation</th>
+                                    <th class="px-4 py-2 text-right">Montant</th>
+                                    <th class="px-4 py-2 text-center">Échéance</th>
+                                    <th class="px-4 py-2 text-center">Statut</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                impotsNonPayes.forEach(impot => {
+                    let statutBadge = '';
+                    let rowClass = '';
+
+                    if (impot.echeance) {
+                        if (impot.echeance.enRetard) {
+                            statutBadge = `<span class="px-2 py-1 rounded-full text-xs font-bold bg-red-600 text-white">EN RETARD (${Math.abs(impot.echeance.joursRestants)}j)</span>`;
+                            rowClass = 'bg-red-50';
+                        } else if (impot.echeance.joursRestants <= 15) {
+                            statutBadge = `<span class="px-2 py-1 rounded-full text-xs font-bold bg-orange-500 text-white">URGENT (${impot.echeance.joursRestants}j)</span>`;
+                            rowClass = 'bg-orange-50';
+                        } else if (impot.echeance.joursRestants <= 30) {
+                            statutBadge = `<span class="px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">${impot.echeance.joursRestants} jours</span>`;
+                        } else {
+                            statutBadge = `<span class="px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">${impot.echeance.joursRestants} jours</span>`;
+                        }
+                    } else {
+                        statutBadge = `<span class="px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">Non défini</span>`;
+                    }
+
+                    html += `
+                        <tr class="border-b ${rowClass}">
+                            <td class="px-4 py-3">
+                                <div class="font-medium">${impot.designation}</div>
+                                <div class="text-xs text-gray-500">Facture #${impot.factureNumber}</div>
+                            </td>
+                            <td class="px-4 py-3 text-right font-mono font-semibold">${impot.montant.toLocaleString('fr-FR')} F</td>
+                            <td class="px-4 py-3 text-center">
+                                <div class="font-medium">${impot.echeance?.label || '-'}</div>
+                                <div class="text-xs text-gray-500">${impot.year}</div>
+                            </td>
+                            <td class="px-4 py-3 text-center">${statutBadge}</td>
+                        </tr>
+                    `;
+                });
+
+                html += `
+                            </tbody>
+                            <tfoot>
+                                <tr class="bg-orange-100 font-bold">
+                                    <td class="px-4 py-3">TOTAL IMPÔTS</td>
+                                    <td class="px-4 py-3 text-right font-mono">${totalImpotsNonPayes.toLocaleString('fr-FR')} F CFA</td>
+                                    <td colspan="2"></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 text-center">
+                        <p class="text-green-700 font-semibold">Tous les impôts sont payés</p>
+                    </div>
+                `;
+            }
+
+            // Section Honoraires non payés
+            if (honorairesNonPayes.length > 0) {
+                html += `
+                    <h4 class="font-bold text-gray-700 mb-3 flex items-center gap-2">
+                        <span class="w-3 h-3 bg-blue-500 rounded-full"></span>
+                        Honoraires non payés (${honorairesNonPayes.length})
+                        <span class="text-sm font-normal text-gray-500">— Échéance globale : 31 Mars</span>
+                    </h4>
+                    <div class="overflow-x-auto mb-6">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="bg-blue-100 text-blue-800">
+                                    <th class="px-4 py-2 text-left">Désignation</th>
+                                    <th class="px-4 py-2 text-right">Montant</th>
+                                    <th class="px-4 py-2 text-center">Échéance</th>
+                                    <th class="px-4 py-2 text-center">Statut</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                honorairesNonPayes.forEach(honoraire => {
+                    let statutBadge = '';
+                    let rowClass = '';
+
+                    if (honoraire.echeance) {
+                        if (honoraire.echeance.enRetard) {
+                            statutBadge = `<span class="px-2 py-1 rounded-full text-xs font-bold bg-red-600 text-white">EN RETARD (${Math.abs(honoraire.echeance.joursRestants)}j)</span>`;
+                            rowClass = 'bg-red-50';
+                        } else if (honoraire.echeance.joursRestants <= 15) {
+                            statutBadge = `<span class="px-2 py-1 rounded-full text-xs font-bold bg-orange-500 text-white">URGENT (${honoraire.echeance.joursRestants}j)</span>`;
+                            rowClass = 'bg-orange-50';
+                        } else if (honoraire.echeance.joursRestants <= 30) {
+                            statutBadge = `<span class="px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">${honoraire.echeance.joursRestants} jours</span>`;
+                        } else {
+                            statutBadge = `<span class="px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">${honoraire.echeance.joursRestants} jours</span>`;
+                        }
+                    }
+
+                    html += `
+                        <tr class="border-b ${rowClass}">
+                            <td class="px-4 py-3">
+                                <div class="font-medium">${honoraire.designation}</div>
+                                <div class="text-xs text-gray-500">Facture #${honoraire.factureNumber}</div>
+                            </td>
+                            <td class="px-4 py-3 text-right font-mono font-semibold">${honoraire.montant.toLocaleString('fr-FR')} F</td>
+                            <td class="px-4 py-3 text-center">
+                                <div class="font-medium">${honoraire.echeance?.label || '-'}</div>
+                                <div class="text-xs text-gray-500">${honoraire.year}</div>
+                            </td>
+                            <td class="px-4 py-3 text-center">${statutBadge}</td>
+                        </tr>
+                    `;
+                });
+
+                html += `
+                            </tbody>
+                            <tfoot>
+                                <tr class="bg-blue-100 font-bold">
+                                    <td class="px-4 py-3">TOTAL HONORAIRES</td>
+                                    <td class="px-4 py-3 text-right font-mono">${totalHonorairesNonPayes.toLocaleString('fr-FR')} F CFA</td>
+                                    <td colspan="2"></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 text-center">
+                        <p class="text-green-700 font-semibold">Tous les honoraires sont payés</p>
+                    </div>
+                `;
+            }
+
+            // Rappel compact des échéances
+            html += `
+                <div class="mt-4 p-3 bg-gray-50 rounded-lg text-xs text-gray-600">
+                    <strong>Rappel :</strong>
+                    Patente/Bail/TF: 28 Fév. —
+                    DSF/DARP/DBEF: 15 Mars —
+                    IGS/PSL: T1(15 Jan), T2(15 Mars), T3(15 Juil), T4(15 Oct) —
+                    Honoraires: 31 Mars
+                </div>
+            `;
+
+            document.getElementById('rapportEcheancesContent').innerHTML = html;
+
+            // Générer aussi le rapport pour l'aperçu impression
+            const attestations = safeParseJSON('attestations', {});
+            const clientAttestations = attestations[currentClient.name] || {};
+            generatePrintableReport(impotsNonPayes, honorairesNonPayes, totalImpotsNonPayes, totalHonorairesNonPayes, clientAttestations, today);
+        }
+
+        function generatePrintableReport(impotsNonPayes, honorairesNonPayes, totalImpotsNonPayes, totalHonorairesNonPayes, clientAttestations, today) {
+            const dateRapport = new Date().toLocaleDateString('fr-FR', {
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+            });
+
+            let printHtml = `
+                <style>
+                    .print-report { font-family: 'Inter', Arial, sans-serif; color: #374151; font-size: 10px; line-height: 1.4; }
+                    .print-report table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+                    .print-report th, .print-report td { padding: 8px 10px; text-align: left; border: 1px solid #e5e7eb; font-size: 10px; }
+                    .print-report th { background: #e5e7eb; color: #1f2937; font-weight: 700; text-transform: uppercase; font-size: 9px; }
+                    .print-report .urgent { background: #fffbe6 !important; }
+                    .print-report .retard { background: #fef2f2 !important; }
+                    .print-report .total-row { background: #f3f4f6; font-weight: bold; }
+                    .print-report .section-title { font-size: 13px; font-weight: bold; color: #1f2937; margin: 18px 0 8px 0; padding-bottom: 5px; border-bottom: 2px solid #374151; }
+                    .print-report .badge { display: inline-block; padding: 2px 7px; border-radius: 10px; font-size: 8px; font-weight: 600; white-space: nowrap; }
+                    .print-report .badge-red { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+                    .print-report .badge-orange { background: #fff7ed; color: #9a3412; border: 1px solid #fed7aa; }
+                    .print-report .badge-yellow { background: #fefce8; color: #854d09; border: 1px solid #fde68a; }
+                    .print-report .badge-green { background: #f0fdf4; color: #16a34a; border: 1px solid #a7f3d0; }
+                    .print-report .attestation-box { border: 1px solid #d1d5db; padding: 10px; border-radius: 6px; }
+                    .print-report .attestation-expired { border-color: #dc2626; background: #fef2f2; }
+                    .print-report .attestation-warning { border-color: #f59e0b; background: #fff7ed; }
+                    .print-report .attestation-ok { border-color: #10b981; background: #f0fdf4; }
+                    @media print { .print-report { padding: 0; } }
+                </style>
+
+                <div class="print-report">
+                    <!-- En-tête -->
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid #e5e7eb;">
+                        <div>
+                            <h1 style="font-size: 16px; font-weight: bold; color: #1f2937; margin: 0;">PRISMA GESTION</h1>
+                            <p style="font-size: 9px; color: #6b7280; margin: 2px 0 0 0;">Comptabilité - Finance - Fiscalité</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <p style="font-size: 9px; color: #6b7280; margin: 0;">Date du rapport:</p>
+                            <p style="font-size: 10px; font-weight: 600; margin: 2px 0 0 0;">${dateRapport}</p>
+                        </div>
+                    </div>
+
+                    <!-- Titre du rapport -->
+                    <div style="text-align: center; margin: 15px 0 20px 0;">
+                        <h2 style="font-size: 18px; font-weight: bold; color: #1f2937; margin: 0;">RAPPORT DE SITUATION CLIENT</h2>
+                        <h3 style="font-size: 14px; font-weight: 600; color: #374151; margin-top: 5px;">Synthèse des Échéances et Statuts</h3>
+                    </div>
+
+                    <!-- Informations client -->
+                    <div style="background: #f8fafc; padding: 12px 15px; border-radius: 6px; margin-bottom: 20px; border: 1px solid #e5e7eb;">
+                        <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 15px;">
+                            <div>
+                                <p style="font-size: 9px; color: #6b7280; margin: 0;">Client</p>
+                                <strong style="font-size: 14px; color: #1f2937;">${currentClient.name}</strong>
+                            </div>
+                            <div>
+                                <p style="font-size: 9px; color: #6b7280; margin: 0;">NIU</p>
+                                <strong style="font-size: 11px; color: #1f2937;">${currentClient.niu || 'N/A'}</strong>
+                            </div>
+                            <div>
+                                <p style="font-size: 9px; color: #6b7280; margin: 0;">Régime Fiscal</p>
+                                <strong style="font-size: 11px; color: #1f2937;">${currentClient.regimeFiscal || 'N/A'}</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Résumé -->
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px;">
+                        <div style="border: 1px solid #fee2e2; background: #fef2f2; padding: 10px; border-radius: 4px;">
+                            <p style="font-size: 9px; color: #dc2626; font-weight: 600; margin: 0;">IMPÔTS EN RETARD</p>
+                            <p style="font-size: 16px; font-weight: bold; color: #dc2626; margin: 3px 0;">${impotsNonPayes.filter(i => i.echeance?.enRetard).length}</p>
+                            <p style="font-size: 9px; color: #dc2626; margin: 0;">${impotsNonPayes.filter(i => i.echeance?.enRetard).reduce((s, i) => s + i.montant, 0).toLocaleString('fr-FR')} F</p>
+                        </div>
+                        <div style="border: 1px solid #ffedd5; background: #fff7ed; padding: 10px; border-radius: 4px;">
+                            <p style="font-size: 9px; color: #ea580c; font-weight: 600; margin: 0;">TOTAL IMPÔTS DÛS</p>
+                            <p style="font-size: 16px; font-weight: bold; color: #ea580c; margin: 3px 0;">${totalImpotsNonPayes.toLocaleString('fr-FR')} F</p>
+                        </div>
+                        <div style="border: 1px solid #e0e7ff; background: #eff6ff; padding: 10px; border-radius: 4px;">
+                            <p style="font-size: 9px; color: #2563eb; font-weight: 600; margin: 0;">HONORAIRES DÛS</p>
+                            <p style="font-size: 16px; font-weight: bold; color: #2563eb; margin: 3px 0;">${totalHonorairesNonPayes.toLocaleString('fr-FR')} F</p>
+                        </div>
+                        <div style="border: 1px solid #ede9fe; background: #faf5ff; padding: 10px; border-radius: 4px;">
+                            <p style="font-size: 9px; color: #7c3aed; font-weight: 600; margin: 0;">TOTAL GÉNÉRAL DÛ</p>
+                            <p style="font-size: 16px; font-weight: bold; color: #7c3aed; margin: 3px 0;">${(totalImpotsNonPayes + totalHonorairesNonPayes).toLocaleString('fr-FR')} F</p>
+                        </div>
+                    </div>
+            `;
+
+            // Section Impôts
+            if (impotsNonPayes.length > 0) {
+                printHtml += `
+                <p class="section-title">IMPÔTS NON PAYÉS (${impotsNonPayes.length})</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 40%;">Désignation</th>
+                            <th style="width: 18%; text-align: right;">Montant</th>
+                            <th style="width: 22%; text-align: center;">Échéance</th>
+                            <th style="width: 20%; text-align: center;">Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                ${impotsNonPayes.map(impot => {
+                    let rowClass = '';
+                    let badge = '';
+
+                    if (impot.echeance?.enRetard) {
+                        rowClass = 'retard';
+                        badge = `<span class="badge badge-red">RETARD ${Math.abs(impot.echeance.joursRestants)}j</span>`;
+                    } else if (impot.echeance?.joursRestants <= 15) {
+                        rowClass = 'urgent';
+                        badge = `<span class="badge badge-orange">URGENT ${impot.echeance.joursRestants}j</span>`;
+                    } else if (impot.echeance?.joursRestants <= 30) {
+                        badge = `<span class="badge badge-yellow">${impot.echeance.joursRestants}j</span>`;
+                    } else if (impot.echeance) {
+                        badge = `<span class="badge badge-green">${impot.echeance.joursRestants}j</span>`;
+                    } else {
+                        badge = `<span class="badge badge-gray">Non défini</span>`;
+                    }
+
+                    return `
+                        <tr class="${rowClass}">
+                            <td>
+                                <strong>${impot.designation}</strong>
+                                <span style="font-size: 9px; color: #6b7280; display: block;">Facture #${impot.factureNumber} (${impot.year})</span>
+                            </td>
+                            <td style="text-align: right; font-family: monospace;">${impot.montant.toLocaleString('fr-FR')} F</td>
+                            <td style="text-align: center;">${impot.echeance?.label || '-'}</td>
+                            <td style="text-align: center;">${badge}</td>
+                        </tr>
+                    `;
+                }).join('')}
+                        <tr class="total-row">
+                            <td><strong>TOTAL IMPÔTS DÛS</strong></td>
+                            <td style="text-align: right; font-family: monospace;"><strong>${totalImpotsNonPayes.toLocaleString('fr-FR')} F CFA</strong></td>
+                            <td colspan="2"></td>
+                        </tr>
+                    </tbody>
+                </table>
+                `;
+            } else {
+                printHtml += `
+                <p class="section-title">IMPÔTS</p>
+                <div style="background: #f0fdf4; border: 1px solid #d1fae5; padding: 10px; text-align: center; border-radius: 4px; color: #065f46; font-weight: 600; font-size: 10px; margin-bottom: 15px;">
+                    ✓ Tous les impôts sont à jour
+                </div>
+                `;
+            }
+
+            // Section Honoraires
+            if (honorairesNonPayes.length > 0) {
+                printHtml += `
+                <p class="section-title">HONORAIRES NON PAYÉS (${honorairesNonPayes.length})</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 40%;">Désignation</th>
+                            <th style="width: 18%; text-align: right;">Montant</th>
+                            <th style="width: 22%; text-align: center;">Échéance</th>
+                            <th style="width: 20%; text-align: center;">Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                ${honorairesNonPayes.map(h => {
+                    let rowClass = '';
+                    let badge = '';
+
+                    if (h.echeance?.enRetard) {
+                        rowClass = 'retard';
+                        badge = `<span class="badge badge-red">RETARD ${Math.abs(h.echeance.joursRestants)}j</span>`;
+                    } else if (h.echeance?.joursRestants <= 15) {
+                        rowClass = 'urgent';
+                        badge = `<span class="badge badge-orange">URGENT ${h.echeance.joursRestants}j</span>`;
+                    } else if (h.echeance?.joursRestants <= 30) {
+                        badge = `<span class="badge badge-yellow">${h.echeance.joursRestants}j</span>`;
+                    } else if (h.echeance) {
+                        badge = `<span class="badge badge-green">${h.echeance.joursRestants}j</span>`;
+                    } else {
+                        badge = `<span class="badge badge-gray">Non défini</span>`;
+                    }
+
+                    return `
+                        <tr class="${rowClass}">
+                            <td>
+                                <strong>${h.designation}</strong>
+                                <span style="font-size: 9px; color: #6b7280; display: block;">Facture #${h.factureNumber} (${h.year})</span>
+                            </td>
+                            <td style="text-align: right; font-family: monospace;">${h.montant.toLocaleString('fr-FR')} F</td>
+                            <td style="text-align: center;">${h.echeance?.label || '-'}</td>
+                            <td style="text-align: center;">${badge}</td>
+                        </tr>
+                    `;
+                }).join('')}
+                        <tr class="total-row">
+                            <td><strong>TOTAL HONORAIRES DÛS</strong></td>
+                            <td style="text-align: right; font-family: monospace;"><strong>${totalHonorairesNonPayes.toLocaleString('fr-FR')} F CFA</strong></td>
+                            <td colspan="2"></td>
+                        </tr>
+                    </tbody>
+                </table>
+                `;
+            } else {
+                printHtml += `
+                <p class="section-title">HONORAIRES</p>
+                <div style="background: #f0fdf4; border: 1px solid #d1fae5; padding: 10px; text-align: center; border-radius: 4px; color: #065f46; font-weight: 600; font-size: 10px; margin-bottom: 15px;">
+                    ✓ Tous les honoraires sont réglés
+                </div>
+                `;
+            }
+
+            // Section Attestations
+            printHtml += `<p class="section-title">VALIDITÉ DES ATTESTATIONS</p>`;
+            printHtml += `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">`;
+
+            // ACF
+            const acfDate = clientAttestations.acf;
+            if (acfDate) {
+                const emissionDate = new Date(acfDate);
+                const expirationDate = new Date(emissionDate);
+                expirationDate.setDate(expirationDate.getDate() + 90);
+                const joursRestants = Math.ceil((expirationDate - today) / (1000 * 60 * 60 * 24));
+
+                let acfClass = 'attestation-ok';
+                let acfStatus = `Valide (${joursRestants} jours restants)`;
+                if (joursRestants < 0) {
+                    acfClass = 'attestation-expired';
+                    acfStatus = `EXPIRÉE depuis ${Math.abs(joursRestants)} jours`;
+                } else if (joursRestants <= 15) {
+                    acfClass = 'attestation-warning';
+                    acfStatus = `URGENT - Expire dans ${joursRestants} jours`;
+                }
+
+                printHtml += `
+                    <div class="attestation-box ${acfClass}">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                            <strong style="font-size: 11px;">ACF</strong>
+                            <span style="font-size: 9px; background: #e0f2fe; padding: 2px 7px; border-radius: 10px; color: #075985;">90 jours</span>
+                        </div>
+                        <p style="font-size: 9px; color: #6b7280; margin: 0;">Émise le: <strong>${emissionDate.toLocaleDateString('fr-FR')}</strong></p>
+                        <p style="font-size: 9px; color: #6b7280; margin: 0;">Expire le: <strong>${expirationDate.toLocaleDateString('fr-FR')}</strong></p>
+                        <p style="font-weight: 600; font-size: 10px; margin: 8px 0 0 0;">${acfStatus}</p>
+                    </div>
+                `;
+            } else {
+                printHtml += `
+                    <div class="attestation-box" style="background: #f9fafb; border-color: #e5e7eb;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                            <strong style="font-size: 11px;">ACF</strong>
+                            <span style="font-size: 9px; background: #e0f2fe; padding: 2px 7px; border-radius: 10px; color: #075985;">90 jours</span>
+                        </div>
+                        <p style="font-size: 10px; font-style: italic; color: #9ca3af; margin: 0;">Non renseignée</p>
+                    </div>
+                `;
+            }
+
+            // ATTIM
+            const attimDate = clientAttestations.attim;
+            if (attimDate) {
+                const emissionDate = new Date(attimDate);
+                const expirationDate = new Date(emissionDate);
+                expirationDate.setDate(expirationDate.getDate() + 30);
+                const joursRestants = Math.ceil((expirationDate - today) / (1000 * 60 * 60 * 24));
+
+                let attimClass = 'attestation-ok';
+                let attimStatus = `Valide (${joursRestants} jours restants)`;
+                if (joursRestants < 0) {
+                    attimClass = 'attestation-expired';
+                    attimStatus = `EXPIRÉE depuis ${Math.abs(joursRestants)} jours`;
+                } else if (joursRestants <= 7) {
+                    attimClass = 'attestation-warning';
+                    attimStatus = `URGENT - Expire dans ${joursRestants} jours`;
+                }
+
+                printHtml += `
+                    <div class="attestation-box ${attimClass}">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                            <strong style="font-size: 11px;">ATTIM</strong>
+                            <span style="font-size: 9px; background: #dcfce7; padding: 2px 7px; border-radius: 10px; color: #065f46;">30 jours</span>
+                        </div>
+                        <p style="font-size: 9px; color: #6b7280; margin: 0;">Émise le: <strong>${emissionDate.toLocaleDateString('fr-FR')}</strong></p>
+                        <p style="font-size: 9px; color: #6b7280; margin: 0;">Expire le: <strong>${expirationDate.toLocaleDateString('fr-FR')}</strong></p>
+                        <p style="font-weight: 600; font-size: 10px; margin: 8px 0 0 0;">${attimStatus}</p>
+                    </div>
+                `;
+            } else {
+                printHtml += `
+                    <div class="attestation-box" style="background: #f9fafb; border-color: #e5e7eb;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                            <strong style="font-size: 11px;">ATTIM</strong>
+                            <span style="font-size: 9px; background: #dcfce7; padding: 2px 7px; border-radius: 10px; color: #065f46;">30 jours</span>
+                        </div>
+                        <p style="font-size: 10px; font-style: italic; color: #9ca3af; margin: 0;">Non renseignée</p>
+                    </div>
+                `;
+            }
+
+            printHtml += `</div>`;
+
+
+            // Pied de page
+            printHtml += `
+                    <div style="margin-top: 25px; padding-top: 10px; border-top: 1px solid #e5e7eb; text-align: center;">
+                        <p style="font-size: 9px; color: #6b7280; margin: 0;">
+                            PRISMA GESTION — L'expertise qui sécurise votre gestion.
+                        </p>
+                        <p style="font-size: 8px; color: #9ca3af; margin: 3px 0 0 0;">
+                            Document généré le ${dateRapport}
+                        </p>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('rapportPrintArea').innerHTML = printHtml;
+        }
+
+        function toggleRapportPreview() {
+            const normalView = document.getElementById('rapportEcheancesContent');
+            const printView = document.getElementById('rapportPrintPreview');
+
+            if (printView.classList.contains('hidden')) {
+                normalView.classList.add('hidden');
+                printView.classList.remove('hidden');
+            } else {
+                printView.classList.add('hidden');
+                normalView.classList.remove('hidden');
+            }
+        }
+
+        function printRapport() {
+            // S'assurer que l'aperçu est visible
+            const printView = document.getElementById('rapportPrintPreview');
+            const normalView = document.getElementById('rapportEcheancesContent');
+
+            normalView.classList.add('hidden');
+            printView.classList.remove('hidden');
+
+            // Attendre que le DOM soit mis à jour puis imprimer
+            setTimeout(() => {
+                window.print();
+            }, 100);
+        }
+
+        async function generateRapportPDF() {
+            if (!currentClient) {
+                PrismaToast.warning('Veuillez sélectionner un client.');
+                return;
+            }
+
+            PrismaLoader.show('Génération du rapport PDF...');
+
+            try {
+                const { jsPDF } = window.jspdf;
+
+                // Utiliser le rapport imprimable
+                const rapportArea = document.getElementById('rapportPrintArea');
+
+                // S'assurer que le contenu est visible temporairement
+                const printView = document.getElementById('rapportPrintPreview');
+                const wasHidden = printView.classList.contains('hidden');
+                if (wasHidden) {
+                    printView.classList.remove('hidden');
+                    printView.style.position = 'absolute';
+                    printView.style.left = '-9999px';
+                }
+
+                const canvas = await html2canvas(rapportArea, {
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    backgroundColor: '#ffffff',
+                    width: rapportArea.scrollWidth,
+                    height: rapportArea.scrollHeight
+                });
+
+                // Restaurer l'état
+                if (wasHidden) {
+                    printView.classList.add('hidden');
+                    printView.style.position = '';
+                    printView.style.left = '';
+                }
+
+                const imgData = canvas.toDataURL('image/png');
+                const imgWidth = 210; // A4 width
+                const pageHeight = 297; // A4 height
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                let heightLeft = imgHeight;
+                let position = 0;
+
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+
+                while (heightLeft > 0) {
+                    position = heightLeft - imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+
+                const clientName = sanitizePdfSegment(currentClient.name, 'Client');
+                const date = new Date().toISOString().split('T')[0];
+                pdf.save(`Rapport_Echeances_${clientName}_${date}.pdf`);
+
+                PrismaToast.success('Rapport PDF généré avec succès !');
+            } catch (error) {
+                console.error('Erreur génération rapport PDF:', error);
+                PrismaToast.error('Erreur lors de la génération du rapport.');
+            } finally {
+                PrismaLoader.hide();
+            }
+        }
+
+        // ============================================
+        // TRAITEMENT DES PAIEMENTS
+        // ============================================
+        function processPayments(client) {
+            const factures = safeParseJSON('factures', []).filter(f => f.client === client.name);
+            const recus = safeParseJSON('recus', []).filter(r => r.client === client.name);
+
+            const invoicePaymentStatus = {};
+
+            factures.forEach(facture => {
+                invoicePaymentStatus[facture.id] = {
+                    prestations: [],
+                    totalImpotsPaid: 0,
+                    totalHonorairesPaid: 0,
+                    remainingImpots: facture.totalImpots || 0,
+                    remainingHonoraires: facture.totalHonoraires || 0
+                };
+                if (facture.prestations) {
+                    facture.prestations.forEach((p, index) => {
+                        invoicePaymentStatus[facture.id].prestations.push({
+                            uniqueId: `prestation-${facture.id}-${index}`,
+                            type: p.type,
+                            designation: p.designation,
+                            totalDue: p.total || 0,
+                            paid: 0,
+                            remaining: p.total || 0
+                        });
+                    });
+                }
+            });
+
+            recus.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            recus.forEach(recu => {
+                let recuImpotsRemaining = recu.montantImpots || 0;
+                let recuHonorairesRemaining = recu.montantHonoraires || 0;
+
+                if (recu.factureId && invoicePaymentStatus[recu.factureId]) {
+                    const invoiceStatus = invoicePaymentStatus[recu.factureId];
+
+                    const impotsToApply = Math.min(recuImpotsRemaining, invoiceStatus.remainingImpots);
+                    invoiceStatus.totalImpotsPaid += impotsToApply;
+                    invoiceStatus.remainingImpots -= impotsToApply;
+                    recuImpotsRemaining -= impotsToApply;
+
+                    const honorairesToApply = Math.min(recuHonorairesRemaining, invoiceStatus.remainingHonoraires);
+                    invoiceStatus.totalHonorairesPaid += honorairesToApply;
+                    invoiceStatus.remainingHonoraires -= honorairesToApply;
+                    recuHonorairesRemaining -= honorairesToApply;
+
+                    applyPaymentToPrestations(invoiceStatus, impotsToApply, honorairesToApply);
+                } else {
+                    for (const factureId in invoicePaymentStatus) {
+                        const invoiceStatus = invoicePaymentStatus[factureId];
+                        const facture = factures.find(f => f.id === factureId);
+
+                        if (recuImpotsRemaining > 0 && invoiceStatus.remainingImpots > 0) {
+                            const amountToApply = Math.min(recuImpotsRemaining, invoiceStatus.remainingImpots);
+                            invoiceStatus.totalImpotsPaid += amountToApply;
+                            invoiceStatus.remainingImpots -= amountToApply;
+                            recuImpotsRemaining -= amountToApply;
+
+                            // Distribution proportionnelle aux prestations Impôt
+                            const totalImpots = facture?.totalImpots || 1;
+                            invoiceStatus.prestations.forEach(p => {
+                                if (p.type === 'Impôt' && p.remaining > 0 && totalImpots > 0) {
+                                    const ratio = p.totalDue / totalImpots;
+                                    const amount = Math.min(amountToApply * ratio, p.remaining);
+                                    p.paid += amount;
+                                    p.remaining -= amount;
+                                }
+                            });
+                        }
+
+                        if (recuHonorairesRemaining > 0 && invoiceStatus.remainingHonoraires > 0) {
+                            const amountToApply = Math.min(recuHonorairesRemaining, invoiceStatus.remainingHonoraires);
+                            invoiceStatus.totalHonorairesPaid += amountToApply;
+                            invoiceStatus.remainingHonoraires -= amountToApply;
+                            recuHonorairesRemaining -= amountToApply;
+
+                            // Distribution proportionnelle aux prestations Honoraire
+                            const totalHonoraires = facture?.totalHonoraires || 1;
+                            invoiceStatus.prestations.forEach(p => {
+                                if (p.type === 'Honoraire' && p.remaining > 0 && totalHonoraires > 0) {
+                                    const ratio = p.totalDue / totalHonoraires;
+                                    const amount = Math.min(amountToApply * ratio, p.remaining);
+                                    p.paid += amount;
+                                    p.remaining -= amount;
+                                }
+                            });
+                        }
+
+                        if (recuImpotsRemaining <= 0 && recuHonorairesRemaining <= 0) break;
+                    }
+                }
+            });
+
+            return invoicePaymentStatus;
+        }
+
+        function applyPaymentToPrestations(invoiceStatus, impotsAmount, honorairesAmount) {
+            let remainingImpots = impotsAmount;
+            let remainingHonoraires = honorairesAmount;
+
+            invoiceStatus.prestations.forEach(p => {
+                if (p.type === 'Impôt' && remainingImpots > 0 && p.remaining > 0) {
+                    const amount = Math.min(remainingImpots, p.remaining);
+                    p.paid += amount;
+                    p.remaining -= amount;
+                    remainingImpots -= amount;
+                } else if (p.type === 'Honoraire' && remainingHonoraires > 0 && p.remaining > 0) {
+                    const amount = Math.min(remainingHonoraires, p.remaining);
+                    p.paid += amount;
+                    p.remaining -= amount;
+                    remainingHonoraires -= amount;
+                }
+            });
+        }
+
+        // ============================================
+        // SUIVI DES PRESTATIONS (HONORAIRES UNIQUEMENT)
+        // ============================================
+        function loadSuiviPrestations(invoicePaymentStatus) {
+            if (!currentClient) {
+                document.getElementById('suiviPrestationsContent').innerHTML = '<p class="text-center py-4 text-gray-500">Veuillez sélectionner un client.</p>';
+                return;
+            }
+
+            const factures = safeParseJSON('factures', []).filter(f => f.client === currentClient.name);
+            let honoraires = [];
+
+            factures.forEach(facture => {
+                if (facture.prestations) {
+                    facture.prestations.forEach((p, index) => {
+                        // Filtrer uniquement les honoraires
+                        if (p.type !== 'Honoraire') return;
+
+                        const uniqueId = `prestation-${facture.id}-${index}`;
+                        const prestationDetails = invoicePaymentStatus[facture.id]?.prestations.find(item => item.uniqueId === uniqueId);
+
+                        let paymentStatusText = 'Non Payé';
+                        let paymentStatusClass = 'bg-red-100 text-red-800';
+                        const totalDue = prestationDetails?.totalDue || p.total || 0;
+                        const paid = prestationDetails?.paid || 0;
+
+                        if (totalDue > 0 && paid >= totalDue) {
+                            paymentStatusText = 'Payé';
+                            paymentStatusClass = 'bg-green-100 text-green-800';
+                        } else if (paid > 0) {
+                            const percent = totalDue > 0 ? (paid / totalDue * 100).toFixed(0) : 0;
+                            paymentStatusText = `Partiel (${percent}%)`;
+                            paymentStatusClass = 'bg-orange-100 text-orange-800';
+                        }
+
+                        honoraires.push({
+                            ...p,
+                            factureId: facture.id,
+                            factureNumber: facture.number,
+                            factureDate: facture.date,
+                            uniqueId: uniqueId,
+                            paymentStatusText: paymentStatusText,
+                            paymentStatusClass: paymentStatusClass,
+                            paidAmount: paid,
+                            totalDue: totalDue
+                        });
+                    });
+                }
+            });
+
+            if (honoraires.length === 0) {
+                document.getElementById('suiviPrestationsContent').innerHTML = '<p class="text-center py-4 text-gray-500">Aucun honoraire facturé pour ce client.</p>';
+                return;
+            }
+
+            const prestationRealizationStatus = safeParseJSON('prestationRealizationStatus', {});
+
+            // Calculer les totaux
+            const totalHonoraires = honoraires.reduce((sum, h) => sum + h.totalDue, 0);
+            const totalPaye = honoraires.reduce((sum, h) => sum + h.paidAmount, 0);
+            const totalRestant = totalHonoraires - totalPaye;
+
+            let html = `
+                <div class="mb-4 grid grid-cols-3 gap-4">
+                    <div class="bg-blue-50 p-3 rounded-lg text-center">
+                        <p class="text-xs text-gray-600">Total Honoraires</p>
+                        <p class="text-lg font-bold text-blue-900">${totalHonoraires.toLocaleString('fr-FR')} F</p>
+                    </div>
+                    <div class="bg-green-50 p-3 rounded-lg text-center">
+                        <p class="text-xs text-gray-600">Payé</p>
+                        <p class="text-lg font-bold text-green-700">${totalPaye.toLocaleString('fr-FR')} F</p>
+                    </div>
+                    <div class="bg-orange-50 p-3 rounded-lg text-center">
+                        <p class="text-xs text-gray-600">Reste à payer</p>
+                        <p class="text-lg font-bold text-orange-700">${totalRestant.toLocaleString('fr-FR')} F</p>
+                    </div>
+                </div>
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="bg-blue-900 text-white">
+                            <th class="px-4 py-3 text-left">Prestation</th>
+                            <th class="px-4 py-3 text-right">Montant</th>
+                            <th class="px-4 py-3 text-center">Facture</th>
+                            <th class="px-4 py-3 text-center">Paiement</th>
+                            <th class="px-4 py-3 text-center">Réalisation</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            honoraires.forEach(prestation => {
+                const currentRealizationStatus = prestationRealizationStatus[prestation.uniqueId] || 'À faire';
+
+                html += `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="px-4 py-3">${prestation.designation}</td>
+                        <td class="px-4 py-3 text-right font-mono">${prestation.totalDue.toLocaleString('fr-FR')} F</td>
+                        <td class="px-4 py-3 text-center text-xs">#${prestation.factureNumber || 'N/A'}</td>
+                        <td class="px-4 py-3 text-center">
+                            <span class="px-2 py-1 rounded-full text-xs font-semibold ${prestation.paymentStatusClass}">
+                                ${prestation.paymentStatusText}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-center">
+                            <select onchange="updatePrestationRealizationStatus('${prestation.uniqueId}', this.value)" class="border border-gray-300 rounded-lg px-2 py-1 text-sm">
+                                <option value="À faire" ${currentRealizationStatus === 'À faire' ? 'selected' : ''}>À faire</option>
+                                <option value="En cours" ${currentRealizationStatus === 'En cours' ? 'selected' : ''}>En cours</option>
+                                <option value="Effectué" ${currentRealizationStatus === 'Effectué' ? 'selected' : ''}>Effectué</option>
+                            </select>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += `</tbody></table>`;
+            document.getElementById('suiviPrestationsContent').innerHTML = html;
+
+            // Badge honoraires
+            if (typeof updateBadge === 'function') {
+                updateBadge('badgeHonoraires', honoraires.length, totalRestant > 0 ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700');
+            }
+        }
+
+        function updatePrestationRealizationStatus(id, status) {
+            const prestationRealizationStatus = safeParseJSON('prestationRealizationStatus', {});
+            prestationRealizationStatus[id] = status;
+            localStorage.setItem('prestationRealizationStatus', JSON.stringify(prestationRealizationStatus));
+            PrismaToast.success('Statut de la prestation mis à jour.');
+        }
+
+        // ============================================
+        // CHARGEMENT SITUATION CLIENT
+        // ============================================
+        function loadClientSituation() {
+            const clientIndex = document.getElementById('clientSelect').value;
+            if (clientIndex === "") {
+                document.getElementById('situationContent').classList.add('hidden');
+                currentClient = null;
+                return;
+            }
+
+            const clients = safeParseJSON('clients', []);
+            currentClient = clients[clientIndex];
+
+            document.getElementById('clientName').textContent = currentClient.name;
+            document.getElementById('clientNiu').textContent = currentClient.niu || 'N/A';
+            document.getElementById('situationDate').textContent = 'Situation au ' + new Date().toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
+
+            // Remplir les infos enrichies du client
+            const regimeLabels = { 'IGS': 'IGS (Synthétique)', 'Reel': 'Régime Réel', 'NonPro': 'Non Professionnel', 'OBNL': 'OBNL' };
+            document.getElementById('clientRegime').textContent = regimeLabels[currentClient.regimeFiscal] || currentClient.regimeFiscal || '-';
+            document.getElementById('clientType').textContent = currentClient.type === 'PM' ? 'Personne Morale' : (currentClient.type === 'PP' ? 'Personne Physique' : (currentClient.type || '-'));
+            document.getElementById('clientCA').textContent = currentClient.chiffreAffaires ? currentClient.chiffreAffaires.toLocaleString('fr-FR') + ' F' : '-';
+            document.getElementById('clientImmo').textContent = currentClient.statutImmo || '-';
+            document.getElementById('clientCDI').textContent = currentClient.cdi || currentClient.rc || '-';
+            document.getElementById('clientCGA').textContent = currentClient.isCGA ? 'Oui' : 'Non';
+
+            const paymentAnalysis = processPayments(currentClient);
+
+            populateYearSelect();
+            loadRapportEcheances();
+            loadDossierFiscal(paymentAnalysis);
+            loadSuiviPrestations(paymentAnalysis);
+            loadFacturesAndPaiements(paymentAnalysis);
+            loadAttestations();
+            loadSummaryDashboard(paymentAnalysis);
+
+            changeVue();
+            document.getElementById('situationContent').classList.remove('hidden');
+        }
+
+        // ============================================
+        // RÉSUMÉ SYNTHÉTIQUE (DASHBOARD)
+        // ============================================
+        function loadSummaryDashboard(paymentAnalysis) {
+            if (!currentClient) return;
+
+            const factures = safeParseJSON('factures', []).filter(f => f.client === currentClient.name);
+            const recus = safeParseJSON('recus', []).filter(r => r.client === currentClient.name);
+            const paiementsImpots = safeParseJSON('paiementsImpotsDirects', {});
+            const clientPaiements = paiementsImpots[currentClient.name] || {};
+            const today = new Date();
+
+            // Calcul impôts non payés
+            let totalImpotsNonPayes = 0;
+            let nbImpotsEnRetard = 0;
+            let totalHonorairesFactures = 0;
+            let totalHonorairesPayes = 0;
+
+            factures.forEach(facture => {
+                const factureYear = new Date(facture.date).getFullYear().toString();
+                if (facture.prestations) {
+                    facture.prestations.forEach((p, index) => {
+                        const uniqueId = `prestation-${facture.id}-${index}`;
+                        const paiementKey = `${factureYear}_${uniqueId}`;
+                        const paiementInfo = clientPaiements[paiementKey] || { mode: 'non_paye' };
+                        if (p.type === 'Impôt' && paiementInfo.mode === 'non_paye') {
+                            totalImpotsNonPayes += p.total || 0;
+                            const ech = getEcheanceForImpot(p.designation, factureYear);
+                            if (ech && ech.enRetard) nbImpotsEnRetard++;
+                        }
+                        if (p.type === 'Honoraire') {
+                            totalHonorairesFactures += p.total || 0;
+                        }
+                    });
+                }
+            });
+
+            // Honoraires payés via reçus
+            recus.forEach(r => { totalHonorairesPayes += r.montantHonoraires || 0; });
+            const honorairesRestants = Math.max(0, totalHonorairesFactures - totalHonorairesPayes);
+
+            // Attestations
+            const attestations = safeParseJSON('attestations', {});
+            const clientAtt = attestations[currentClient.name] || {};
+            let attAlerts = 0;
+            ['acf', 'attim'].forEach(type => {
+                const d = clientAtt[type];
+                const validity = type === 'acf' ? 90 : 30;
+                if (!d) { attAlerts++; return; }
+                const exp = new Date(d);
+                exp.setDate(exp.getDate() + validity);
+                const remaining = Math.ceil((exp - today) / 86400000);
+                if (remaining <= (type === 'acf' ? 15 : 7)) attAlerts++;
+            });
+
+            // Total factures et reçus
+            const totalFactures = factures.reduce((s, f) => s + (f.total || 0), 0);
+            const totalRecus = recus.reduce((s, r) => s + (r.montant || 0), 0);
+
+            const summaryEl = document.getElementById('summaryContent');
+            summaryEl.innerHTML = `
+                <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg">
+                    <p class="text-xs text-red-600 font-semibold uppercase">Impôts dus</p>
+                    <p class="text-xl font-bold text-red-700">${totalImpotsNonPayes.toLocaleString('fr-FR')} F</p>
+                    <p class="text-xs text-red-500">${nbImpotsEnRetard > 0 ? nbImpotsEnRetard + ' en retard' : 'Aucun retard'}</p>
+                </div>
+                <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
+                    <p class="text-xs text-blue-600 font-semibold uppercase">Honoraires restants</p>
+                    <p class="text-xl font-bold text-blue-700">${honorairesRestants.toLocaleString('fr-FR')} F</p>
+                    <p class="text-xs text-blue-500">sur ${totalHonorairesFactures.toLocaleString('fr-FR')} F facturés</p>
+                </div>
+                <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-r-lg">
+                    <p class="text-xs text-yellow-600 font-semibold uppercase">Factures émises</p>
+                    <p class="text-xl font-bold text-yellow-700">${factures.length}</p>
+                    <p class="text-xs text-yellow-500">${totalFactures.toLocaleString('fr-FR')} F au total</p>
+                </div>
+                <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg">
+                    <p class="text-xs text-green-600 font-semibold uppercase">Paiements reçus</p>
+                    <p class="text-xl font-bold text-green-700">${recus.length}</p>
+                    <p class="text-xs text-green-500">${totalRecus.toLocaleString('fr-FR')} F encaissés</p>
+                </div>
+                <div class="${attAlerts > 0 ? 'bg-pink-50 border-pink-500' : 'bg-green-50 border-green-500'} border-l-4 p-4 rounded-r-lg">
+                    <p class="text-xs ${attAlerts > 0 ? 'text-pink-600' : 'text-green-600'} font-semibold uppercase">Attestations</p>
+                    <p class="text-xl font-bold ${attAlerts > 0 ? 'text-pink-700' : 'text-blue-900'}">${attAlerts > 0 ? attAlerts + ' alerte(s)' : 'OK'}</p>
+                    <p class="text-xs ${attAlerts > 0 ? 'text-pink-500' : 'text-green-500'}">${attAlerts > 0 ? 'Vérifier la validité' : 'Toutes valides'}</p>
+                </div>
+            `;
+
+            // Mettre à jour les badges des sections
+            updateBadge('badgeRapport', nbImpotsEnRetard > 0 ? nbImpotsEnRetard + ' retard' : '', 'bg-red-100 text-red-700');
+            updateBadge('badgeFactures', factures.length, 'bg-yellow-100 text-yellow-700');
+            updateBadge('badgePaiements', recus.length, 'bg-green-100 text-green-700');
+            updateBadge('badgeAttestations', attAlerts > 0 ? '!' : '', attAlerts > 0 ? 'bg-pink-100 text-pink-700' : 'bg-green-100 text-green-700');
+        }
+
+        function updateBadge(id, value, classes) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (!value && value !== 0) { el.classList.add('hidden'); return; }
+            el.textContent = value;
+            el.className = 'section-count ' + classes;
+            el.classList.remove('hidden');
+        }
+
+        function loadFacturesAndPaiements(paymentAnalysis) {
+            const factures = safeParseJSON('factures', []).filter(f => f.client === currentClient.name);
+            const recus = safeParseJSON('recus', []).filter(r => r.client === currentClient.name);
+
+            const facturesTable = document.getElementById('facturesTable');
+            if (factures.length === 0) {
+                facturesTable.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-gray-500">Aucune facture</td></tr>';
+            } else {
+                facturesTable.innerHTML = factures.map(f => {
+                    const status = paymentAnalysis[f.id];
+                    const isPaid = status && status.remainingImpots === 0 && status.remainingHonoraires === 0;
+                    const isPartial = status && (status.totalImpotsPaid > 0 || status.totalHonorairesPaid > 0) && !isPaid;
+
+                    let statusText = f.status || 'émise';
+                    let statusClass = 'bg-yellow-100 text-yellow-800';
+
+                    if (isPaid) {
+                        statusText = 'payée';
+                        statusClass = 'bg-green-100 text-green-800';
+                    } else if (isPartial) {
+                        statusText = 'partielle';
+                        statusClass = 'bg-orange-100 text-orange-800';
+                    }
+
+                    return `
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="px-4 py-3">${new Date(f.date).toLocaleDateString('fr-FR')}</td>
+                            <td class="px-4 py-3 font-semibold">${f.number}</td>
+                            <td class="px-4 py-3 text-right">${(f.total || 0).toLocaleString('fr-FR')} F CFA</td>
+                            <td class="px-4 py-3 text-center">
+                                <span class="px-3 py-1 rounded-full text-xs font-semibold ${statusClass}">
+                                    ${statusText}
+                                </span>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            const paiementsTable = document.getElementById('paiementsTable');
+            if (recus.length === 0) {
+                paiementsTable.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-gray-500">Aucun paiement</td></tr>';
+            } else {
+                paiementsTable.innerHTML = recus.map(r => `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="px-4 py-3">${new Date(r.date).toLocaleDateString('fr-FR')}</td>
+                        <td class="px-4 py-3 font-semibold">${r.number}</td>
+                        <td class="px-4 py-3 text-sm">${r.motif || '-'}</td>
+                        <td class="px-4 py-3 text-right">${(r.montant || 0).toLocaleString('fr-FR')} F CFA</td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        // ============================================
+        // CHANGEMENT DE VUE
+        // ============================================
+        function changeVue() {
+            const vue = document.getElementById('typeVue').value;
+            const sectionRapport = document.getElementById('sectionRapportEcheances');
+            const sectionCabinet = document.getElementById('sectionCabinet');
+            const sectionDossierFiscal = document.getElementById('sectionDossierFiscal');
+            const sectionSuiviPrestations = document.getElementById('sectionSuiviPrestations');
+            const sectionSuiviAttestations = document.getElementById('sectionSuiviAttestations');
+
+            // Le résumé synthétique reste toujours visible
+            // Réinitialiser l'affichage des sections
+            [sectionRapport, sectionCabinet, sectionDossierFiscal, sectionSuiviPrestations, sectionSuiviAttestations].forEach(el => {
+                if (el) el.classList.remove('hidden');
+            });
+
+            switch (vue) {
+                case 'cabinet':
+                    if (sectionDossierFiscal) sectionDossierFiscal.classList.add('hidden');
+                    if (sectionSuiviAttestations) sectionSuiviAttestations.classList.add('hidden');
+                    break;
+                case 'fiscale':
+                    if (sectionCabinet) sectionCabinet.classList.add('hidden');
+                    if (sectionSuiviPrestations) sectionSuiviPrestations.classList.add('hidden');
+                    break;
+            }
+        }
+
+        // ============================================
+        // GÉNÉRATION PDF
+        // ============================================
+        async function generatePDF() {
+            if (!currentClient) {
+                PrismaToast.warning('Veuillez sélectionner un client.');
+                return;
+            }
+
+            PrismaLoader.show('Génération du PDF en cours...');
+
+            try {
+                const { jsPDF } = window.jspdf;
+                const printArea = document.getElementById('printArea');
+
+                // Capture du contenu HTML en canvas
+                const canvas = await html2canvas(printArea, {
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    backgroundColor: '#ffffff'
+                });
+
+                const imgData = canvas.toDataURL('image/png');
+                const imgWidth = 210; // A4 width in mm
+                const pageHeight = 297; // A4 height in mm
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                let heightLeft = imgHeight;
+                let position = 0;
+
+                // Première page
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+
+                // Pages supplémentaires si nécessaire
+                while (heightLeft > 0) {
+                    position = heightLeft - imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+
+                // Nom du fichier
+                const clientName = sanitizePdfSegment(currentClient.name, 'Client');
+                const date = new Date().toISOString().split('T')[0];
+                const fileName = `Situation_${clientName}_${date}.pdf`;
+
+                pdf.save(fileName);
+                PrismaToast.success('PDF généré avec succès !');
+            } catch (error) {
+                console.error('Erreur génération PDF:', error);
+                PrismaToast.error('Erreur lors de la génération du PDF.');
+            } finally {
+                PrismaLoader.hide();
+            }
+        }
+
+        // ============================================
+        // INITIALISATION
+        // ============================================
+        loadClientSelect();
+
+        // Synchronisation entre onglets (correction: appels séparés)
+        PrismaSync.watch('clients', loadClientSelect);
+        PrismaSync.watch('factures', () => {
+            if (currentClient) loadClientSituation();
+        });
+        PrismaSync.watch('recus', () => {
+            if (currentClient) loadClientSituation();
+        });
+    </script>
+</body>
+</html>

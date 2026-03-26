@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reçu de Paiement - PRISMA GESTION</title>
+    <script src="assets/css/tailwindcss.min.js"></script>
+    <link rel="stylesheet" href="prisma-print.css">
+    <link rel="stylesheet" href="assets/css/inter-font.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        @media print {
+            body { background: white; margin: 0; padding: 0; }
+            .no-print { display: none !important; }
+            .print-area { box-shadow: none !important; padding: 0 !important; }
+            @page { size: A4; margin: 10mm 10mm; }
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <nav class="bg-blue-900 text-white p-4 shadow-lg no-print">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <a href="index.html" class="inline-flex items-center px-3 py-1.5 border border-white rounded-lg shadow-sm text-white hover:bg-white hover:text-blue-900 transition-colors duration-200">← PRISMA GESTION</a>
+            <span class="text-sm text-blue-200">Reçu de Paiement</span>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto p-6 no-print">
+        <!-- Liste des reçus existants -->
+        <div id="recuListSection" class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-gray-800">Reçus de paiement</h2>
+                <button onclick="showCreateForm()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                    + Nouveau reçu
+                </button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="px-4 py-3 text-left">Date</th>
+                            <th class="px-4 py-3 text-left">Numéro</th>
+                            <th class="px-4 py-3 text-left">Client</th>
+                            <th class="px-4 py-3 text-left">Mode</th>
+                            <th class="px-4 py-3 text-right">Total</th>
+                            <th class="px-4 py-3 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recuTable">
+                        <tr><td colspan="6" class="text-center py-8 text-gray-500">Aucun reçu</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Formulaire de création / modification -->
+        <div id="createForm" class="hidden bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 id="formTitle" class="text-2xl font-bold text-gray-800 mb-4">Créer un reçu de paiement</h2>
+
+            <!-- Toggle Mode Auto/Manuel -->
+            <div class="mb-4 flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <span class="text-sm font-semibold text-gray-700">Mode de saisie :</span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="manualModeToggle" onchange="toggleManualMode()" class="sr-only peer">
+                    <div class="w-11 h-6 bg-blue-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:bg-orange-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+                </label>
+                <span id="modeLabel" class="text-sm font-medium text-blue-700">Automatique</span>
+                <span id="modeHint" class="text-xs text-gray-500 ml-2">N° et date générés automatiquement</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Client *</label>
+                    <select id="clientSelect" onchange="onClientChange()" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+                        <option value="">-- Sélectionner un client --</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Numéro de reçu *</label>
+                    <input type="text" id="recuNumber" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+
+            <!-- Date manuelle (visible uniquement en mode manuel) -->
+            <div id="manualDateSection" class="hidden mb-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-orange-700 mb-2">Date du reçu *</label>
+                        <input type="date" id="manualDate" class="w-full border border-orange-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 bg-orange-50">
+                        <p class="text-xs text-orange-500 mt-1">Saisir la date figurant sur le reçu original</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Importer depuis un document -->
+            <div id="documentSection" class="hidden mb-4 p-4 bg-orange-50 rounded-lg border border-orange-200">
+                <label class="block text-sm font-semibold text-orange-800 mb-2">Importer depuis un document (optionnel)</label>
+                <select id="documentSelect" onchange="importDocument()" class="w-full border border-orange-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 bg-white">
+                    <option value="">-- Sélectionner un document --</option>
+                </select>
+                <div id="soldeInfo" class="hidden mt-2 p-2 bg-white rounded border border-orange-200">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-600">Total document :</span>
+                        <span id="totalDocument" class="font-semibold">0 F CFA</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-600">Déjà payé :</span>
+                        <span id="dejaPaye" class="font-semibold text-green-600">0 F CFA</span>
+                    </div>
+                    <div class="flex justify-between text-sm font-bold border-t pt-1 mt-1">
+                        <span class="text-orange-800">Solde restant :</span>
+                        <span id="soldeRestant" class="text-orange-600">0 F CFA</span>
+                    </div>
+                </div>
+                <p class="text-xs text-orange-600 mt-1">Cochez les éléments effectivement payés et ajustez les montants si nécessaire</p>
+            </div>
+
+            <!-- Lignes importées avec validation -->
+            <div id="importedLinesSection" class="hidden mb-4">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="text-sm font-bold text-gray-800">Éléments à payer</h3>
+                    <div class="flex gap-2">
+                        <button onclick="toggleAllLines(true)" class="text-xs bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">Tout cocher</button>
+                        <button onclick="toggleAllLines(false)" class="text-xs bg-gray-400 text-white px-3 py-1 rounded hover:bg-gray-500">Tout décocher</button>
+                    </div>
+                </div>
+                <div id="importedLinesContainer" class="space-y-2"></div>
+            </div>
+
+            <!-- Ventilation du paiement -->
+            <div class="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <h3 class="text-sm font-bold text-gray-800 mb-3">Ventilation du paiement</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-blue-700 mb-2">Montant Impôts (F CFA)</label>
+                        <input type="number" id="montantImpots" min="0" value="0" onchange="updateTotal()" class="w-full border border-blue-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 bg-blue-50">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-green-700 mb-2">Montant Honoraires (F CFA)</label>
+                        <input type="number" id="montantHonoraires" min="0" value="0" onchange="updateTotal()" class="w-full border border-green-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500 bg-green-50">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Total (F CFA)</label>
+                        <input type="number" id="montant" readonly class="w-full border border-gray-300 rounded-lg px-4 py-2 bg-gray-100 font-bold text-lg">
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-1 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Mode de paiement *</label>
+                    <select id="paymentMode" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+                        <option>Espèces</option>
+                        <option>Virement bancaire</option>
+                        <option>Mobile Money</option>
+                        <option>Chèque</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Motif du paiement *</label>
+                <textarea id="motif" rows="3" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500" placeholder="Ex: Règlement facture N° 0012/2026/01"></textarea>
+            </div>
+
+            <div class="flex justify-end gap-4 mt-6">
+                <button onclick="hideCreateForm()" class="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition">Annuler</button>
+                <button onclick="generateRecu()" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition">
+                    Enregistrer le reçu
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="recuPreview" class="hidden">
+        <div class="max-w-3xl mx-auto bg-white p-8 print-area shadow-xl" id="printArea" style="border: 3px double #1e3a8a;"></div>
+        <div class="max-w-3xl mx-auto mt-6 mb-6 flex justify-center gap-4 no-print">
+            <button onclick="window.print()" class="bg-gray-700 text-white px-6 py-2 rounded-lg hover:bg-gray-800 transition">Imprimer</button>
+            <button onclick="downloadPDF()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">Télécharger PDF</button>
+            <button onclick="backToForm()" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition">Retour</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="prisma-components.js"></script>
+    <script>
+        let selectedDocument = null;
+        let importedLines = [];
+        let editingRecuId = null;
+        let isManualMode = false;
+        let currentPreviewRecu = null;
+
+        function sanitizePdfSegment(value, fallback = 'Document') {
+            return String(value || '')
+                .replace(/^N[°ºo]?\s*/i, '')
+                .replace(/[\/\\]/g, '-')
+                .replace(/[^a-zA-Z0-9\u00C0-\u00FF\s\-]/g, '')
+                .trim() || fallback;
+        }
+
+        function toggleManualMode() {
+            isManualMode = document.getElementById('manualModeToggle').checked;
+            const label = document.getElementById('modeLabel');
+            const hint = document.getElementById('modeHint');
+            const manualDateSection = document.getElementById('manualDateSection');
+
+            if (isManualMode) {
+                label.textContent = 'Manuel';
+                label.className = 'text-sm font-medium text-orange-700';
+                hint.textContent = 'Saisir le N° et la date du reçu original';
+                manualDateSection.classList.remove('hidden');
+                document.getElementById('recuNumber').value = '';
+                document.getElementById('recuNumber').placeholder = 'Ex: RECU-0001/2025';
+            } else {
+                label.textContent = 'Automatique';
+                label.className = 'text-sm font-medium text-blue-700';
+                hint.textContent = 'N° et date générés automatiquement';
+                manualDateSection.classList.add('hidden');
+                document.getElementById('recuNumber').placeholder = '';
+                generateRecuNumber();
+            }
+        }
+
+        function loadClientSelect() {
+            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+            const select = document.getElementById('clientSelect');
+            clients.forEach((client, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = client.name;
+                select.appendChild(option);
+            });
+        }
+
+        function onClientChange() {
+            const clientIndex = document.getElementById('clientSelect').value;
+            if (!clientIndex) {
+                document.getElementById('documentSection').classList.add('hidden');
+                document.getElementById('importedLinesSection').classList.add('hidden');
+                selectedDocument = null;
+                importedLines = [];
+                return;
+            }
+
+            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+            const client = clients[clientIndex];
+            loadDocumentSelect(client.name);
+        }
+
+        function loadDocumentSelect(clientName) {
+            const factures = JSON.parse(localStorage.getItem('factures') || '[]');
+            const devis = JSON.parse(localStorage.getItem('devis') || '[]');
+            const propositions = JSON.parse(localStorage.getItem('propositions') || '[]');
+            const recus = JSON.parse(localStorage.getItem('recus') || '[]');
+            const select = document.getElementById('documentSelect');
+
+            const clientFactures = factures.filter(f => f.client === clientName);
+            const clientDevis = devis.filter(d => d.client === clientName && (d.status === 'accepté' || d.status === 'envoyé'));
+            const clientPropositions = propositions.filter(p => p.client === clientName);
+
+            select.innerHTML = '<option value="">-- Sélectionner un document --</option>';
+
+            const hasDocuments = clientFactures.length > 0 || clientDevis.length > 0 || clientPropositions.length > 0;
+
+            if (!hasDocuments) {
+                document.getElementById('documentSection').classList.add('hidden');
+                return;
+            }
+
+            // Factures
+            if (clientFactures.length > 0) {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = 'Factures';
+                clientFactures.forEach(f => {
+                    const paiements = recus.filter(r => r.factureIds && r.factureIds.includes(f.id))
+                        .reduce((sum, r) => sum + (parseFloat(r.montant) || 0), 0);
+                    const solde = (parseFloat(f.total) || 0) - paiements;
+
+                    const option = document.createElement('option');
+                    option.value = `facture_${f.id}`;
+                    const dateStr = new Date(f.date).toLocaleDateString('fr-FR');
+                    option.textContent = `${f.number} - ${dateStr} - ${f.total.toLocaleString('fr-FR')} F CFA`;
+                    if (solde <= 0) {
+                        option.textContent += ' (Soldée)';
+                        option.disabled = true;
+                    } else if (paiements > 0) {
+                        option.textContent += ` (Reste: ${solde.toLocaleString('fr-FR')} F CFA)`;
+                    }
+                    optgroup.appendChild(option);
+                });
+                select.appendChild(optgroup);
+            }
+
+            // Devis
+            if (clientDevis.length > 0) {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = 'Devis';
+                clientDevis.forEach(d => {
+                    const option = document.createElement('option');
+                    option.value = `devis_${d.id}`;
+                    const dateStr = new Date(d.date).toLocaleDateString('fr-FR');
+                    option.textContent = `${d.number} - ${dateStr} - ${d.total.toLocaleString('fr-FR')} F CFA`;
+                    optgroup.appendChild(option);
+                });
+                select.appendChild(optgroup);
+            }
+
+            // Propositions
+            if (clientPropositions.length > 0) {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = 'Propositions de paiement';
+                clientPropositions.forEach(p => {
+                    const option = document.createElement('option');
+                    option.value = `proposition_${p.id}`;
+                    const dateStr = new Date(p.date).toLocaleDateString('fr-FR');
+                    option.textContent = `Proposition du ${dateStr} - ${p.total.toLocaleString('fr-FR')} F CFA`;
+                    optgroup.appendChild(option);
+                });
+                select.appendChild(optgroup);
+            }
+
+            document.getElementById('documentSection').classList.remove('hidden');
+        }
+
+        function importDocument() {
+            const documentValue = document.getElementById('documentSelect').value;
+            const soldeInfo = document.getElementById('soldeInfo');
+
+            if (!documentValue) {
+                soldeInfo.classList.add('hidden');
+                document.getElementById('importedLinesSection').classList.add('hidden');
+                selectedDocument = null;
+                importedLines = [];
+                document.getElementById('montantImpots').value = 0;
+                document.getElementById('montantHonoraires').value = 0;
+                updateTotal();
+                document.getElementById('motif').value = '';
+                return;
+            }
+
+            const [type, id] = documentValue.split('_');
+            const idNum = parseInt(id);
+            const recus = JSON.parse(localStorage.getItem('recus') || '[]');
+
+            let docData, docNumber, prestations, totalDoc, totalPaye = 0;
+
+            if (type === 'facture') {
+                const factures = JSON.parse(localStorage.getItem('factures') || '[]');
+                docData = factures.find(f => f.id === idNum);
+                if (!docData) return;
+                docNumber = docData.number;
+                prestations = docData.prestations || [];
+                totalDoc = parseFloat(docData.total) || 0;
+
+                // Calculer les paiements déjà effectués
+                const paiementsFacture = recus.filter(r => r.factureIds && r.factureIds.includes(idNum));
+                totalPaye = paiementsFacture.reduce((sum, r) => sum + (parseFloat(r.montant) || 0), 0);
+
+                selectedDocument = { type: 'facture', id: idNum, number: docNumber };
+
+            } else if (type === 'devis') {
+                const devisList = JSON.parse(localStorage.getItem('devis') || '[]');
+                docData = devisList.find(d => d.id === idNum);
+                if (!docData) return;
+                docNumber = docData.number;
+                prestations = docData.prestations || [];
+                totalDoc = parseFloat(docData.total) || 0;
+
+                selectedDocument = { type: 'devis', id: idNum, number: docNumber };
+
+            } else if (type === 'proposition') {
+                const propositions = JSON.parse(localStorage.getItem('propositions') || '[]');
+                docData = propositions.find(p => p.id === idNum);
+                if (!docData) return;
+                docNumber = `Proposition du ${new Date(docData.date).toLocaleDateString('fr-FR')}`;
+                // Les propositions ont des "lignes" au lieu de "prestations"
+                prestations = (docData.lignes || []).map(l => ({
+                    type: l.type,
+                    designation: l.designation,
+                    qty: 1,
+                    price: l.amount,
+                    total: l.amount
+                }));
+                totalDoc = parseFloat(docData.total) || 0;
+
+                selectedDocument = { type: 'proposition', id: idNum, number: docNumber };
+            }
+
+            // Afficher les infos de solde
+            const soldeRestant = totalDoc - totalPaye;
+            document.getElementById('totalDocument').textContent = totalDoc.toLocaleString('fr-FR') + ' F CFA';
+            document.getElementById('dejaPaye').textContent = totalPaye.toLocaleString('fr-FR') + ' F CFA';
+            document.getElementById('soldeRestant').textContent = soldeRestant.toLocaleString('fr-FR') + ' F CFA';
+            soldeInfo.classList.remove('hidden');
+
+            // Générer les lignes avec cases à cocher
+            importedLines = prestations.map((p, i) => ({
+                index: i,
+                type: p.type || 'Honoraire',
+                designation: p.designation,
+                montantOriginal: p.total || (p.qty * p.price) || 0,
+                montant: p.total || (p.qty * p.price) || 0,
+                checked: true
+            }));
+
+            renderImportedLines();
+            recalcFromLines();
+
+            // Motif
+            const typeLabels = { facture: 'facture', devis: 'devis', proposition: 'proposition' };
+            document.getElementById('motif').value = `Règlement ${typeLabels[type]} ${docNumber}`;
+
+            PrismaToast.success('Document importé. Validez les éléments payés.');
+        }
+
+        function renderImportedLines() {
+            const container = document.getElementById('importedLinesContainer');
+            if (importedLines.length === 0) {
+                document.getElementById('importedLinesSection').classList.add('hidden');
+                return;
+            }
+
+            document.getElementById('importedLinesSection').classList.remove('hidden');
+            container.innerHTML = importedLines.map((line, i) => {
+                const typeColor = line.type === 'Impôt'
+                    ? 'bg-blue-100 text-blue-800 border-blue-200'
+                    : 'bg-green-100 text-green-800 border-green-200';
+                const rowBg = line.checked ? 'bg-white' : 'bg-gray-100 opacity-60';
+                return `
+                    <div class="flex items-center gap-3 p-3 rounded-lg border ${rowBg} transition-all" id="imported-line-${i}">
+                        <input type="checkbox" ${line.checked ? 'checked' : ''}
+                            onchange="toggleLine(${i}, this.checked)"
+                            class="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 cursor-pointer shrink-0">
+                        <span class="inline-block px-2 py-0.5 text-xs font-semibold rounded border ${typeColor} shrink-0">${line.type}</span>
+                        <span class="flex-1 text-sm font-medium text-gray-800 truncate" title="${line.designation}">${line.designation}</span>
+                        <div class="flex items-center gap-1 shrink-0">
+                            <input type="number" value="${line.montant}" min="0"
+                                onchange="updateLineMontant(${i}, this.value)"
+                                class="w-28 border border-gray-300 rounded px-2 py-1 text-sm text-right font-semibold focus:ring-2 focus:ring-blue-500 ${line.checked ? '' : 'bg-gray-200'}"
+                                ${line.checked ? '' : 'disabled'}>
+                            <span class="text-xs text-gray-500">F</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function toggleLine(index, checked) {
+            importedLines[index].checked = checked;
+            if (!checked) {
+                importedLines[index].montant = 0;
+            } else {
+                importedLines[index].montant = importedLines[index].montantOriginal;
+            }
+            renderImportedLines();
+            recalcFromLines();
+        }
+
+        function toggleAllLines(checked) {
+            importedLines.forEach(line => {
+                line.checked = checked;
+                line.montant = checked ? line.montantOriginal : 0;
+            });
+            renderImportedLines();
+            recalcFromLines();
+        }
+
+        function updateLineMontant(index, value) {
+            importedLines[index].montant = parseFloat(value) || 0;
+            recalcFromLines();
+        }
+
+        function recalcFromLines() {
+            let totalImpots = 0;
+            let totalHonoraires = 0;
+
+            importedLines.forEach(line => {
+                if (line.checked) {
+                    if (line.type === 'Impôt') {
+                        totalImpots += line.montant;
+                    } else {
+                        totalHonoraires += line.montant;
+                    }
+                }
+            });
+
+            document.getElementById('montantImpots').value = totalImpots;
+            document.getElementById('montantHonoraires').value = totalHonoraires;
+            updateTotal();
+        }
+
+        function updateTotal() {
+            const montantImpots = parseFloat(document.getElementById('montantImpots').value) || 0;
+            const montantHonoraires = parseFloat(document.getElementById('montantHonoraires').value) || 0;
+            document.getElementById('montant').value = montantImpots + montantHonoraires;
+        }
+
+        function numberToWords(num) {
+            const units = ['', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf'];
+            const teens = ['dix', 'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf'];
+            const tens = ['', '', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante', 'soixante-dix', 'quatre-vingt', 'quatre-vingt-dix'];
+
+            if (num === 0) return 'zéro';
+            if (num < 10) return units[num];
+            if (num < 20) return teens[num - 10];
+            if (num < 100) {
+                const ten = Math.floor(num / 10);
+                const unit = num % 10;
+                if (ten === 7) return 'soixante-' + teens[unit];
+                if (ten === 9) return 'quatre-vingt-' + teens[unit];
+                return tens[ten] + (unit ? '-' + units[unit] : '');
+            }
+            if (num < 1000) {
+                const hundred = Math.floor(num / 100);
+                const rest = num % 100;
+                return (hundred > 1 ? units[hundred] + ' ' : '') + 'cent' + (rest ? ' ' + numberToWords(rest) : '');
+            }
+            if (num < 1000000) {
+                const thousand = Math.floor(num / 1000);
+                const rest = num % 1000;
+                return (thousand > 1 ? numberToWords(thousand) + ' ' : '') + 'mille' + (rest ? ' ' + numberToWords(rest) : '');
+            }
+            return num.toString();
+        }
+
+        function generateRecu() {
+            const clientIndex = document.getElementById('clientSelect').value;
+            const recuNumber = document.getElementById('recuNumber').value;
+            const montantImpots = parseFloat(document.getElementById('montantImpots').value) || 0;
+            const montantHonoraires = parseFloat(document.getElementById('montantHonoraires').value) || 0;
+            const montant = montantImpots + montantHonoraires;
+            const paymentMode = document.getElementById('paymentMode').value;
+            const motif = document.getElementById('motif').value;
+
+            if (!clientIndex || !recuNumber || !montant || !motif) {
+                PrismaToast.warning('Veuillez remplir tous les champs obligatoires');
+                return;
+            }
+
+            if (isManualMode && !document.getElementById('manualDate').value) {
+                PrismaToast.warning('En mode manuel, veuillez saisir la date du reçu');
+                return;
+            }
+
+            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+            const client = clients[clientIndex];
+
+            const lignesPayees = importedLines.filter(l => l.checked && l.montant > 0).map(l => ({
+                type: l.type, designation: l.designation, montant: l.montant
+            }));
+
+            const allRecus = JSON.parse(localStorage.getItem('recus') || '[]');
+
+            if (editingRecuId) {
+                const index = allRecus.findIndex(r => r.id === editingRecuId);
+                if (index !== -1) {
+                    allRecus[index] = {
+                        ...allRecus[index],
+                        number: recuNumber, client: client.name, montant, montantImpots, montantHonoraires,
+                        paymentMode, motif, lignesPayees,
+                        dateModification: new Date().toISOString(),
+                        factureIds: selectedDocument && selectedDocument.type === 'facture' ? [selectedDocument.id] : allRecus[index].factureIds,
+                        factureNumbers: selectedDocument && selectedDocument.type === 'facture' ? [selectedDocument.number] : allRecus[index].factureNumbers,
+                        sourceType: selectedDocument ? selectedDocument.type : allRecus[index].sourceType,
+                        sourceId: selectedDocument ? selectedDocument.id : allRecus[index].sourceId,
+                        sourceNumber: selectedDocument ? selectedDocument.number : allRecus[index].sourceNumber
+                    };
+                    localStorage.setItem('recus', JSON.stringify(allRecus));
+                    PrismaToast.success('Reçu modifié avec succès !');
+                    hideCreateForm();
+                    loadRecusList();
+                    displayRecuFromData(allRecus[index]);
+                }
+            } else {
+                const manualDateVal = document.getElementById('manualDate').value;
+                const recuDate = (isManualMode && manualDateVal) ? new Date(manualDateVal + 'T12:00:00').toISOString() : new Date().toISOString();
+
+                const recu = {
+                    id: Date.now(), number: recuNumber, client: client.name, montant, montantImpots, montantHonoraires,
+                    paymentMode, motif, lignesPayees, date: recuDate, isManual: isManualMode || false,
+                    factureIds: selectedDocument && selectedDocument.type === 'facture' ? [selectedDocument.id] : [],
+                    factureNumbers: selectedDocument && selectedDocument.type === 'facture' ? [selectedDocument.number] : [],
+                    sourceType: selectedDocument ? selectedDocument.type : null,
+                    sourceId: selectedDocument ? selectedDocument.id : null,
+                    sourceNumber: selectedDocument ? selectedDocument.number : null
+                };
+                allRecus.push(recu);
+                localStorage.setItem('recus', JSON.stringify(allRecus));
+                PrismaToast.success('Reçu enregistré avec succès !');
+                hideCreateForm();
+                loadRecusList();
+                displayRecuFromData(recu);
+            }
+            editingRecuId = null;
+        }
+
+        function displayRecuFromData(recu) {
+            currentPreviewRecu = recu;
+            const date = new Date(recu.date);
+            const dateStr = date.toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
+            const montantEnLettres = numberToWords(recu.montant);
+            const montantImpots = recu.montantImpots || 0;
+            const montantHonoraires = recu.montantHonoraires || 0;
+
+            const ventilationHTML = (montantImpots > 0 || montantHonoraires > 0) ? `
+                <div class="mb-4 grid grid-cols-2 gap-4">
+                    <div class="bg-blue-50 p-3 rounded-lg border-l-4 border-blue-600">
+                        <p class="text-xs text-blue-800 font-semibold">Impôts</p>
+                        <p class="text-lg font-bold text-blue-900">${montantImpots.toLocaleString('fr-FR')} F CFA</p>
+                    </div>
+                    <div class="bg-green-50 p-3 rounded-lg border-l-4 border-green-600">
+                        <p class="text-xs text-green-800 font-semibold">Honoraires</p>
+                        <p class="text-lg font-bold text-green-900">${montantHonoraires.toLocaleString('fr-FR')} F CFA</p>
+                    </div>
+                </div>
+            ` : '';
+
+            // Récupérer les données client depuis localStorage
+            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+            const client = clients.find(c => c.name === recu.client) || { name: recu.client };
+
+            document.getElementById('printArea').innerHTML = `
+                <div class="text-center mb-6" style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; padding: 1.5rem; margin: -2rem -2rem 2rem -2rem;">
+                    <h1 class="text-3xl font-bold">REÇU DE PAIEMENT</h1>
+                    <p class="text-lg mt-2">N° ${recu.number}</p>
+                </div>
+                <div class="mb-6 text-right">
+                    <p class="text-sm text-gray-600">Yaoundé, le ${dateStr}</p>
+                </div>
+                <div class="mb-6 bg-blue-50 p-4 rounded-lg border-l-4 border-blue-900">
+                    <h2 class="text-lg font-bold text-blue-900 mb-2">Reçu de :</h2>
+                    <p class="text-xl font-bold">${client.name}</p>
+                    ${client.niu ? `<p class="text-sm text-gray-700">NIU : ${client.niu}</p>` : ''}
+                    ${client.ville ? `<p class="text-sm text-gray-700">${client.ville}${client.quartier ? ' - ' + client.quartier : ''}</p>` : ''}
+                </div>
+                <div class="mb-6 text-center bg-green-50 p-6 rounded-lg border-2 border-green-700">
+                    <p class="text-gray-700 mb-2">La somme de :</p>
+                    <p class="text-4xl font-bold text-green-900 mb-2">${recu.montant.toLocaleString('fr-FR')} F CFA</p>
+                    <p class="text-sm text-gray-600 italic">(${montantEnLettres} francs CFA)</p>
+                </div>
+                ${ventilationHTML}
+                <div class="mb-6 space-y-3">
+                    <div class="flex justify-between border-b pb-2">
+                        <span class="font-semibold text-gray-700">Mode de paiement :</span>
+                        <span class="text-gray-900">${recu.paymentMode}</span>
+                    </div>
+                    <div class="border-b pb-2">
+                        <p class="font-semibold text-gray-700 mb-1">Motif du paiement :</p>
+                        <p class="text-gray-900">${recu.motif}</p>
+                    </div>
+                </div>
+                <div class="mt-12 pt-6 border-t-2 border-gray-300">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="font-bold text-blue-900 text-lg">PRISMA GESTION</p>
+                            <p class="text-xs text-gray-600">Comptabilité - Finance - Fiscalité</p>
+                            <p class="text-xs text-gray-600 mt-2">Yaoundé - Bata Longkak</p>
+                            <p class="text-xs text-gray-600">Tél : (237) 656 752 475 / 671 050 546</p>
+                            <p class="text-xs text-gray-600">N.I.U : M052116042979Z</p>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <img id="cachetImg" src="" alt="" style="max-height: 70px; display: none;">
+                            <div class="text-center">
+                                <img id="signatureImg" src="" alt="" style="max-height: 50px; display: none;">
+                                <div style="border-top: 1px solid #9ca3af; padding-top: 0.25rem; margin-top: 0.5rem;">
+                                    <p class="font-bold" id="signataireNom">OBIANG TIME Nathan</p>
+                                    <p class="text-sm text-gray-600" id="signataireTitre">Directeur Associé</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-6 text-center text-xs text-gray-500 italic">
+                    Ce reçu est valable sans signature ni cachet en vertu de l'article 1316-4 du Code Civil
+                </div>
+                <div style="margin-top: 1.5rem; padding-top: 0.5rem; border-top: 1px solid #e5e7eb; text-align: center;">
+                    <p style="font-size: 0.7rem; color: #6b7280; margin: 0;">
+                        <span style="font-weight: 600; color: #1e3a8a;">PRISMA Manager</span> — PRISMA GESTION : L'expertise qui sécurise votre gestion.
+                    </p>
+                </div>
+            `;
+
+            document.querySelector('.no-print').classList.add('hidden');
+            document.getElementById('recuPreview').classList.remove('hidden');
+            document.getElementById('createForm').classList.add('hidden');
+            loadCabinetSignatures();
+            window.scrollTo(0, 0);
+        }
+
+        // Charger la liste des reçus
+        function loadRecusList() {
+            const recus = JSON.parse(localStorage.getItem('recus') || '[]');
+            const table = document.getElementById('recuTable');
+
+            if (recus.length === 0) {
+                table.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-500">Aucun reçu</td></tr>';
+                return;
+            }
+
+            table.innerHTML = recus.slice().reverse().map(r => {
+                const dateStr = new Date(r.date).toLocaleDateString('fr-FR');
+                return `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="px-4 py-3 text-sm">${dateStr}</td>
+                        <td class="px-4 py-3 font-semibold">${r.number}</td>
+                        <td class="px-4 py-3">${r.client}</td>
+                        <td class="px-4 py-3 text-sm">${r.paymentMode || '-'}</td>
+                        <td class="px-4 py-3 text-right font-bold text-blue-900">${r.montant.toLocaleString('fr-FR')} F CFA</td>
+                        <td class="px-4 py-3 text-center">
+                            <div class="flex justify-center gap-2">
+                                <button onclick="viewRecu(${r.id})" class="bg-gray-600 text-white px-3 py-1 rounded text-sm hover:bg-gray-700">Voir</button>
+                                <button onclick="editRecu(${r.id})" class="bg-yellow-600 text-white px-3 py-1 rounded text-sm hover:bg-yellow-700">Modifier</button>
+                                <button onclick="deleteRecu(${r.id})" class="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700">Suppr.</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function generateRecuNumber() {
+            const recus = JSON.parse(localStorage.getItem('recus') || '[]');
+            const num = String(recus.length + 1).padStart(4, '0');
+            document.getElementById('recuNumber').value = `RECU-${num}/${new Date().getFullYear()}`;
+        }
+
+        function showCreateForm() {
+            editingRecuId = null;
+            selectedDocument = null;
+            importedLines = [];
+            isManualMode = false;
+            document.getElementById('manualModeToggle').checked = false;
+            document.getElementById('modeLabel').textContent = 'Automatique';
+            document.getElementById('modeLabel').className = 'text-sm font-medium text-blue-700';
+            document.getElementById('modeHint').textContent = 'N° et date générés automatiquement';
+            document.getElementById('manualDateSection').classList.add('hidden');
+            document.getElementById('manualDate').value = '';
+            document.getElementById('recuNumber').placeholder = '';
+            document.getElementById('formTitle').textContent = 'Créer un reçu de paiement';
+            document.getElementById('clientSelect').innerHTML = '<option value="">-- Sélectionner un client --</option>';
+            loadClientSelect();
+            document.getElementById('clientSelect').value = '';
+            document.getElementById('montantImpots').value = 0;
+            document.getElementById('montantHonoraires').value = 0;
+            document.getElementById('montant').value = '';
+            document.getElementById('motif').value = '';
+            document.getElementById('documentSection').classList.add('hidden');
+            document.getElementById('importedLinesSection').classList.add('hidden');
+            document.getElementById('soldeInfo').classList.add('hidden');
+            generateRecuNumber();
+            updateTotal();
+            document.getElementById('createForm').classList.remove('hidden');
+            document.getElementById('recuListSection').classList.add('hidden');
+            window.scrollTo(0, 0);
+        }
+
+        function hideCreateForm() {
+            document.getElementById('createForm').classList.add('hidden');
+            document.getElementById('recuListSection').classList.remove('hidden');
+            editingRecuId = null;
+            selectedDocument = null;
+            importedLines = [];
+        }
+
+        function viewRecu(id) {
+            const recus = JSON.parse(localStorage.getItem('recus') || '[]');
+            const r = recus.find(x => x.id === id);
+            if (r) displayRecuFromData(r);
+        }
+
+        function editRecu(id) {
+            const recus = JSON.parse(localStorage.getItem('recus') || '[]');
+            const recu = recus.find(x => x.id === id);
+            if (!recu) return;
+
+            editingRecuId = id;
+            selectedDocument = recu.sourceType ? { type: recu.sourceType, id: recu.sourceId, number: recu.sourceNumber } : null;
+
+            document.getElementById('formTitle').textContent = 'Modifier le reçu';
+            document.getElementById('clientSelect').innerHTML = '<option value="">-- Sélectionner un client --</option>';
+            loadClientSelect();
+
+            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+            const clientIndex = clients.findIndex(c => c.name === recu.client);
+            if (clientIndex !== -1) {
+                document.getElementById('clientSelect').value = clientIndex;
+                onClientChange();
+            }
+
+            document.getElementById('recuNumber').value = recu.number;
+            document.getElementById('montantImpots').value = recu.montantImpots || 0;
+            document.getElementById('montantHonoraires').value = recu.montantHonoraires || 0;
+            document.getElementById('paymentMode').value = recu.paymentMode || 'Espèces';
+            document.getElementById('motif').value = recu.motif || '';
+            updateTotal();
+
+            // Restaurer les lignes importées si elles existent
+            if (recu.lignesPayees && recu.lignesPayees.length > 0) {
+                importedLines = recu.lignesPayees.map((l, i) => ({
+                    index: i, type: l.type, designation: l.designation,
+                    montantOriginal: l.montant, montant: l.montant, checked: true
+                }));
+                renderImportedLines();
+            }
+
+            document.getElementById('createForm').classList.remove('hidden');
+            document.getElementById('recuListSection').classList.add('hidden');
+            document.getElementById('recuPreview').classList.add('hidden');
+            window.scrollTo(0, 0);
+            PrismaToast.info('Reçu chargé pour modification');
+        }
+
+        function deleteRecu(id) {
+            PrismaModal.confirmDelete('Supprimer ce reçu ?', () => {
+                const recus = JSON.parse(localStorage.getItem('recus') || '[]');
+                localStorage.setItem('recus', JSON.stringify(recus.filter(r => r.id !== id)));
+                loadRecusList();
+                PrismaToast.success('Reçu supprimé');
+            });
+        }
+
+        function loadCabinetSignatures() {
+            const config = JSON.parse(localStorage.getItem('cabinetConfig') || '{}');
+
+            const signatureImg = document.getElementById('signatureImg');
+            const cachetImg = document.getElementById('cachetImg');
+            const signataireNom = document.getElementById('signataireNom');
+            const signataireTitre = document.getElementById('signataireTitre');
+
+            if (config.signature && signatureImg) {
+                signatureImg.src = config.signature;
+                signatureImg.style.display = 'block';
+            }
+
+            if (config.cachet && cachetImg) {
+                cachetImg.src = config.cachet;
+                cachetImg.style.display = 'block';
+            }
+
+            if (config.signataireNom && signataireNom) {
+                signataireNom.textContent = config.signataireNom;
+            }
+
+            if (config.signataireTitre && signataireTitre) {
+                signataireTitre.textContent = config.signataireTitre;
+            }
+        }
+
+        function backToForm() {
+            document.querySelector('.no-print').classList.remove('hidden');
+            document.getElementById('recuPreview').classList.add('hidden');
+            document.getElementById('recuListSection').classList.remove('hidden');
+            document.getElementById('createForm').classList.add('hidden');
+            currentPreviewRecu = null;
+            window.scrollTo(0, 0);
+        }
+
+        function downloadPDF() {
+            if (typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') {
+                PrismaToast.error('Erreur : Bibliothèques non chargées.');
+                return;
+            }
+
+            PrismaLoader.show('Génération du PDF...');
+
+            html2canvas(document.getElementById('printArea'), { scale: 2 }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
+                const imgWidth = 210;
+                const imgHeight = canvas.height * imgWidth / canvas.width;
+                pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+                PrismaLoader.hide();
+                const recu = currentPreviewRecu || {};
+                const fileNumber = sanitizePdfSegment(recu.number, 'Recu');
+                const fileClient = sanitizePdfSegment(recu.client, 'Client');
+                pdf.save(`Recu_${fileNumber}_${fileClient}.pdf`);
+                PrismaToast.success('PDF téléchargé avec succès !');
+            }).catch(err => {
+                PrismaLoader.hide();
+                PrismaToast.error('Erreur lors de la génération du PDF');
+            });
+        }
+
+        loadClientSelect();
+        loadRecusList();
+
+        // Synchroniser les données entre onglets
+        PrismaSync.watch('clients', () => {
+            const currentClient = document.getElementById('clientSelect').value;
+            document.getElementById('clientSelect').innerHTML = '<option value="">-- Sélectionner un client --</option>';
+            loadClientSelect();
+            if (currentClient) {
+                document.getElementById('clientSelect').value = currentClient;
+                onClientChange();
+            }
+        });
+        PrismaSync.watch('factures', () => { onClientChange(); });
+        PrismaSync.watch('devis', () => { onClientChange(); });
+        PrismaSync.watch('propositions', () => { onClientChange(); });
+        PrismaSync.watch('recus', () => { onClientChange(); loadRecusList(); });
+    </script>
+</body>
+</html>

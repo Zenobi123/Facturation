@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Point sur l'Activité - PRISMA GESTION</title>
+    <script src="assets/css/tailwindcss.min.js"></script>
+    <link rel="stylesheet" href="prisma-print.css">
+    <link rel="stylesheet" href="assets/css/inter-font.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .section-collapsible .section-body { max-height: 5000px; overflow: hidden; transition: max-height 0.3s ease, opacity 0.3s ease; opacity: 1; }
+        .section-collapsible.collapsed .section-body { max-height: 0; opacity: 0; padding-top: 0 !important; padding-bottom: 0 !important; }
+        .section-header { cursor: pointer; user-select: none; }
+        .section-header .chevron { transition: transform 0.3s ease; display: inline-block; }
+        .section-collapsible.collapsed .section-header .chevron { transform: rotate(-90deg); }
+        .section-count { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; padding: 0 6px; }
+        .progress-bar { height: 12px; border-radius: 6px; background: #e5e7eb; overflow: hidden; }
+        .progress-fill { height: 100%; border-radius: 6px; transition: width 0.5s ease; }
+        @media print {
+            body { background: white; margin: 0; padding: 0; }
+            .no-print { display: none !important; }
+            .print-area { box-shadow: none !important; padding: 0 !important; }
+            .section-collapsible .section-body { max-height: none !important; opacity: 1 !important; }
+            @page { size: A4 landscape; margin: 8mm; }
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <nav class="bg-blue-900 text-white p-4 shadow-lg no-print">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <a href="index.html" class="inline-flex items-center px-3 py-1.5 border border-white rounded-lg shadow-sm text-white hover:bg-white hover:text-blue-900 transition-colors duration-200">&larr; PRISMA GESTION</a>
+            <span class="text-sm text-blue-200">Point sur l'Activit&eacute;</span>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto p-6">
+        <!-- Contrôles -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6 no-print">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Point sur l'Activit&eacute;</h2>
+            <div class="flex flex-wrap items-end gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Exercice fiscal</label>
+                    <select id="exerciceSelect" onchange="loadActivityReport()" class="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500">
+                    </select>
+                </div>
+                <button onclick="printActivityReport()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">Imprimer</button>
+                <button onclick="generatePDF()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">T&eacute;l&eacute;charger PDF</button>
+                <button onclick="toggleAllSections()" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors" id="btnToggleAll">Tout replier</button>
+            </div>
+        </div>
+
+        <!-- Zone imprimable -->
+        <div class="print-area" id="printArea">
+
+            <!-- En-tête imprimable -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h1 class="text-2xl font-bold text-blue-900">PRISMA GESTION</h1>
+                        <p class="text-xs text-gray-600 uppercase tracking-widest">Comptabilit&eacute; - Finance - Fiscalit&eacute;</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm text-gray-600" id="reportDate"></p>
+                    </div>
+                </div>
+                <div style="border-bottom: 2px solid #1e3a8a; margin-bottom: 1rem;"></div>
+                <h2 class="text-xl font-bold text-blue-900 text-center mb-2">POINT SUR L'ACTIVIT&Eacute; &mdash; EXERCICE <span id="exerciceTitle"></span></h2>
+            </div>
+
+            <!-- KPI Cards -->
+            <div id="kpiCards" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6"></div>
+
+            <!-- Section 1 : Synthèse Globale -->
+            <div id="sectionSynthese" class="section-collapsible bg-white rounded-lg shadow-md mb-6 border-l-4 border-blue-500">
+                <div class="section-header p-6 flex justify-between items-center" onclick="toggleSection('sectionSynthese')">
+                    <h3 class="text-lg font-bold text-blue-900"><span class="chevron">&#x25BC;</span> Synth&egrave;se Globale <span id="countSynthese" class="section-count bg-blue-100 text-blue-800"></span></h3>
+                </div>
+                <div class="section-body px-6 pb-6" id="syntheseContent"></div>
+            </div>
+
+            <!-- Section 2 : Situation des Paiements -->
+            <div id="sectionPaiements" class="section-collapsible bg-white rounded-lg shadow-md mb-6 border-l-4 border-green-500">
+                <div class="section-header p-6 flex justify-between items-center" onclick="toggleSection('sectionPaiements')">
+                    <h3 class="text-lg font-bold text-green-900"><span class="chevron">&#x25BC;</span> Situation des Paiements <span id="countPaiements" class="section-count bg-green-100 text-green-800"></span></h3>
+                </div>
+                <div class="section-body px-6 pb-6" id="paiementsContent"></div>
+            </div>
+
+            <!-- Section 3 : Suivi des Prestations -->
+            <div id="sectionPrestations" class="section-collapsible bg-white rounded-lg shadow-md mb-6 border-l-4 border-purple-500">
+                <div class="section-header p-6 flex justify-between items-center" onclick="toggleSection('sectionPrestations')">
+                    <h3 class="text-lg font-bold text-purple-900"><span class="chevron">&#x25BC;</span> Suivi des Prestations <span id="countPrestations" class="section-count bg-purple-100 text-purple-800"></span></h3>
+                </div>
+                <div class="section-body px-6 pb-6" id="prestationsContent"></div>
+            </div>
+
+            <!-- Section 4 : Reste à Faire -->
+            <div id="sectionReste" class="section-collapsible bg-white rounded-lg shadow-md mb-6 border-l-4 border-red-500">
+                <div class="section-header p-6 flex justify-between items-center" onclick="toggleSection('sectionReste')">
+                    <h3 class="text-lg font-bold text-red-900"><span class="chevron">&#x25BC;</span> Reste &agrave; Faire <span id="countReste" class="section-count bg-red-100 text-red-800"></span></h3>
+                </div>
+                <div class="section-body px-6 pb-6" id="resteContent"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="prisma-components.js"></script>
+    <script>
+        // ============================================
+        // UTILITAIRES
+        // ============================================
+        function safeParseJSON(key, fallback) {
+            try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; }
+        }
+
+        function fmt(n) {
+            return (n || 0).toLocaleString('fr-FR');
+        }
+
+        function toggleSection(id) {
+            document.getElementById(id).classList.toggle('collapsed');
+        }
+
+        let allCollapsed = false;
+        function toggleAllSections() {
+            allCollapsed = !allCollapsed;
+            document.querySelectorAll('.section-collapsible').forEach(s => {
+                s.classList.toggle('collapsed', allCollapsed);
+            });
+            document.getElementById('btnToggleAll').textContent = allCollapsed ? 'Tout déplier' : 'Tout replier';
+        }
+
+        // ============================================
+        // CONSTANTES ÉCHÉANCES FISCALES
+        // ============================================
+        const ECHEANCES_FISCALES = {
+            'Patente': { type: 'annuel', date: '02-28', label: '28 Février' },
+            'Bail': { type: 'annuel', date: '02-28', label: '28 Février' },
+            'Bail Commercial': { type: 'annuel', date: '02-28', label: '28 Février' },
+            'TF': { type: 'annuel', date: '02-28', label: '28 Février' },
+            'Taxe Foncière': { type: 'annuel', date: '02-28', label: '28 Février' },
+            'DSF': { type: 'annuel', date: '03-15', label: '15 Mars' },
+            'DARP': { type: 'annuel', date: '06-30', label: '30 Juin' },
+            'DBEF': { type: 'annuel', date: '06-30', label: '30 Juin' },
+            'IGS': { type: 'trimestriel', echeances: [
+                { trimestre: 1, date: '01-15', label: '15 Janvier' },
+                { trimestre: 2, date: '03-15', label: '15 Mars' },
+                { trimestre: 3, date: '07-15', label: '15 Juillet' },
+                { trimestre: 4, date: '10-15', label: '15 Octobre' }
+            ]},
+            'PSL': { type: 'trimestriel', echeances: [
+                { trimestre: 1, date: '01-15', label: '15 Janvier' },
+                { trimestre: 2, date: '03-15', label: '15 Mars' },
+                { trimestre: 3, date: '07-15', label: '15 Juillet' },
+                { trimestre: 4, date: '10-15', label: '15 Octobre' }
+            ]}
+        };
+
+        const ECHEANCE_HONORAIRES = { date: '03-31', label: '31 Mars' };
+
+        function getEcheanceForImpot(designation, year) {
+            const today = new Date();
+            const designationUpper = designation.toUpperCase();
+            for (const [impotType, config] of Object.entries(ECHEANCES_FISCALES)) {
+                if (designationUpper.includes(impotType.toUpperCase())) {
+                    if (config.type === 'annuel') {
+                        const echeanceDate = new Date(`${year}-${config.date}`);
+                        const joursRestants = Math.ceil((echeanceDate - today) / (1000 * 60 * 60 * 24));
+                        return { date: echeanceDate, label: config.label, joursRestants, enRetard: joursRestants < 0 };
+                    } else if (config.type === 'trimestriel') {
+                        let trimestre = null;
+                        const trimestreMatch = designation.match(/T(\d)|trimestre\s*(\d)|(\d)(?:er|ème|e)?\s*trimestre/i);
+                        if (trimestreMatch) {
+                            trimestre = parseInt(trimestreMatch[1] || trimestreMatch[2] || trimestreMatch[3]);
+                        }
+                        if (trimestre && trimestre >= 1 && trimestre <= 4) {
+                            const echeanceConfig = config.echeances[trimestre - 1];
+                            const echeanceDate = new Date(`${year}-${echeanceConfig.date}`);
+                            const joursRestants = Math.ceil((echeanceDate - today) / (1000 * 60 * 60 * 24));
+                            return { date: echeanceDate, label: `${echeanceConfig.label} (T${trimestre})`, joursRestants, enRetard: joursRestants < 0 };
+                        } else {
+                            for (const ech of config.echeances) {
+                                const echeanceDate = new Date(`${year}-${ech.date}`);
+                                if (echeanceDate >= today) {
+                                    const joursRestants = Math.ceil((echeanceDate - today) / (1000 * 60 * 60 * 24));
+                                    return { date: echeanceDate, label: `${ech.label} (T${ech.trimestre})`, joursRestants, enRetard: false };
+                                }
+                            }
+                            const lastEch = config.echeances[3];
+                            const echeanceDate = new Date(`${year}-${lastEch.date}`);
+                            const joursRestants = Math.ceil((echeanceDate - today) / (1000 * 60 * 60 * 24));
+                            return { date: echeanceDate, label: `${lastEch.label} (T4)`, joursRestants, enRetard: true };
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        // ============================================
+        // TRAITEMENT DES PAIEMENTS (adapté)
+        // ============================================
+        function applyPaymentToPrestations(invoiceStatus, impotsAmount, honorairesAmount) {
+            let remainingImpots = impotsAmount;
+            let remainingHonoraires = honorairesAmount;
+            invoiceStatus.prestations.forEach(p => {
+                if (p.type === 'Impôt' && remainingImpots > 0 && p.remaining > 0) {
+                    const amount = Math.min(remainingImpots, p.remaining);
+                    p.paid += amount; p.remaining -= amount; remainingImpots -= amount;
+                } else if (p.type === 'Honoraire' && remainingHonoraires > 0 && p.remaining > 0) {
+                    const amount = Math.min(remainingHonoraires, p.remaining);
+                    p.paid += amount; p.remaining -= amount; remainingHonoraires -= amount;
+                }
+            });
+        }
+
+        function processPaymentsForClient(clientFactures, clientRecus) {
+            const invoicePaymentStatus = {};
+
+            clientFactures.forEach(facture => {
+                invoicePaymentStatus[facture.id] = {
+                    prestations: [],
+                    totalImpotsPaid: 0,
+                    totalHonorairesPaid: 0,
+                    remainingImpots: facture.totalImpots || 0,
+                    remainingHonoraires: facture.totalHonoraires || 0
+                };
+                if (facture.prestations) {
+                    facture.prestations.forEach((p, index) => {
+                        invoicePaymentStatus[facture.id].prestations.push({
+                            uniqueId: `prestation-${facture.id}-${index}`,
+                            type: p.type,
+                            designation: p.designation,
+                            totalDue: p.total || 0,
+                            paid: 0,
+                            remaining: p.total || 0
+                        });
+                    });
+                }
+            });
+
+            const sortedRecus = [...clientRecus].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            sortedRecus.forEach(recu => {
+                let recuImpotsRemaining = recu.montantImpots || 0;
+                let recuHonorairesRemaining = recu.montantHonoraires || 0;
+
+                if (recu.factureId && invoicePaymentStatus[recu.factureId]) {
+                    const invoiceStatus = invoicePaymentStatus[recu.factureId];
+                    const impotsToApply = Math.min(recuImpotsRemaining, invoiceStatus.remainingImpots);
+                    invoiceStatus.totalImpotsPaid += impotsToApply;
+                    invoiceStatus.remainingImpots -= impotsToApply;
+                    recuImpotsRemaining -= impotsToApply;
+                    const honorairesToApply = Math.min(recuHonorairesRemaining, invoiceStatus.remainingHonoraires);
+                    invoiceStatus.totalHonorairesPaid += honorairesToApply;
+                    invoiceStatus.remainingHonoraires -= honorairesToApply;
+                    recuHonorairesRemaining -= honorairesToApply;
+                    applyPaymentToPrestations(invoiceStatus, impotsToApply, honorairesToApply);
+                } else {
+                    for (const factureId in invoicePaymentStatus) {
+                        const invoiceStatus = invoicePaymentStatus[factureId];
+                        const facture = clientFactures.find(f => f.id === factureId);
+
+                        if (recuImpotsRemaining > 0 && invoiceStatus.remainingImpots > 0) {
+                            const amountToApply = Math.min(recuImpotsRemaining, invoiceStatus.remainingImpots);
+                            invoiceStatus.totalImpotsPaid += amountToApply;
+                            invoiceStatus.remainingImpots -= amountToApply;
+                            recuImpotsRemaining -= amountToApply;
+                            const totalImpots = facture?.totalImpots || 1;
+                            invoiceStatus.prestations.forEach(p => {
+                                if (p.type === 'Impôt' && p.remaining > 0 && totalImpots > 0) {
+                                    const ratio = p.totalDue / totalImpots;
+                                    const amount = Math.min(amountToApply * ratio, p.remaining);
+                                    p.paid += amount; p.remaining -= amount;
+                                }
+                            });
+                        }
+
+                        if (recuHonorairesRemaining > 0 && invoiceStatus.remainingHonoraires > 0) {
+                            const amountToApply = Math.min(recuHonorairesRemaining, invoiceStatus.remainingHonoraires);
+                            invoiceStatus.totalHonorairesPaid += amountToApply;
+                            invoiceStatus.remainingHonoraires -= amountToApply;
+                            recuHonorairesRemaining -= amountToApply;
+                            const totalHonoraires = facture?.totalHonoraires || 1;
+                            invoiceStatus.prestations.forEach(p => {
+                                if (p.type === 'Honoraire' && p.remaining > 0 && totalHonoraires > 0) {
+                                    const ratio = p.totalDue / totalHonoraires;
+                                    const amount = Math.min(amountToApply * ratio, p.remaining);
+                                    p.paid += amount; p.remaining -= amount;
+                                }
+                            });
+                        }
+
+                        if (recuImpotsRemaining <= 0 && recuHonorairesRemaining <= 0) break;
+                    }
+                }
+            });
+
+            return invoicePaymentStatus;
+        }
+
+        // ============================================
+        // DONNÉES GLOBALES
+        // ============================================
+        let reportData = {};
+
+        function loadActivityReport() {
+            const selectedYear = parseInt(document.getElementById('exerciceSelect').value);
+            document.getElementById('exerciceTitle').textContent = selectedYear;
+            document.getElementById('reportDate').textContent = `Généré le ${new Date().toLocaleDateString('fr-FR')}`;
+
+            const allFactures = safeParseJSON('factures', []);
+            const allRecus = safeParseJSON('recus', []);
+            const allClients = safeParseJSON('clients', []);
+            const prestationStatus = safeParseJSON('prestationRealizationStatus', {});
+
+            // Factures de l'exercice
+            const facturesExercice = allFactures.filter(f => {
+                const d = new Date(f.date);
+                return d.getFullYear() === selectedYear;
+            });
+
+            // Clients actifs = clients ayant au moins une facture sur l'exercice
+            const clientNames = [...new Set(facturesExercice.map(f => f.client))];
+
+            // Agréger par client
+            const clientsData = [];
+            let totalCA = 0, totalImpots = 0, totalHonoraires = 0, totalPaye = 0;
+            let totalPrestations = 0, prestationsEffectuees = 0, prestationsEnCours = 0, prestationsAFaire = 0;
+
+            clientNames.forEach(clientName => {
+                const clientFactures = facturesExercice.filter(f => f.client === clientName);
+                const clientRecus = allRecus.filter(r => r.client === clientName); // Tous les reçus
+                const clientRecusExercice = allRecus.filter(r => r.client === clientName && new Date(r.date).getFullYear() === selectedYear);
+                const clientInfo = allClients.find(c => c.name === clientName) || {};
+
+                const paymentStatus = processPaymentsForClient(clientFactures, clientRecus);
+
+                let ca = 0, imp = 0, hon = 0, paye = 0;
+                const prestationsDetail = [];
+
+                clientFactures.forEach(facture => {
+                    ca += facture.total || 0;
+                    imp += facture.totalImpots || 0;
+                    hon += facture.totalHonoraires || 0;
+
+                    const status = paymentStatus[facture.id];
+                    if (status) {
+                        paye += (status.totalImpotsPaid || 0) + (status.totalHonorairesPaid || 0);
+
+                        status.prestations.forEach(p => {
+                            const realStatus = prestationStatus[p.uniqueId] || 'À faire';
+                            totalPrestations++;
+                            if (realStatus === 'Effectué') prestationsEffectuees++;
+                            else if (realStatus === 'En cours') prestationsEnCours++;
+                            else prestationsAFaire++;
+
+                            prestationsDetail.push({
+                                client: clientName,
+                                factureId: facture.id,
+                                factureNum: facture.numero || facture.id,
+                                factureDate: facture.date,
+                                designation: p.designation,
+                                type: p.type,
+                                totalDue: p.totalDue,
+                                paid: p.paid,
+                                remaining: p.remaining,
+                                realisation: realStatus,
+                                uniqueId: p.uniqueId
+                            });
+                        });
+                    }
+                });
+
+                totalCA += ca;
+                totalImpots += imp;
+                totalHonoraires += hon;
+                totalPaye += paye;
+
+                clientsData.push({
+                    name: clientName,
+                    info: clientInfo,
+                    factures: clientFactures,
+                    recus: clientRecus,
+                    recusExercice: clientRecusExercice,
+                    paymentStatus,
+                    ca, imp, hon, paye,
+                    reste: ca - paye,
+                    taux: ca > 0 ? Math.round((paye / ca) * 100) : 0,
+                    prestations: prestationsDetail
+                });
+            });
+
+            // Trier par CA décroissant
+            clientsData.sort((a, b) => b.ca - a.ca);
+
+            reportData = {
+                year: selectedYear,
+                clientsData,
+                totalCA, totalImpots, totalHonoraires, totalPaye,
+                totalReste: totalCA - totalPaye,
+                tauxRecouvrement: totalCA > 0 ? Math.round((totalPaye / totalCA) * 100) : 0,
+                totalPrestations, prestationsEffectuees, prestationsEnCours, prestationsAFaire,
+                allRecus: allRecus.filter(r => new Date(r.date).getFullYear() === selectedYear)
+            };
+
+            renderKPIs();
+            renderSyntheseGlobale();
+            renderSituationPaiements();
+            renderSuiviPrestations();
+            renderResteAFaire();
+        }
+
+        // ============================================
+        // KPI CARDS
+        // ============================================
+        function renderKPIs() {
+            const d = reportData;
+            const cards = [
+                { label: 'Clients actifs', value: d.clientsData.length, color: 'gray', suffix: '' },
+                { label: 'CA Total facturé', value: fmt(d.totalCA), color: 'blue', suffix: ' F' },
+                { label: 'Total Impôts facturés', value: fmt(d.totalImpots), color: 'red', suffix: ' F' },
+                { label: 'Total Honoraires facturés', value: fmt(d.totalHonoraires), color: 'green', suffix: ' F' },
+                { label: 'Paiements reçus', value: fmt(d.totalPaye), color: 'emerald', suffix: ' F' },
+                { label: 'Reste à payer', value: fmt(d.totalReste), color: 'orange', suffix: ' F' },
+                { label: 'Prestations effectuées', value: `${d.prestationsEffectuees}/${d.totalPrestations}`, color: 'teal', suffix: '' },
+                { label: 'Taux de recouvrement', value: d.tauxRecouvrement, color: 'indigo', suffix: '%' }
+            ];
+
+            document.getElementById('kpiCards').innerHTML = cards.map(c => `
+                <div class="bg-white rounded-lg shadow-md p-4 border-t-4 border-${c.color}-500">
+                    <p class="text-xs text-gray-500 uppercase font-semibold mb-1">${c.label}</p>
+                    <p class="text-2xl font-bold text-${c.color}-700">${c.value}${c.suffix}</p>
+                </div>
+            `).join('');
+        }
+
+        // ============================================
+        // SECTION 1 : SYNTHÈSE GLOBALE
+        // ============================================
+        function renderSyntheseGlobale() {
+            const d = reportData;
+            document.getElementById('countSynthese').textContent = `${d.clientsData.length} clients`;
+
+            if (d.clientsData.length === 0) {
+                document.getElementById('syntheseContent').innerHTML = '<p class="text-center py-4 text-gray-500">Aucune facture sur cet exercice.</p>';
+                return;
+            }
+
+            let rows = d.clientsData.map((c, i) => `
+                <tr class="${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}">
+                    <td class="px-4 py-2 font-medium text-gray-900">${c.name}</td>
+                    <td class="px-4 py-2 text-center">${c.factures.length}</td>
+                    <td class="px-4 py-2 text-right text-red-700">${fmt(c.imp)}</td>
+                    <td class="px-4 py-2 text-right text-green-700">${fmt(c.hon)}</td>
+                    <td class="px-4 py-2 text-right font-bold">${fmt(c.ca)}</td>
+                </tr>
+            `).join('');
+
+            document.getElementById('syntheseContent').innerHTML = `
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="bg-blue-50 text-blue-900">
+                                <th class="px-4 py-3 text-left">Client</th>
+                                <th class="px-4 py-3 text-center">Nb Factures</th>
+                                <th class="px-4 py-3 text-right">Impôts (F CFA)</th>
+                                <th class="px-4 py-3 text-right">Honoraires (F CFA)</th>
+                                <th class="px-4 py-3 text-right">Total (F CFA)</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                        <tfoot>
+                            <tr class="bg-blue-100 font-bold text-blue-900">
+                                <td class="px-4 py-3">TOTAL</td>
+                                <td class="px-4 py-3 text-center">${d.clientsData.reduce((s, c) => s + c.factures.length, 0)}</td>
+                                <td class="px-4 py-3 text-right text-red-700">${fmt(d.totalImpots)}</td>
+                                <td class="px-4 py-3 text-right text-green-700">${fmt(d.totalHonoraires)}</td>
+                                <td class="px-4 py-3 text-right">${fmt(d.totalCA)}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            `;
+        }
+
+        // ============================================
+        // SECTION 2 : SITUATION DES PAIEMENTS
+        // ============================================
+        function renderSituationPaiements() {
+            const d = reportData;
+            document.getElementById('countPaiements').textContent = `${d.tauxRecouvrement}%`;
+
+            const subCards = `
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div class="bg-emerald-50 rounded-lg p-4 text-center">
+                        <p class="text-xs text-gray-500 uppercase">Total Payé</p>
+                        <p class="text-xl font-bold text-emerald-700">${fmt(d.totalPaye)} F</p>
+                    </div>
+                    <div class="bg-orange-50 rounded-lg p-4 text-center">
+                        <p class="text-xs text-gray-500 uppercase">Total Impayé</p>
+                        <p class="text-xl font-bold text-orange-700">${fmt(d.totalReste)} F</p>
+                    </div>
+                    <div class="bg-indigo-50 rounded-lg p-4 text-center">
+                        <p class="text-xs text-gray-500 uppercase">Taux recouvrement</p>
+                        <p class="text-xl font-bold text-indigo-700">${d.tauxRecouvrement}%</p>
+                    </div>
+                </div>
+            `;
+
+            // Tableau A — Par client
+            let rowsA = d.clientsData.map((c, i) => {
+                let badge = '';
+                if (c.reste <= 0) badge = '<span class="inline-block px-2 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-800">Soldé</span>';
+                else if (c.paye > 0) badge = '<span class="inline-block px-2 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-800">Partiel</span>';
+                else badge = '<span class="inline-block px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-800">Impayé</span>';
+
+                return `<tr class="${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}">
+                    <td class="px-4 py-2 font-medium text-gray-900">${c.name}</td>
+                    <td class="px-4 py-2 text-right">${fmt(c.ca)}</td>
+                    <td class="px-4 py-2 text-right text-emerald-700">${fmt(c.paye)}</td>
+                    <td class="px-4 py-2 text-right text-orange-700">${fmt(c.reste)}</td>
+                    <td class="px-4 py-2 text-center">${c.taux}%</td>
+                    <td class="px-4 py-2 text-center">${badge}</td>
+                </tr>`;
+            }).join('');
+
+            const tableA = `
+                <h4 class="font-bold text-gray-800 mb-2 mt-4">Récapitulatif par client</h4>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="bg-green-50 text-green-900">
+                                <th class="px-4 py-3 text-left">Client</th>
+                                <th class="px-4 py-3 text-right">Facturé</th>
+                                <th class="px-4 py-3 text-right">Payé</th>
+                                <th class="px-4 py-3 text-right">Reste</th>
+                                <th class="px-4 py-3 text-center">Taux</th>
+                                <th class="px-4 py-3 text-center">Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rowsA}</tbody>
+                    </table>
+                </div>
+            `;
+
+            // Tableau B — Détail reçus
+            const recusExercice = d.allRecus.sort((a, b) => new Date(b.date) - new Date(a.date));
+            let rowsB = '';
+            if (recusExercice.length === 0) {
+                rowsB = '<tr><td colspan="6" class="text-center py-4 text-gray-500">Aucun reçu sur cet exercice.</td></tr>';
+            } else {
+                rowsB = recusExercice.map((r, i) => `
+                    <tr class="${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}">
+                        <td class="px-4 py-2">${new Date(r.date).toLocaleDateString('fr-FR')}</td>
+                        <td class="px-4 py-2 font-mono text-xs">${r.numero || r.id}</td>
+                        <td class="px-4 py-2 font-medium">${r.client}</td>
+                        <td class="px-4 py-2 text-right text-red-700">${fmt(r.montantImpots || 0)}</td>
+                        <td class="px-4 py-2 text-right text-green-700">${fmt(r.montantHonoraires || 0)}</td>
+                        <td class="px-4 py-2 text-right font-bold">${fmt(r.montant || 0)}</td>
+                    </tr>
+                `).join('');
+            }
+
+            const tableB = `
+                <h4 class="font-bold text-gray-800 mb-2 mt-6">Détail des reçus de paiement</h4>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="bg-emerald-50 text-emerald-900">
+                                <th class="px-4 py-3 text-left">Date</th>
+                                <th class="px-4 py-3 text-left">N° Reçu</th>
+                                <th class="px-4 py-3 text-left">Client</th>
+                                <th class="px-4 py-3 text-right">Impôts</th>
+                                <th class="px-4 py-3 text-right">Honoraires</th>
+                                <th class="px-4 py-3 text-right">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rowsB}</tbody>
+                    </table>
+                </div>
+            `;
+
+            document.getElementById('paiementsContent').innerHTML = subCards + tableA + tableB;
+        }
+
+        // ============================================
+        // SECTION 3 : SUIVI DES PRESTATIONS
+        // ============================================
+        let currentFilter = 'all';
+
+        function filterPrestations(filter) {
+            currentFilter = filter;
+            renderSuiviPrestations();
+        }
+
+        function renderSuiviPrestations() {
+            const d = reportData;
+            const allPrestations = d.clientsData.flatMap(c => c.prestations);
+
+            const total = allPrestations.length;
+            const effectuees = allPrestations.filter(p => p.realisation === 'Effectué').length;
+            const enCours = allPrestations.filter(p => p.realisation === 'En cours').length;
+            const aFaire = allPrestations.filter(p => p.realisation === 'À faire').length;
+            const pctEffectuees = total > 0 ? Math.round((effectuees / total) * 100) : 0;
+
+            document.getElementById('countPrestations').textContent = `${effectuees}/${total}`;
+
+            const subCards = `
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                    <div class="bg-purple-50 rounded-lg p-3 text-center">
+                        <p class="text-xs text-gray-500 uppercase">Total</p>
+                        <p class="text-xl font-bold text-purple-700">${total}</p>
+                    </div>
+                    <div class="bg-green-50 rounded-lg p-3 text-center">
+                        <p class="text-xs text-gray-500 uppercase">Effectuées</p>
+                        <p class="text-xl font-bold text-green-700">${effectuees}</p>
+                    </div>
+                    <div class="bg-yellow-50 rounded-lg p-3 text-center">
+                        <p class="text-xs text-gray-500 uppercase">En cours</p>
+                        <p class="text-xl font-bold text-yellow-700">${enCours}</p>
+                    </div>
+                    <div class="bg-red-50 rounded-lg p-3 text-center">
+                        <p class="text-xs text-gray-500 uppercase">À faire</p>
+                        <p class="text-xl font-bold text-red-700">${aFaire}</p>
+                    </div>
+                </div>
+                <div class="progress-bar mb-4">
+                    <div class="progress-fill bg-green-500" style="width: ${pctEffectuees}%"></div>
+                </div>
+                <p class="text-xs text-gray-500 mb-4 text-center">${pctEffectuees}% des prestations réalisées</p>
+            `;
+
+            const filters = `
+                <div class="flex gap-2 mb-4 no-print">
+                    <button onclick="filterPrestations('all')" class="px-3 py-1 rounded-full text-xs font-bold ${currentFilter === 'all' ? 'bg-purple-600 text-white' : 'bg-gray-200 text-gray-700'}">Toutes</button>
+                    <button onclick="filterPrestations('À faire')" class="px-3 py-1 rounded-full text-xs font-bold ${currentFilter === 'À faire' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-700'}">À faire</button>
+                    <button onclick="filterPrestations('En cours')" class="px-3 py-1 rounded-full text-xs font-bold ${currentFilter === 'En cours' ? 'bg-yellow-600 text-white' : 'bg-gray-200 text-gray-700'}">En cours</button>
+                    <button onclick="filterPrestations('Effectué')" class="px-3 py-1 rounded-full text-xs font-bold ${currentFilter === 'Effectué' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700'}">Effectuées</button>
+                </div>
+            `;
+
+            let filtered = allPrestations;
+            if (currentFilter !== 'all') {
+                filtered = allPrestations.filter(p => p.realisation === currentFilter);
+            }
+
+            // Grouper par client
+            const grouped = {};
+            filtered.forEach(p => {
+                if (!grouped[p.client]) grouped[p.client] = [];
+                grouped[p.client].push(p);
+            });
+
+            let tableRows = '';
+            for (const [client, prestations] of Object.entries(grouped)) {
+                tableRows += `<tr class="bg-purple-50"><td colspan="6" class="px-4 py-2 font-bold text-purple-900">${client} (${prestations.length})</td></tr>`;
+                prestations.forEach((p, i) => {
+                    const realisationBadge = p.realisation === 'Effectué'
+                        ? '<span class="inline-block px-2 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-800">Effectué</span>'
+                        : p.realisation === 'En cours'
+                        ? '<span class="inline-block px-2 py-0.5 rounded-full text-xs font-bold bg-yellow-100 text-yellow-800">En cours</span>'
+                        : '<span class="inline-block px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-800">À faire</span>';
+                    const paiementBadge = p.remaining <= 0
+                        ? '<span class="inline-block px-2 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-800">Payé</span>'
+                        : p.paid > 0
+                        ? '<span class="inline-block px-2 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-800">Partiel</span>'
+                        : '<span class="inline-block px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-800">Impayé</span>';
+
+                    tableRows += `<tr class="${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}">
+                        <td class="px-4 py-2 pl-8 text-gray-600 text-xs">${p.factureNum}</td>
+                        <td class="px-4 py-2">${p.designation}</td>
+                        <td class="px-4 py-2 text-center"><span class="inline-block px-2 py-0.5 rounded-full text-xs font-bold ${p.type === 'Impôt' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}">${p.type}</span></td>
+                        <td class="px-4 py-2 text-right">${fmt(p.totalDue)}</td>
+                        <td class="px-4 py-2 text-center">${realisationBadge}</td>
+                        <td class="px-4 py-2 text-center">${paiementBadge}</td>
+                    </tr>`;
+                });
+            }
+
+            if (filtered.length === 0) {
+                tableRows = '<tr><td colspan="6" class="text-center py-4 text-gray-500">Aucune prestation trouvée.</td></tr>';
+            }
+
+            const table = `
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="bg-purple-50 text-purple-900">
+                                <th class="px-4 py-3 text-left">Facture</th>
+                                <th class="px-4 py-3 text-left">Désignation</th>
+                                <th class="px-4 py-3 text-center">Type</th>
+                                <th class="px-4 py-3 text-right">Montant</th>
+                                <th class="px-4 py-3 text-center">Réalisation</th>
+                                <th class="px-4 py-3 text-center">Paiement</th>
+                            </tr>
+                        </thead>
+                        <tbody>${tableRows}</tbody>
+                    </table>
+                </div>
+            `;
+
+            document.getElementById('prestationsContent').innerHTML = subCards + filters + table;
+        }
+
+        // ============================================
+        // SECTION 4 : RESTE À FAIRE
+        // ============================================
+        function renderResteAFaire() {
+            const d = reportData;
+            const allPrestations = d.clientsData.flatMap(c => c.prestations);
+
+            // 4A — Impôts non payés
+            const impotsImpayes = allPrestations.filter(p => p.type === 'Impôt' && p.remaining > 0);
+            impotsImpayes.forEach(p => {
+                const ech = getEcheanceForImpot(p.designation, d.year);
+                p.echeance = ech;
+            });
+            impotsImpayes.sort((a, b) => {
+                const aJ = a.echeance ? a.echeance.joursRestants : 999;
+                const bJ = b.echeance ? b.echeance.joursRestants : 999;
+                return aJ - bJ;
+            });
+
+            let rows4A = '';
+            if (impotsImpayes.length === 0) {
+                rows4A = '<tr><td colspan="5" class="text-center py-4 text-gray-500">Tous les impôts sont payés.</td></tr>';
+            } else {
+                rows4A = impotsImpayes.map((p, i) => {
+                    let echeanceLabel = '-';
+                    let statutBadge = '';
+                    if (p.echeance) {
+                        echeanceLabel = p.echeance.label;
+                        if (p.echeance.enRetard) {
+                            statutBadge = `<span class="inline-block px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-800">EN RETARD (${Math.abs(p.echeance.joursRestants)}j)</span>`;
+                        } else if (p.echeance.joursRestants <= 15) {
+                            statutBadge = `<span class="inline-block px-2 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-800">URGENT (${p.echeance.joursRestants}j)</span>`;
+                        } else {
+                            statutBadge = `<span class="inline-block px-2 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800">${p.echeance.joursRestants}j</span>`;
+                        }
+                    }
+                    return `<tr class="${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}">
+                        <td class="px-4 py-2 font-medium">${p.client}</td>
+                        <td class="px-4 py-2">${p.designation}</td>
+                        <td class="px-4 py-2 text-right text-red-700 font-bold">${fmt(p.remaining)}</td>
+                        <td class="px-4 py-2 text-center">${echeanceLabel}</td>
+                        <td class="px-4 py-2 text-center">${statutBadge}</td>
+                    </tr>`;
+                }).join('');
+            }
+
+            const section4A = `
+                <h4 class="font-bold text-red-800 mb-2">4A — Impôts non payés</h4>
+                <div class="overflow-x-auto mb-6">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="bg-red-50 text-red-900">
+                                <th class="px-4 py-3 text-left">Client</th>
+                                <th class="px-4 py-3 text-left">Désignation</th>
+                                <th class="px-4 py-3 text-right">Montant restant</th>
+                                <th class="px-4 py-3 text-center">Échéance</th>
+                                <th class="px-4 py-3 text-center">Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows4A}</tbody>
+                    </table>
+                </div>
+            `;
+
+            // 4B — Honoraires impayés
+            const honImpayes = allPrestations.filter(p => p.type === 'Honoraire' && p.remaining > 0);
+            let rows4B = '';
+            if (honImpayes.length === 0) {
+                rows4B = '<tr><td colspan="5" class="text-center py-4 text-gray-500">Tous les honoraires sont payés.</td></tr>';
+            } else {
+                rows4B = honImpayes.map((p, i) => `
+                    <tr class="${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}">
+                        <td class="px-4 py-2 font-medium">${p.client}</td>
+                        <td class="px-4 py-2">${p.designation}</td>
+                        <td class="px-4 py-2 text-right">${fmt(p.totalDue)}</td>
+                        <td class="px-4 py-2 text-right text-emerald-700">${fmt(p.paid)}</td>
+                        <td class="px-4 py-2 text-right text-orange-700 font-bold">${fmt(p.remaining)}</td>
+                    </tr>
+                `).join('');
+            }
+
+            const section4B = `
+                <h4 class="font-bold text-orange-800 mb-2">4B — Honoraires impayés</h4>
+                <div class="overflow-x-auto mb-6">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="bg-orange-50 text-orange-900">
+                                <th class="px-4 py-3 text-left">Client</th>
+                                <th class="px-4 py-3 text-left">Désignation</th>
+                                <th class="px-4 py-3 text-right">Facturé</th>
+                                <th class="px-4 py-3 text-right">Payé</th>
+                                <th class="px-4 py-3 text-right">Reste</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows4B}</tbody>
+                    </table>
+                </div>
+            `;
+
+            // 4C — Prestations non réalisées
+            const nonRealisees = allPrestations.filter(p => p.realisation !== 'Effectué');
+            let rows4C = '';
+            if (nonRealisees.length === 0) {
+                rows4C = '<tr><td colspan="5" class="text-center py-4 text-gray-500">Toutes les prestations sont effectuées.</td></tr>';
+            } else {
+                rows4C = nonRealisees.map((p, i) => {
+                    const badge = p.realisation === 'En cours'
+                        ? '<span class="inline-block px-2 py-0.5 rounded-full text-xs font-bold bg-yellow-100 text-yellow-800">En cours</span>'
+                        : '<span class="inline-block px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-800">À faire</span>';
+                    return `<tr class="${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}">
+                        <td class="px-4 py-2 font-medium">${p.client}</td>
+                        <td class="px-4 py-2">${p.designation}</td>
+                        <td class="px-4 py-2 text-center"><span class="inline-block px-2 py-0.5 rounded-full text-xs font-bold ${p.type === 'Impôt' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}">${p.type}</span></td>
+                        <td class="px-4 py-2 text-right">${fmt(p.totalDue)}</td>
+                        <td class="px-4 py-2 text-center">${badge}</td>
+                    </tr>`;
+                }).join('');
+            }
+
+            const section4C = `
+                <h4 class="font-bold text-purple-800 mb-2">4C — Prestations non réalisées</h4>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="bg-purple-50 text-purple-900">
+                                <th class="px-4 py-3 text-left">Client</th>
+                                <th class="px-4 py-3 text-left">Désignation</th>
+                                <th class="px-4 py-3 text-center">Type</th>
+                                <th class="px-4 py-3 text-right">Montant</th>
+                                <th class="px-4 py-3 text-center">Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows4C}</tbody>
+                    </table>
+                </div>
+            `;
+
+            // Compteur section
+            const totalReste = impotsImpayes.length + honImpayes.length + nonRealisees.length;
+            document.getElementById('countReste').textContent = totalReste;
+            document.getElementById('resteContent').innerHTML = section4A + section4B + section4C;
+        }
+
+        // ============================================
+        // EXPORT PDF
+        // ============================================
+        async function generatePDF() {
+            PrismaLoader.show('Génération du PDF en cours...');
+            try {
+                const { jsPDF } = window.jspdf;
+                const printArea = document.getElementById('printArea');
+
+                // Expand all sections before capture
+                document.querySelectorAll('.section-collapsible').forEach(s => s.classList.remove('collapsed'));
+
+                const canvas = await html2canvas(printArea, {
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    backgroundColor: '#ffffff'
+                });
+
+                const imgData = canvas.toDataURL('image/png');
+                const imgWidth = 297; // A4 landscape width in mm
+                const pageHeight = 210; // A4 landscape height in mm
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+                const pdf = new jsPDF('l', 'mm', 'a4');
+                let heightLeft = imgHeight;
+                let position = 0;
+
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+
+                while (heightLeft > 0) {
+                    position = heightLeft - imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+
+                const year = document.getElementById('exerciceSelect').value;
+                const date = new Date().toISOString().split('T')[0];
+                pdf.save(`Activite_${year}_${date}.pdf`);
+                PrismaToast.success('PDF généré avec succès !');
+            } catch (error) {
+                console.error('Erreur génération PDF:', error);
+                PrismaToast.error('Erreur lors de la génération du PDF.');
+            } finally {
+                PrismaLoader.hide();
+            }
+        }
+
+        // ============================================
+        // IMPRESSION DIRECTE (pattern CLAUDE.md)
+        // ============================================
+        function printActivityReport() {
+            if (!reportData || !reportData.clientsData) {
+                PrismaToast.error('Aucune donnée à imprimer. Sélectionnez un exercice.');
+                return;
+            }
+
+            // Déplier toutes les sections avant capture
+            document.querySelectorAll('.section-collapsible').forEach(s => s.classList.remove('collapsed'));
+
+            // 1. Style temporaire injecté dans <head>
+            const printStyle = document.createElement('style');
+            printStyle.id = 'act-print-style';
+            printStyle.textContent = `
+                @page { size: A4 landscape; margin: 10mm; }
+                @media print { body { display: block !important; } }
+                * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; box-sizing: border-box; }
+                body {
+                    font-family: 'Inter', Arial, sans-serif !important;
+                    width: auto !important; margin: 0 !important; padding: 10px !important;
+                    background: white !important; color: #1f2937 !important;
+                    font-size: 9pt !important; line-height: 1.5 !important;
+                }
+
+                /* ---- Layout ---- */
+                .max-w-7xl { max-width: none !important; padding: 0 !important; margin: 0 !important; }
+                .p-6 { padding: 0 !important; }
+                .mb-6 { margin-bottom: 10px !important; }
+                .shadow-md, .shadow-lg { box-shadow: none !important; }
+                .rounded-lg { border-radius: 3px !important; }
+                .no-print { display: none !important; }
+                .chevron { display: none !important; }
+                .overflow-x-auto { overflow: visible !important; }
+
+                /* ---- En-tête du rapport ---- */
+                .print-area > .bg-white:first-child {
+                    border: none !important; border-bottom: 2px solid #1e3a8a !important;
+                    padding: 10px 0 12px !important; margin-bottom: 12px !important;
+                    box-shadow: none !important;
+                }
+                h1.text-2xl { font-size: 16pt !important; }
+                h2.text-xl { font-size: 12pt !important; }
+                .tracking-widest { letter-spacing: 0.1em !important; }
+
+                /* ---- KPI Cards ---- */
+                #kpiCards {
+                    display: grid !important; grid-template-columns: repeat(4, 1fr) !important;
+                    gap: 6px !important; margin-bottom: 12px !important;
+                }
+                #kpiCards > div {
+                    box-shadow: none !important;
+                    border: 1px solid #d1d5db !important;
+                    border-top-width: 3px !important; border-top-style: solid !important;
+                    padding: 6px 8px !important; border-radius: 4px !important;
+                    page-break-inside: avoid !important;
+                }
+                #kpiCards .text-xs { font-size: 7pt !important; }
+                #kpiCards .text-2xl { font-size: 13pt !important; }
+                /* KPI top-border colors */
+                #kpiCards .border-gray-500 { border-top-color: #6b7280 !important; }
+                #kpiCards .border-blue-500 { border-top-color: #3b82f6 !important; }
+                #kpiCards .border-red-500 { border-top-color: #ef4444 !important; }
+                #kpiCards .border-green-500 { border-top-color: #22c55e !important; }
+                #kpiCards .border-emerald-500 { border-top-color: #10b981 !important; }
+                #kpiCards .border-orange-500 { border-top-color: #f97316 !important; }
+                #kpiCards .border-teal-500 { border-top-color: #14b8a6 !important; }
+                #kpiCards .border-indigo-500 { border-top-color: #6366f1 !important; }
+                /* KPI text colors */
+                .text-gray-700 { color: #374151 !important; }
+                .text-blue-700 { color: #1d4ed8 !important; }
+                .text-red-700 { color: #b91c1c !important; }
+                .text-green-700 { color: #15803d !important; }
+                .text-emerald-700 { color: #047857 !important; }
+                .text-orange-700 { color: #c2410c !important; }
+                .text-teal-700 { color: #0f766e !important; }
+                .text-indigo-700 { color: #4338ca !important; }
+
+                /* ---- Sections ---- */
+                .section-collapsible {
+                    border: 1px solid #d1d5db !important; box-shadow: none !important;
+                    margin-bottom: 10px !important;
+                    border-left-width: 4px !important; border-left-style: solid !important;
+                }
+                .section-collapsible .section-body {
+                    max-height: none !important; opacity: 1 !important;
+                    padding: 10px 14px 14px !important;
+                }
+                .section-header {
+                    padding: 10px 14px !important;
+                    border-bottom: 1px solid #e5e7eb !important;
+                }
+                .section-header h3 { font-size: 11pt !important; margin: 0 !important; }
+                .section-count { font-size: 8pt !important; }
+                /* Section left-border colors */
+                .section-collapsible.border-blue-500 { border-left-color: #3b82f6 !important; }
+                .section-collapsible.border-green-500 { border-left-color: #22c55e !important; }
+                .section-collapsible.border-purple-500 { border-left-color: #a855f7 !important; }
+                .section-collapsible.border-red-500 { border-left-color: #ef4444 !important; }
+
+                /* ---- Page breaks ---- */
+                #sectionPaiements { page-break-before: always !important; }
+                #sectionReste { page-break-before: always !important; }
+                tr { page-break-inside: avoid !important; }
+                h4.font-bold { page-break-after: avoid !important; }
+
+                /* ---- Tables (override prisma-print.css dark blue th) ---- */
+                table { width: 100% !important; border-collapse: collapse !important; font-size: 8.5pt !important; }
+                thead { display: table-header-group !important; }
+                th {
+                    background-color: transparent !important; color: inherit !important;
+                    font-weight: 600 !important; border: none !important;
+                    border-bottom: 2px solid currentColor !important;
+                    padding: 7px 10px !important; text-align: left !important;
+                }
+                td {
+                    border: none !important;
+                    border-bottom: 1px solid #e5e7eb !important;
+                    padding: 5px 10px !important;
+                }
+                tbody tr:nth-child(even) { background-color: #f9fafb !important; }
+                /* Tfoot total */
+                tfoot tr { background-color: #dbeafe !important; }
+                tfoot td {
+                    border-top: 2px solid #1e3a8a !important; border-bottom: none !important;
+                    font-weight: 700 !important; padding: 8px 10px !important;
+                }
+
+                /* ---- Table header row colors (per section) ---- */
+                .bg-blue-50 { background-color: #eff6ff !important; }
+                .bg-blue-50 th { color: #1e3a8a !important; border-bottom-color: #93c5fd !important; }
+                .text-blue-900 { color: #1e3a8a !important; }
+
+                .bg-green-50 { background-color: #f0fdf4 !important; }
+                .bg-green-50 th { color: #14532d !important; border-bottom-color: #86efac !important; }
+                .text-green-900 { color: #14532d !important; }
+
+                .bg-emerald-50 { background-color: #ecfdf5 !important; }
+                .bg-emerald-50 th { color: #064e3b !important; border-bottom-color: #6ee7b7 !important; }
+                .text-emerald-900 { color: #064e3b !important; }
+
+                .bg-purple-50 { background-color: #faf5ff !important; }
+                .bg-purple-50 th { color: #581c87 !important; border-bottom-color: #d8b4fe !important; }
+                .bg-purple-50 td { background-color: #faf5ff !important; border-bottom-color: #d8b4fe !important; }
+                .text-purple-900 { color: #581c87 !important; }
+
+                .bg-red-50 { background-color: #fef2f2 !important; }
+                .bg-red-50 th { color: #7f1d1d !important; border-bottom-color: #fca5a5 !important; }
+                .text-red-900 { color: #7f1d1d !important; }
+
+                .bg-orange-50 { background-color: #fff7ed !important; }
+                .bg-orange-50 th { color: #7c2d12 !important; border-bottom-color: #fdba74 !important; }
+                .text-orange-900 { color: #7c2d12 !important; }
+
+                .bg-blue-100 { background-color: #dbeafe !important; }
+
+                /* ---- Sub-cards (stat cards) ---- */
+                .bg-indigo-50 { background-color: #eef2ff !important; }
+                .bg-yellow-50 { background-color: #fefce8 !important; }
+                .rounded-lg.p-3, .rounded-lg.p-4:not(#kpiCards > div) {
+                    border: 1px solid #e5e7eb !important; border-radius: 4px !important;
+                }
+
+                /* ---- Badges ---- */
+                .bg-green-100 { background-color: #dcfce7 !important; }
+                .bg-red-100 { background-color: #fee2e2 !important; }
+                .bg-orange-100 { background-color: #ffedd5 !important; }
+                .bg-yellow-100 { background-color: #fef3c7 !important; }
+                .bg-purple-100 { background-color: #f3e8ff !important; }
+                .text-green-800 { color: #166534 !important; }
+                .text-red-800 { color: #991b1b !important; }
+                .text-orange-800 { color: #9a3412 !important; }
+                .text-yellow-800 { color: #854d0e !important; }
+                .text-blue-800 { color: #1e40af !important; }
+                .text-purple-800 { color: #6b21a8 !important; }
+
+                /* ---- Text colors (amounts) ---- */
+                .text-gray-500 { color: #6b7280 !important; }
+                .text-gray-600 { color: #4b5563 !important; }
+                .text-gray-900 { color: #111827 !important; }
+                .text-purple-700 { color: #7e22ce !important; }
+
+                /* ---- Progress bar ---- */
+                .progress-bar {
+                    height: 10px !important; border: 1px solid #d1d5db !important;
+                    border-radius: 5px !important; background: #e5e7eb !important;
+                }
+                .progress-fill { border-radius: 5px !important; }
+                .bg-green-500 { background-color: #22c55e !important; }
+
+                /* ---- Sub-section titles ---- */
+                h4.font-bold { font-size: 10pt !important; margin-top: 12px !important; margin-bottom: 6px !important; }
+
+                /* ---- Print footer ---- */
+                .act-footer {
+                    margin-top: 20px; padding-top: 8px;
+                    border-top: 1px solid #d1d5db;
+                    text-align: center; font-size: 7.5pt; color: #9ca3af;
+                }
+            `;
+            document.head.appendChild(printStyle);
+
+            // 2. Contenu à imprimer (body uniquement)
+            const year = document.getElementById('exerciceSelect').value;
+            const now = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            const footer = `<div class="act-footer">Point sur l'Activité — Exercice ${year} — Généré le ${now} — PRISMA GESTION</div>`;
+            const bodyContent = document.getElementById('printArea').innerHTML + footer;
+
+            // 3. Remplacement temporaire + impression directe
+            const originalContent = document.body.innerHTML;
+            document.body.innerHTML = bodyContent;
+            window.print();
+
+            // 4. Restauration
+            document.body.innerHTML = originalContent;
+            document.getElementById('act-print-style').remove();
+            init();
+        }
+
+        // ============================================
+        // INITIALISATION
+        // ============================================
+        function init() {
+            // Populate exercice selector
+            const select = document.getElementById('exerciceSelect');
+            const currentYear = new Date().getFullYear();
+            select.innerHTML = '';
+            for (let y = currentYear + 1; y >= 2024; y--) {
+                const opt = document.createElement('option');
+                opt.value = y;
+                opt.textContent = y;
+                if (y === currentYear) opt.selected = true;
+                select.appendChild(opt);
+            }
+            loadActivityReport();
+        }
+
+        init();
+
+        // Synchronisation entre onglets
+        PrismaSync.watch('factures', loadActivityReport);
+        PrismaSync.watch('recus', loadActivityReport);
+        PrismaSync.watch('clients', loadActivityReport);
+    </script>
+</body>
+</html>

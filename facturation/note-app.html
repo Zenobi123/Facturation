@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Note Explicative - PRISMA GESTION</title>
+    <script src="assets/css/tailwindcss.min.js"></script>
+    <link rel="stylesheet" href="prisma-print.css">
+    <link rel="stylesheet" href="assets/css/inter-font.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        @media print {
+            body { background: white; font-size: 11pt; margin: 0; padding: 0; }
+            .no-print { display: none !important; }
+            .print-area { box-shadow: none !important; padding: 0 !important; }
+            @page { size: A4; margin: 10mm 10mm; }
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <nav class="bg-blue-900 text-white p-4 shadow-lg no-print">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <a href="index.html" class="inline-flex items-center px-3 py-1.5 border border-white rounded-lg shadow-sm text-white hover:bg-white hover:text-blue-900 transition-colors duration-200">← PRISMA GESTION</a>
+            <span class="text-sm text-blue-200">Note Explicative</span>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto p-6 no-print">
+        <!-- Liste des notes existantes -->
+        <div id="noteListSection" class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-gray-800">Notes explicatives</h2>
+                <button onclick="showCreateForm()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                    + Nouvelle note
+                </button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="px-4 py-3 text-left">Date</th>
+                            <th class="px-4 py-3 text-left">Numéro</th>
+                            <th class="px-4 py-3 text-left">Client</th>
+                            <th class="px-4 py-3 text-right">Impôts</th>
+                            <th class="px-4 py-3 text-right">Honoraires</th>
+                            <th class="px-4 py-3 text-right">Total</th>
+                            <th class="px-4 py-3 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="noteTable">
+                        <tr><td colspan="7" class="text-center py-8 text-gray-500">Aucune note</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Formulaire de création / modification -->
+        <div id="createForm" class="hidden bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 id="formTitle" class="text-2xl font-bold text-gray-800 mb-4">Créer une note explicative</h2>
+
+            <!-- Toggle Mode Auto/Manuel -->
+            <div class="mb-4 flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <span class="text-sm font-semibold text-gray-700">Mode de saisie :</span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="manualModeToggle" onchange="toggleManualMode()" class="sr-only peer">
+                    <div class="w-11 h-6 bg-blue-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:bg-orange-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+                </label>
+                <span id="modeLabel" class="text-sm font-medium text-blue-700">Automatique</span>
+                <span id="modeHint" class="text-xs text-gray-500 ml-2">N° et date générés automatiquement</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Client *</label>
+                    <select id="clientSelect" onchange="loadClientData()" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+                        <option value="">-- Sélectionner un client --</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Numéro de note d'honoraire *</label>
+                    <input type="text" id="noteNumber" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+
+            <!-- Date manuelle (visible uniquement en mode manuel) -->
+            <div id="manualDateSection" class="hidden mb-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-orange-700 mb-2">Date de la note *</label>
+                        <input type="date" id="manualDate" class="w-full border border-orange-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 bg-orange-50">
+                        <p class="text-xs text-orange-500 mt-1">Saisir la date figurant sur le document original</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Importer depuis une facture -->
+            <div id="factureSection" class="hidden mb-4 p-4 bg-orange-50 rounded-lg border border-orange-200">
+                <label class="block text-sm font-semibold text-orange-800 mb-2">Importer depuis une facture (optionnel)</label>
+                <select id="factureSelect" onchange="importFromFacture()" class="w-full border border-orange-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 bg-white">
+                    <option value="">-- Sélectionner une facture --</option>
+                </select>
+                <p class="text-xs text-orange-600 mt-1">Les lignes de la facture seront importées automatiquement</p>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Contact client</label>
+                <input type="text" id="clientContact" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500" placeholder="Ex: Monsieur TEMGOUA Bertin">
+                <input type="hidden" id="clientCivilite" value="M.">
+            </div>
+
+            <div class="mb-4">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-lg font-bold text-gray-800">Lignes de la note</h3>
+                    <button onclick="addNoteLine()" class="bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 text-sm">
+                        + Ajouter une ligne
+                    </button>
+                </div>
+                <div id="linesContainer" class="space-y-2 mb-4"></div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 mb-4 p-4 bg-gray-100 rounded-lg">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Total Impôts</label>
+                    <input type="number" id="totalImpots" readonly class="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Total Honoraires</label>
+                    <input type="number" id="totalHonoraires" readonly class="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white">
+                </div>
+            </div>
+
+            <div class="bg-blue-100 p-4 rounded-lg mb-4">
+                <div class="flex justify-between items-center">
+                    <span class="text-lg font-bold text-gray-700">TOTAL GÉNÉRAL</span>
+                    <span class="text-2xl font-bold text-blue-900" id="totalGeneral">0 F CFA</span>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-4 mt-6">
+                <button onclick="hideCreateForm()" class="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition">Annuler</button>
+                <button onclick="generateNote()" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition">
+                    Enregistrer la note
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="notePreview" class="hidden">
+        <div class="max-w-4xl mx-auto bg-white p-12 print-area" id="printArea"></div>
+        <div class="max-w-4xl mx-auto mt-6 mb-6 flex justify-center gap-4 no-print">
+            <button onclick="window.print()" class="bg-gray-700 text-white px-6 py-2 rounded-lg hover:bg-gray-800 transition">Imprimer</button>
+            <button onclick="downloadPDF()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">Télécharger PDF</button>
+            <button onclick="backToForm()" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition">Retour</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="prisma-components.js"></script>
+    <script>
+        let lineCounter = 0;
+        let selectedFacture = null;
+        let editingNoteId = null;
+        let isManualMode = false;
+        let currentPreviewNote = null;
+
+        function sanitizePdfSegment(value, fallback = 'Document') {
+            return String(value || '')
+                .replace(/^N[°ºo]?\s*/i, '')
+                .replace(/[\/\\]/g, '-')
+                .replace(/[^a-zA-Z0-9\u00C0-\u00FF\s\-]/g, '')
+                .trim() || fallback;
+        }
+
+        function normalizeCivilite(value, fallback = 'M.') {
+            const normalized = String(value || '').trim().toLowerCase();
+
+            if (['mme', 'madame', 'f', 'femme', 'feminin', 'féminin'].includes(normalized)) {
+                return 'Mme';
+            }
+
+            if (['m.', 'm', 'mr', 'monsieur', 'h', 'homme', 'masculin'].includes(normalized)) {
+                return 'M.';
+            }
+
+            return fallback;
+        }
+
+        function getCiviliteLongue(value) {
+            return normalizeCivilite(value) === 'Mme' ? 'Madame' : 'Monsieur';
+        }
+
+        function stripCivilitePrefix(contact) {
+            return String(contact || '')
+                .replace(/^(monsieur|madame|mme|m\.|mr)\s+/i, '')
+                .trim();
+        }
+
+        function toggleManualMode() {
+            isManualMode = document.getElementById('manualModeToggle').checked;
+            const label = document.getElementById('modeLabel');
+            const hint = document.getElementById('modeHint');
+            const manualDateSection = document.getElementById('manualDateSection');
+
+            if (isManualMode) {
+                label.textContent = 'Manuel';
+                label.className = 'text-sm font-medium text-orange-700';
+                hint.textContent = 'Saisir le N° et la date du document original';
+                manualDateSection.classList.remove('hidden');
+                document.getElementById('noteNumber').value = '';
+                document.getElementById('noteNumber').placeholder = 'Ex: NH-0001/2025/06';
+            } else {
+                label.textContent = 'Automatique';
+                label.className = 'text-sm font-medium text-blue-700';
+                hint.textContent = 'N° et date générés automatiquement';
+                manualDateSection.classList.add('hidden');
+                document.getElementById('noteNumber').placeholder = '';
+                generateNoteNumber();
+            }
+        }
+
+        function loadClientSelect() {
+            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+            const select = document.getElementById('clientSelect');
+            clients.forEach((client, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = client.name;
+                select.appendChild(option);
+            });
+        }
+
+        function loadClientData() {
+            const index = document.getElementById('clientSelect').value;
+            if (!index) {
+                document.getElementById('factureSection').classList.add('hidden');
+                document.getElementById('clientCivilite').value = 'M.';
+                selectedFacture = null;
+                return;
+            }
+
+            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+            const client = clients[index];
+            document.getElementById('clientContact').value = client.contact || '';
+            document.getElementById('clientCivilite').value = normalizeCivilite(client.civilite);
+
+            // Charger les factures du client
+            loadFactureSelect(client.name);
+        }
+
+        function loadFactureSelect(clientName) {
+            const factures = JSON.parse(localStorage.getItem('factures') || '[]');
+            const select = document.getElementById('factureSelect');
+
+            // Filtrer les factures du client
+            const clientFactures = factures.filter(f => f.client === clientName);
+
+            select.innerHTML = '<option value="">-- Sélectionner une facture --</option>';
+
+            if (clientFactures.length === 0) {
+                document.getElementById('factureSection').classList.add('hidden');
+                return;
+            }
+
+            clientFactures.forEach(f => {
+                const option = document.createElement('option');
+                option.value = f.id;
+                const dateStr = new Date(f.date).toLocaleDateString('fr-FR');
+                option.textContent = `${f.number} - ${dateStr} - ${f.total.toLocaleString('fr-FR')} F CFA`;
+                select.appendChild(option);
+            });
+
+            document.getElementById('factureSection').classList.remove('hidden');
+        }
+
+        function importFromFacture() {
+            const factureId = document.getElementById('factureSelect').value;
+
+            if (!factureId) {
+                selectedFacture = null;
+                return;
+            }
+
+            const factures = JSON.parse(localStorage.getItem('factures') || '[]');
+            const facture = factures.find(f => f.id === parseInt(factureId));
+
+            if (!facture) return;
+
+            selectedFacture = facture;
+
+            // Vider les lignes existantes
+            document.getElementById('linesContainer').innerHTML = '';
+            lineCounter = 0;
+
+            // Importer les prestations de la facture
+            if (facture.prestations && facture.prestations.length > 0) {
+                facture.prestations.forEach(p => {
+                    addNoteLineWithData(p.type, p.designation, p.total || (p.qty * p.price));
+                });
+            }
+
+            // Mettre à jour le numéro de note pour référencer la facture
+            const noteNumber = document.getElementById('noteNumber').value;
+            if (!noteNumber.includes(facture.number)) {
+                // Extraire le numéro de la facture (sans le "N° ")
+                const factureRef = facture.number.replace('N° ', '');
+                document.getElementById('noteNumber').value = `NH-${factureRef}`;
+            }
+
+            updateTotals();
+            PrismaToast.success('Lignes de la facture importées !');
+        }
+
+        function addNoteLineWithData(type, designation, montant) {
+            lineCounter++;
+            const container = document.getElementById('linesContainer');
+            const div = document.createElement('div');
+            div.className = 'grid grid-cols-12 gap-2';
+            div.id = `line-${lineCounter}`;
+            div.innerHTML = `
+                <div class="col-span-2">
+                    <select class="w-full border border-gray-300 rounded px-3 py-2 text-sm line-type" onchange="updateTotals()">
+                        <option value="Impôt" ${type === 'Impôt' ? 'selected' : ''}>Impôt</option>
+                        <option value="Honoraire" ${type === 'Honoraire' ? 'selected' : ''}>Honoraire</option>
+                    </select>
+                </div>
+                <div class="col-span-6">
+                    <input type="text" placeholder="Désignation" value="${designation || ''}" class="w-full border border-gray-300 rounded px-3 py-2 text-sm line-designation">
+                </div>
+                <div class="col-span-3">
+                    <input type="number" placeholder="Montant" value="${montant || 0}" class="w-full border border-gray-300 rounded px-3 py-2 text-sm line-montant" onchange="updateTotals()">
+                </div>
+                <div class="col-span-1">
+                    <button onclick="document.getElementById('line-${lineCounter}').remove(); updateTotals()" class="w-full bg-red-600 text-white px-2 py-2 rounded hover:bg-red-700">×</button>
+                </div>
+            `;
+            container.appendChild(div);
+        }
+
+        function addNoteLine() {
+            lineCounter++;
+            const container = document.getElementById('linesContainer');
+            const div = document.createElement('div');
+            div.className = 'grid grid-cols-12 gap-2';
+            div.id = `line-${lineCounter}`;
+            div.innerHTML = `
+                <div class="col-span-2">
+                    <select class="w-full border border-gray-300 rounded px-3 py-2 text-sm line-type" onchange="updateTotals()">
+                        <option value="Impôt">Impôt</option>
+                        <option value="Honoraire">Honoraire</option>
+                    </select>
+                </div>
+                <div class="col-span-6">
+                    <input type="text" placeholder="Désignation" class="w-full border border-gray-300 rounded px-3 py-2 text-sm line-designation">
+                </div>
+                <div class="col-span-3">
+                    <input type="number" placeholder="Montant" value="0" class="w-full border border-gray-300 rounded px-3 py-2 text-sm line-montant" onchange="updateTotals()">
+                </div>
+                <div class="col-span-1">
+                    <button onclick="document.getElementById('line-${lineCounter}').remove(); updateTotals()" class="w-full bg-red-600 text-white px-2 py-2 rounded hover:bg-red-700">×</button>
+                </div>
+            `;
+            container.appendChild(div);
+        }
+
+        function updateTotals() {
+            const lines = Array.from(document.querySelectorAll('#linesContainer > div'));
+            let impots = 0;
+            let honoraires = 0;
+            
+            lines.forEach(line => {
+                const type = line.querySelector('.line-type').value;
+                const montant = parseFloat(line.querySelector('.line-montant').value) || 0;
+                if (type === 'Impôt') {
+                    impots += montant;
+                } else {
+                    honoraires += montant;
+                }
+            });
+            
+            document.getElementById('totalImpots').value = impots;
+            document.getElementById('totalHonoraires').value = honoraires;
+            document.getElementById('totalGeneral').textContent = (impots + honoraires).toLocaleString('fr-FR') + ' F CFA';
+        }
+
+        function generateNote() {
+            const clientIndex = document.getElementById('clientSelect').value;
+            const noteNumber = document.getElementById('noteNumber').value;
+            const clientContact = document.getElementById('clientContact').value;
+
+            if (!clientIndex || !noteNumber) {
+                PrismaToast.warning('Veuillez sélectionner un client et saisir le numéro de note');
+                return;
+            }
+
+            if (isManualMode && !document.getElementById('manualDate').value) {
+                PrismaToast.warning('En mode manuel, veuillez saisir la date du document');
+                return;
+            }
+
+            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+            const client = clients[clientIndex];
+
+            const lines = Array.from(document.querySelectorAll('#linesContainer > div')).map(div => ({
+                type: div.querySelector('.line-type').value,
+                designation: div.querySelector('.line-designation').value,
+                montant: parseFloat(div.querySelector('.line-montant').value)
+            }));
+
+            if (lines.length === 0) {
+                PrismaToast.warning('Veuillez ajouter au moins une ligne');
+                return;
+            }
+
+            const impots = lines.filter(l => l.type === 'Impôt');
+            const honoraires = lines.filter(l => l.type === 'Honoraire');
+            const totalImpots = impots.reduce((sum, i) => sum + i.montant, 0);
+            const totalHonoraires = honoraires.reduce((sum, h) => sum + h.montant, 0);
+
+            const allNotes = JSON.parse(localStorage.getItem('notes') || '[]');
+
+            if (editingNoteId) {
+                const index = allNotes.findIndex(n => n.id === editingNoteId);
+                if (index !== -1) {
+                    allNotes[index] = {
+                        ...allNotes[index],
+                        number: noteNumber, client: client.name, clientContact, lignes: lines,
+                        clientCivilite: normalizeCivilite(document.getElementById('clientCivilite').value),
+                        totalImpots, totalHonoraires, totalGeneral: totalImpots + totalHonoraires,
+                        dateModification: new Date().toISOString(),
+                        factureId: selectedFacture ? selectedFacture.id : allNotes[index].factureId,
+                        factureNumber: selectedFacture ? selectedFacture.number : allNotes[index].factureNumber
+                    };
+                    localStorage.setItem('notes', JSON.stringify(allNotes));
+                    PrismaToast.success('Note modifiée avec succès !');
+                    hideCreateForm();
+                    loadNotesList();
+                    displayNoteFromData(allNotes[index]);
+                }
+            } else {
+                const manualDateVal = document.getElementById('manualDate').value;
+                const noteDate = (isManualMode && manualDateVal) ? new Date(manualDateVal + 'T12:00:00').toISOString() : new Date().toISOString();
+
+                const note = {
+                    id: Date.now(), number: noteNumber, client: client.name, clientContact, lignes: lines,
+                    clientCivilite: normalizeCivilite(document.getElementById('clientCivilite').value),
+                    totalImpots, totalHonoraires, totalGeneral: totalImpots + totalHonoraires,
+                    date: noteDate, isManual: isManualMode || false,
+                    factureId: selectedFacture ? selectedFacture.id : null,
+                    factureNumber: selectedFacture ? selectedFacture.number : null
+                };
+                allNotes.push(note);
+                localStorage.setItem('notes', JSON.stringify(allNotes));
+                PrismaToast.success('Note enregistrée avec succès !');
+                hideCreateForm();
+                loadNotesList();
+                displayNoteFromData(note);
+            }
+            editingNoteId = null;
+        }
+
+        // Charger la liste des notes
+        function loadNotesList() {
+            const notes = JSON.parse(localStorage.getItem('notes') || '[]');
+            const table = document.getElementById('noteTable');
+
+            if (notes.length === 0) {
+                table.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-gray-500">Aucune note</td></tr>';
+                return;
+            }
+
+            table.innerHTML = notes.slice().reverse().map(n => {
+                const dateStr = new Date(n.date).toLocaleDateString('fr-FR');
+                return `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="px-4 py-3 text-sm">${dateStr}</td>
+                        <td class="px-4 py-3 font-semibold">${n.number}</td>
+                        <td class="px-4 py-3">${n.client}</td>
+                        <td class="px-4 py-3 text-right text-sm text-blue-800">${(n.totalImpots || 0).toLocaleString('fr-FR')} F CFA</td>
+                        <td class="px-4 py-3 text-right text-sm text-green-800">${(n.totalHonoraires || 0).toLocaleString('fr-FR')} F CFA</td>
+                        <td class="px-4 py-3 text-right font-bold text-blue-900">${(n.totalGeneral || 0).toLocaleString('fr-FR')} F CFA</td>
+                        <td class="px-4 py-3 text-center">
+                            <div class="flex justify-center gap-2">
+                                <button onclick="viewNote(${n.id})" class="bg-gray-600 text-white px-3 py-1 rounded text-sm hover:bg-gray-700">Voir</button>
+                                <button onclick="editNote(${n.id})" class="bg-yellow-600 text-white px-3 py-1 rounded text-sm hover:bg-yellow-700">Modifier</button>
+                                <button onclick="deleteNote(${n.id})" class="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700">Suppr.</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function generateNoteNumber() {
+            const notes = JSON.parse(localStorage.getItem('notes') || '[]');
+            const num = String(notes.length + 1).padStart(4, '0');
+            const date = new Date();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            document.getElementById('noteNumber').value = `NH-${num}/${date.getFullYear()}/${month}`;
+        }
+
+        function showCreateForm() {
+            editingNoteId = null;
+            selectedFacture = null;
+            isManualMode = false;
+            document.getElementById('manualModeToggle').checked = false;
+            document.getElementById('modeLabel').textContent = 'Automatique';
+            document.getElementById('modeLabel').className = 'text-sm font-medium text-blue-700';
+            document.getElementById('modeHint').textContent = 'N° et date générés automatiquement';
+            document.getElementById('manualDateSection').classList.add('hidden');
+            document.getElementById('manualDate').value = '';
+            document.getElementById('noteNumber').placeholder = '';
+            document.getElementById('formTitle').textContent = 'Créer une note explicative';
+            document.getElementById('clientSelect').innerHTML = '<option value="">-- Sélectionner un client --</option>';
+            loadClientSelect();
+            document.getElementById('clientSelect').value = '';
+            document.getElementById('clientContact').value = '';
+            document.getElementById('clientCivilite').value = 'M.';
+            document.getElementById('linesContainer').innerHTML = '';
+            document.getElementById('factureSection').classList.add('hidden');
+            lineCounter = 0;
+            generateNoteNumber();
+            addNoteLine();
+            addNoteLine();
+            updateTotals();
+            document.getElementById('createForm').classList.remove('hidden');
+            document.getElementById('noteListSection').classList.add('hidden');
+            window.scrollTo(0, 0);
+        }
+
+        function hideCreateForm() {
+            document.getElementById('createForm').classList.add('hidden');
+            document.getElementById('noteListSection').classList.remove('hidden');
+            editingNoteId = null;
+            selectedFacture = null;
+        }
+
+        function viewNote(id) {
+            const notes = JSON.parse(localStorage.getItem('notes') || '[]');
+            const n = notes.find(x => x.id === id);
+            if (n) displayNoteFromData(n);
+        }
+
+        function displayNoteFromData(note) {
+            currentPreviewNote = note;
+            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+            const client = clients.find(c => c.name === note.client) || { name: note.client, civilite: note.clientCivilite || 'M.' };
+            const impots = note.lignes.filter(l => l.type === 'Impôt');
+            const honoraires = note.lignes.filter(l => l.type === 'Honoraire');
+            displayNote(client, note.clientContact, note.number, impots, honoraires, note.totalImpots, note.totalHonoraires, note.date);
+        }
+
+        function editNote(id) {
+            const notes = JSON.parse(localStorage.getItem('notes') || '[]');
+            const note = notes.find(x => x.id === id);
+            if (!note) return;
+
+            editingNoteId = id;
+            selectedFacture = note.factureId ? { id: note.factureId, number: note.factureNumber } : null;
+
+            document.getElementById('formTitle').textContent = 'Modifier la note explicative';
+            document.getElementById('clientSelect').innerHTML = '<option value="">-- Sélectionner un client --</option>';
+            loadClientSelect();
+
+            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+            const clientIndex = clients.findIndex(c => c.name === note.client);
+            if (clientIndex !== -1) {
+                document.getElementById('clientSelect').value = clientIndex;
+                loadClientData();
+            }
+
+            document.getElementById('noteNumber').value = note.number;
+            document.getElementById('clientContact').value = note.clientContact || '';
+            document.getElementById('clientCivilite').value = normalizeCivilite(note.clientCivilite || 'M.');
+
+            document.getElementById('linesContainer').innerHTML = '';
+            lineCounter = 0;
+            note.lignes.forEach(l => {
+                addNoteLineWithData(l.type, l.designation, l.montant);
+            });
+            updateTotals();
+
+            document.getElementById('createForm').classList.remove('hidden');
+            document.getElementById('noteListSection').classList.add('hidden');
+            document.getElementById('notePreview').classList.add('hidden');
+            window.scrollTo(0, 0);
+            PrismaToast.info('Note chargée pour modification');
+        }
+
+        function deleteNote(id) {
+            PrismaModal.confirmDelete('Supprimer cette note ?', () => {
+                const notes = JSON.parse(localStorage.getItem('notes') || '[]');
+                localStorage.setItem('notes', JSON.stringify(notes.filter(n => n.id !== id)));
+                loadNotesList();
+                PrismaToast.success('Note supprimée');
+            });
+        }
+
+        function displayNote(client, contact, noteNumber, impots, honoraires, totalImpots, totalHonoraires, savedDate) {
+            const date = savedDate ? new Date(savedDate) : new Date();
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            const dateStr = date.toLocaleDateString('fr-FR', options);
+            const totalGeneral = totalImpots + totalHonoraires;
+            const civiliteLongue = getCiviliteLongue(client.civilite);
+            const contactSansCivilite = stripCivilitePrefix(contact);
+            const destinataireContact = contactSansCivilite ? `${civiliteLongue} ${contactSansCivilite}` : civiliteLongue;
+
+            const impotsHTML = impots.map((i, idx) => `
+                <li><strong>${i.designation} : ${i.montant.toLocaleString('fr-FR')} F CFA</strong></li>
+            `).join('');
+
+            const honorairesHTML = honoraires.map((h, idx) => `
+                <li><strong>${h.designation} : ${h.montant.toLocaleString('fr-FR')} F CFA</strong></li>
+            `).join('');
+
+            document.getElementById('printArea').innerHTML = `
+                <div class="flex justify-between items-start mb-4">
+                    <div class="font-bold">
+                        <h1 class="text-2xl text-blue-900">PRISMA GESTION</h1>
+                        <p class="text-xs text-gray-600 uppercase tracking-widest">Comptabilité - Finance - Fiscalité</p>
+                        <div class="text-sm mt-2 text-gray-700">
+                            <p>Siège Social : Yaoundé - Bata Longkak</p>
+                            <p>Tél : (237) 656 752 475 / 671 050 546</p>
+                            <p>N.I.U : M052116042979Z</p>
+                        </div>
+                    </div>
+                    <div class="text-right text-sm text-gray-600">
+                        <p>Yaoundé, le ${dateStr}</p>
+                    </div>
+                </div>
+
+                <div style="border-bottom: 2px solid #1e3a8a; margin-bottom: 1rem;"></div>
+
+                <div class="mb-6" style="margin-left: auto; width: 50%;">
+                    <p class="font-bold text-lg">${client.name}</p>
+                    ${client.niu ? `<p class="text-sm text-gray-600 mt-1">NIU : ${client.niu}</p>` : ''}
+                    ${client.ville ? `<p class="text-sm text-gray-600">${client.ville}${client.quartier ? ' - ' + client.quartier : ''}</p>` : ''}
+                    ${contact ? `<p class="text-sm font-semibold text-blue-900 mt-2">À l'attention de ${destinataireContact}</p>` : ''}
+                </div>
+
+                <div class="mb-6">
+                    <p class="font-bold underline">Objet : Note explicative relative à la Note d'honoraire ${noteNumber}</p>
+                </div>
+
+                <div class="text-gray-800 leading-relaxed space-y-2" style="font-size: 0.9rem;">
+                    <p>${civiliteLongue},</p>
+
+                    <p>Suite à l'émission de notre Note d'honoraire en référence, nous vous adressons la présente pour vous apporter les précisions techniques nécessaires à la bonne compréhension de sa composition.</p>
+
+                    <h3 class="font-bold text-blue-900 mt-4 text-base">I. STRUCTURE DE LA FACTURATION</h3>
+
+                    <p>La note d'honoraire se décompose en deux catégories distinctes d'éléments :</p>
+
+                    <h4 class="font-semibold text-blue-900 mt-3 text-sm">A. Les paiements d'obligations fiscales (Total : ${totalImpots.toLocaleString('fr-FR')} F CFA)</h4>
+
+                    <p class="text-sm">Les postes ci-dessous constituent vos obligations fiscales exigibles auprès de l'Administration fiscale camerounaise, à savoir :</p>
+
+                    <ol class="list-decimal pl-6 space-y-1 text-sm">
+                        ${impotsHTML}
+                    </ol>
+
+                    <h5 class="font-semibold text-blue-800 mt-2 text-sm">Modalités de traitement :</h5>
+
+                    <p class="text-sm">En versant ces montants au Cabinet PRISMA GESTION, vous nous mandatez pour procéder au règlement desdites obligations fiscales auprès des Centres des Impôts compétents en votre nom et pour votre compte.</p>
+
+                    <p class="text-sm">À défaut de versement au Cabinet, il vous incombera, en votre qualité de contribuable, de vous acquitter directement de ces impositions auprès de l'Administration fiscale dans les délais légaux impartis.</p>
+
+                    <h4 class="font-semibold text-blue-900 mt-3 text-sm">B. Les honoraires pour prestations intellectuelles (Total : ${totalHonoraires.toLocaleString('fr-FR')} F CFA)</h4>
+
+                    <p class="text-sm">Les autres postes constituent la rémunération des prestations intellectuelles et techniques assurées par notre Cabinet, notamment :</p>
+
+                    <ol class="list-decimal pl-6 space-y-1 text-sm">
+                        ${honorairesHTML}
+                    </ol>
+
+                    <h3 class="font-bold text-blue-900 mt-4 text-base">II. MONTANT TOTAL</h3>
+
+                    <p>Le montant global de la note d'honoraire s'établit donc comme suit :</p>
+
+                    <ul class="list-disc pl-6 space-y-1">
+                        <li>Impôts : <strong>${totalImpots.toLocaleString('fr-FR')} F CFA</strong></li>
+                        <li>Honoraires prestations : <strong>${totalHonoraires.toLocaleString('fr-FR')} F CFA</strong></li>
+                        <li class="font-bold text-blue-900">TOTAL GÉNÉRAL : ${totalGeneral.toLocaleString('fr-FR')} F CFA</li>
+                    </ul>
+
+                    <p class="mt-3">Nous restons à votre entière disposition pour tout complément d'information que vous jugeriez utile concernant cette facturation.</p>
+
+                    <p>Veuillez agréer, ${civiliteLongue}, l'expression de notre considération distinguée.</p>
+                </div>
+
+                <div class="mt-6 flex justify-end">
+                    <div class="flex items-center gap-4">
+                        <img id="cachetImg" src="" alt="" style="max-height: 70px; display: none;">
+                        <div class="text-center">
+                            <p class="font-bold">Pour PRISMA GESTION</p>
+                            <img id="signatureImg" src="" alt="" style="max-height: 50px; display: none; margin: 0.5rem auto;">
+                            <div style="border-top: 1px solid #9ca3af; padding-top: 0.25rem; margin-top: 0.5rem;">
+                                <p class="text-base font-bold" id="signataireNom">OBIANG TIME Nathan</p>
+                                <p class="text-sm text-gray-600">Comptable - Fiscaliste</p>
+                                <p class="text-sm text-gray-600" id="signataireTitre">Directeur Associé</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pied de page -->
+                <div style="margin-top: 2rem; padding-top: 0.5rem; border-top: 1px solid #e5e7eb; text-align: center;">
+                    <p style="font-size: 0.7rem; color: #6b7280; margin: 0;">
+                        <span style="font-weight: 600; color: #1e3a8a;">PRISMA Manager</span> — PRISMA GESTION : L'expertise qui sécurise votre gestion.
+                    </p>
+                </div>
+            `;
+
+            document.querySelector('.no-print').classList.add('hidden');
+            document.getElementById('notePreview').classList.remove('hidden');
+            document.getElementById('createForm').classList.add('hidden');
+
+            // Charger la signature et le cachet du cabinet
+            loadCabinetSignatures();
+
+            window.scrollTo(0, 0);
+        }
+
+        function loadCabinetSignatures() {
+            const config = JSON.parse(localStorage.getItem('cabinetConfig') || '{}');
+
+            const signatureImg = document.getElementById('signatureImg');
+            const cachetImg = document.getElementById('cachetImg');
+            const signataireNom = document.getElementById('signataireNom');
+            const signataireTitre = document.getElementById('signataireTitre');
+
+            if (config.signature && signatureImg) {
+                signatureImg.src = config.signature;
+                signatureImg.style.display = 'block';
+            }
+
+            if (config.cachet && cachetImg) {
+                cachetImg.src = config.cachet;
+                cachetImg.style.display = 'block';
+            }
+
+            if (config.signataireNom && signataireNom) {
+                signataireNom.textContent = config.signataireNom;
+            }
+
+            if (config.signataireTitre && signataireTitre) {
+                signataireTitre.textContent = config.signataireTitre;
+            }
+        }
+
+        function backToForm() {
+            document.querySelector('.no-print').classList.remove('hidden');
+            document.getElementById('notePreview').classList.add('hidden');
+            document.getElementById('noteListSection').classList.remove('hidden');
+            document.getElementById('createForm').classList.add('hidden');
+            currentPreviewNote = null;
+            window.scrollTo(0, 0);
+        }
+
+        function downloadPDF() {
+            if (typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') {
+                PrismaToast.error('Erreur : Bibliothèques non chargées.');
+                return;
+            }
+
+            PrismaLoader.show('Génération du PDF...');
+
+            html2canvas(document.getElementById('printArea'), { scale: 2 }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
+                const imgWidth = 210;
+                const imgHeight = canvas.height * imgWidth / canvas.width;
+                pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+                PrismaLoader.hide();
+                const note = currentPreviewNote || {};
+                const fileNumber = sanitizePdfSegment(note.number, 'Note');
+                const fileClient = sanitizePdfSegment(note.client, 'Client');
+                pdf.save(`Note_${fileNumber}_${fileClient}.pdf`);
+                PrismaToast.success('PDF téléchargé avec succès !');
+            }).catch(err => {
+                PrismaLoader.hide();
+                PrismaToast.error('Erreur lors de la génération du PDF');
+            });
+        }
+
+        loadClientSelect();
+        loadNotesList();
+
+        // Synchroniser les données entre onglets
+        PrismaSync.watch('clients', () => {
+            const currentClient = document.getElementById('clientSelect').value;
+            document.getElementById('clientSelect').innerHTML = '<option value="">-- Sélectionner un client --</option>';
+            loadClientSelect();
+            if (currentClient) {
+                document.getElementById('clientSelect').value = currentClient;
+                loadClientData();
+            }
+        });
+        PrismaSync.watch('factures', () => {
+            const index = document.getElementById('clientSelect').value;
+            if (index) {
+                const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+                if (clients[index]) {
+                    loadFactureSelect(clients[index].name);
+                }
+            }
+        });
+        PrismaSync.watch('notes', () => {
+            loadNotesList();
+            PrismaToast.info('Liste des notes mise à jour', 2000);
+        });
+    </script>
+</body>
+</html>
