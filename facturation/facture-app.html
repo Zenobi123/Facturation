@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Génération de Factures - PRISMA GESTION</title>
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1e3a8a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Prisma">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
     <script src="assets/css/tailwindcss.min.js"></script>
     <link rel="stylesheet" href="prisma-print.css">
     <link rel="stylesheet" href="assets/css/inter-font.css">
@@ -1926,6 +1934,11 @@
         PrismaSync.watch('devis', () => {
             loadDevisSelect();
         });
+    </script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').catch(console.error);
+        }
     </script>
 </body>
 </html>
