@@ -1,0 +1,71 @@
+name: Build Windows Installer
+
+on:
+  push:
+    tags:
+      - 'v*'        # Déclenché sur un tag comme v2.0.0
+  workflow_dispatch:  # Ou manuellement depuis l'onglet Actions
+
+jobs:
+  build-windows:
+    name: Build PRISMA GESTION (Windows x64)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Install Node dependencies
+        run: npm install
+
+      - name: Build Windows installer (NSIS .exe)
+        run: npm run build -- --target x86_64-pc-windows-msvc
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: prisma-gestion-windows-installer
+          path: |
+            src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*.exe
+            src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Create GitHub Release (sur tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*.exe
+            src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi
+          name: "PRISMA GESTION ${{ github.ref_name }}"
+          body: |
+            ## PRISMA GESTION ${{ github.ref_name }}
+
+            ### Installation Windows
+            - Téléchargez le fichier `.exe` (installeur NSIS) ou `.msi`
+            - Exécutez l'installeur en tant qu'utilisateur normal (installation dans `AppData`)
+            - L'application sera disponible dans le menu Démarrer
+
+            ### Pré-requis
+            - Windows 10 version 1803 ou supérieure (WebView2 inclus)
+            - Windows 11 (WebView2 inclus nativement)

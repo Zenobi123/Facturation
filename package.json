@@ -1,0 +1,13 @@
+{
+  "name": "prisma-gestion",
+  "version": "2.0.0",
+  "description": "Logiciel de Gestion Commerciale - PRISMA GESTION",
+  "scripts": {
+    "tauri": "tauri",
+    "dev": "tauri dev",
+    "build": "tauri build"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  }
+}
